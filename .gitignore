@@ -1,0 +1,57 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Secrets / environment ---
+.env
+.env.*
+!.env.example
+
+# --- Data: raw large datasets are never committed (small fixtures are, see below) ---
+data/raw/**
+!data/raw/citibike/.gitkeep
+data/processed/**
+!data/processed/.gitkeep
+
+# Curated fixtures ARE versioned intentionally; do not ignore them.
+!data/fixtures/**
+
+# --- Generated artifacts / model binaries / reports ---
+reports/**
+!reports/.gitkeep
+*.parquet
+*.joblib
+*.pkl
+*.onnx
+
+# --- Local database volumes ---
+neo4j/
+*.db
+*.sqlite3
+
+# --- Node / frontend (apps/web, added in later phase) ---
+node_modules/
+apps/web/.next/
+apps/web/out/
+apps/web/dist/
+
+# --- Claude Code local settings (per-machine, not shared) ---
+.claude/settings.local.json
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

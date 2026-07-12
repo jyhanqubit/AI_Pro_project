@@ -1,0 +1,8 @@
+ride_id,rideable_type,started_at,ended_at,start_station_id,start_station_name,end_station_id,end_station_name,start_lat,start_lng,end_lat,end_lng,member_casual
+R0000000000000001,classic_bike,2026-07-12 13:05:00,2026-07-12 13:17:00,HB101,Grove St PATH,HB102,Hoboken Terminal,40.7196,-74.0431,40.7360,-74.0301,member
+R0000000000000002,electric_bike,2026-07-12 13:40:00,2026-07-12 13:52:00,HB102,Hoboken Terminal,HB105,City Hall,40.7360,-74.0301,40.7377,-74.0324,casual
+R0000000000000003,classic_bike,2026-07-12 14:20:00,2026-07-12 14:05:00,HB105,City Hall,HB101,Grove St PATH,40.7377,-74.0324,40.7196,-74.0431,member
+R0000000000000004,classic_bike,2026-07-12 14:30:00,2026-07-12 14:41:00,HB110,Newport Pkwy,HB102,Hoboken Terminal,999.0,-74.0500,40.7360,-74.0301,member
+R0000000000000005,electric_bike,2026-07-12 15:00:00,2026-07-12 15:10:00,HB110,Newport Pkwy,HB105,City Hall,,-74.0500,40.7377,-74.0324,casual
+R0000000000000006,classic_bike,2026-07-12 15:15:00,2026-07-12 15:29:00,HB101,Grove St PATH,HB110,Newport Pkwy,40.7196,-74.0431,40.7272,-74.0337,member
+R0000000000000007,electric_bike,2026-07-12 15:45:00,2026-07-12 16:02:00,HB102,Hoboken Terminal,HB101,Grove St PATH,40.7360,-74.0301,40.7196,-74.0431,member

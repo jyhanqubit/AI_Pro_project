@@ -1,0 +1,67 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shockflow-ai"
+version = "0.0.0"
+description = "Event-aware urban mobility demand forecasting and fleet rebalancing decision-support system."
+requires-python = ">=3.11"
+dependencies = [
+    "pydantic>=2.5",
+    "pydantic-settings>=2.1",
+    "tzdata>=2024.1",  # IANA tz database for zoneinfo on Windows
+    "h3>=4.0",  # H3 hexagonal grid for zone assignment (CLAUDE.md section 4)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.4",
+    "mypy>=1.9",
+    "scipy>=1.11",  # statistical hypothesis tests for EDA verification
+]
+graph = [
+    "neo4j>=5.0",  # optional live graph backend (Demo Mode runs offline without it)
+]
+
+[tool.setuptools]
+# Explicit package list; keeps the scaffold importable under pip -e install.
+packages = [
+    "contracts",
+    "config",
+    "services",
+    "services.api",
+    "pipelines",
+    "pipelines.collectors",
+    "pipelines.events",
+    "pipelines.features",
+    "pipelines.graph",
+    "ml",
+    "ml.forecasting",
+    "optimization",
+    "optimization.classical",
+    "optimization.quantum",
+]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+# Matches the interpreter used for development (see docs/STATUS.md); numpy's 3.12 stubs
+# require this target to parse.
+python_version = "3.12"
+warn_unused_ignores = true
+disallow_untyped_defs = false  # tighten per-module as contracts land
+
+[[tool.mypy.overrides]]
+module = ["h3", "numpy.*", "scipy.*", "neo4j"]
+ignore_missing_imports = true  # third-party libs without usable stubs for our purposes
+follow_imports = "skip"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

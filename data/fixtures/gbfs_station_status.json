@@ -1,0 +1,36 @@
+{
+  "last_updated": 1752341400,
+  "ttl": 60,
+  "version": "2.3",
+  "data": {
+    "stations": [
+      {
+        "station_id": "HB101",
+        "num_bikes_available": 5,
+        "num_docks_available": 10,
+        "is_installed": 1,
+        "is_renting": 1,
+        "is_returning": 1,
+        "last_reported": 1752341390
+      },
+      {
+        "station_id": "HB102",
+        "num_bikes_available": 0,
+        "num_docks_available": 18,
+        "is_installed": 1,
+        "is_renting": 1,
+        "is_returning": 1,
+        "last_reported": 1752341380
+      },
+      {
+        "station_id": "HB110",
+        "num_bikes_available": 12,
+        "num_docks_available": 3,
+        "is_installed": 1,
+        "is_renting": 1,
+        "is_returning": 0,
+        "last_reported": 1752341370
+      }
+    ]
+  }
+}

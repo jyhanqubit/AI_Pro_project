@@ -1,0 +1,10 @@
+# Normalize line endings to LF in the repository; check out native on each platform.
+* text=auto eol=lf
+
+# Binary assets — never normalize.
+*.png binary
+*.jpg binary
+*.zip binary
+*.parquet binary
+*.joblib binary
+*.pkl binary
