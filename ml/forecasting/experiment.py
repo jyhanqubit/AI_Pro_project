@@ -21,9 +21,11 @@ from config.forecasting import (
     CV_SPLITS,
     CV_TEST_HOURS,
     FINAL_TEST_HOURS,
+    OVERFLOW_COST,
     PRIMARY_TARGET,
     REQUIRED_FEATURES,
     SELECT_TOP_K,
+    SHORTAGE_COST,
 )
 from ml.forecasting.baselines import seasonal_naive_predict
 from ml.forecasting.dataset import Panel
@@ -71,6 +73,18 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
     # No event falls in the test window (curated events postdate the data): honest empty mask.
     event_mask_test: np.ndarray = np.zeros(len(test_pos), dtype=bool)
 
+    def ev(pred: np.ndarray) -> dict[str, float]:
+        """Evaluate a prediction against the test target with the configured cost weights."""
+        return evaluate(
+            y_test,
+            pred,
+            scale=scale,
+            y_prev=y_prev_test,
+            event_mask=event_mask_test,
+            shortage_cost=SHORTAGE_COST,
+            overflow_cost=OVERFLOW_COST,
+        )
+
     b1_cols = panel.b1_cols
 
     results: dict[str, Any] = {
@@ -82,13 +96,13 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
         "n_features_b1": len(b1_cols),
         "seasonal_scale_mae": scale,
         "test_window_hours": FINAL_TEST_HOURS,
+        "ocs_shortage_cost": SHORTAGE_COST,
+        "ocs_overflow_cost": OVERFLOW_COST,
     }
 
     # --- B0 seasonal naive reference -------------------------------------------------------
     snaive_test = seasonal_naive_predict(df.iloc[test_pos], target)
-    results["B0_seasonal_naive"] = evaluate(
-        y_test, snaive_test, scale=scale, y_prev=y_prev_test, event_mask=event_mask_test
-    )
+    results["B0_seasonal_naive"] = ev(snaive_test)
 
     # --- Stage 1: GridSearch over the algorithm zoo on B1 features --------------------------
     x_b1 = _matrix(df, b1_cols)
@@ -104,9 +118,7 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
         search.fit(x_dev, y_dev)
         best = search.best_estimator_
         pred_test = best.predict(x_test)
-        metrics = evaluate(
-            y_test, pred_test, scale=scale, y_prev=y_prev_test, event_mask=event_mask_test
-        )
+        metrics = ev(pred_test)
         algo_results[kind] = {
             "best_params": {k: _clean(v) for k, v in search.best_params_.items()},
             "cv_wape": float(-search.best_score_),  # scorer is negated WAPE
@@ -129,9 +141,7 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
         est = clone(pipe).set_params(**results["best_params"])
         est.fit(xa[dev_pos], y_dev)
         pred = est.predict(xa[test_pos])
-        ablation[level] = evaluate(
-            y_test, pred, scale=scale, y_prev=y_prev_test, event_mask=event_mask_test
-        )
+        ablation[level] = ev(pred)
         ablation[level]["n_features"] = len(cols)
     results["ablation"] = ablation
 
@@ -161,9 +171,7 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
     pred_sel = est_sel.predict(x_sel[test_pos])
     results["reduced_model"] = {
         "k": len(top_k),
-        "test": evaluate(
-            y_test, pred_sel, scale=scale, y_prev=y_prev_test, event_mask=event_mask_test
-        ),
+        "test": ev(pred_sel),
     }
     return results
 

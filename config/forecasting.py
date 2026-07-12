@@ -33,6 +33,15 @@ CV_TEST_HOURS = 48  # each expanding-window fold validates on 2 days
 # Feature-selection target size (top-k by permutation importance) for the reduced re-fit.
 SELECT_TOP_K = 12
 
+# --- Domain-customised metric: Operational Cost Score (OCS) ---------------------------------
+# Demand-forecast errors are operationally asymmetric on a bike system: under-forecasting a
+# zone-hour risks a stockout (a rider finds no bike), while over-forecasting wastes rebalancing
+# and risks dock overflow. OCS weights the two sides and normalises by total demand, so it is
+# scale-free and zero-robust like WAPE. With SHORTAGE_COST == OVERFLOW_COST it reduces exactly
+# to WAPE. These weights are the operational-cost knobs of section 11.5 / section 14.
+SHORTAGE_COST = 2.0  # cost per bike of under-forecasting (stockout risk) — the costlier side
+OVERFLOW_COST = 1.0  # cost per bike of over-forecasting (overflow / wasted relocation)
+
 # --- Model zoo + GridSearch spaces (section 11.5) -------------------------------------------
 # Each entry: estimator kind + a grid keyed by pipeline step. Linear / distance models are
 # scaled; tree ensembles are not. Grids are deliberately modest to keep the run reproducible

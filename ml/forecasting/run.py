@@ -138,10 +138,14 @@ def main(argv: list[str] | None = None) -> None:
 
     print(f"\nbest algorithm: {res['best_algorithm']}  params={res['best_params']}")
     b0, best = res["B0_seasonal_naive"], res["algorithms"][res["best_algorithm"]]["test"]
-    print(f"B0 seasonal naive  WAPE={b0['wape']:.4f}  MAE={b0['mae']:.3f}")
+    print(
+        f"B0 seasonal naive  WAPE={b0['wape']:.4f}  MAE={b0['mae']:.3f}  "
+        f"OCS={b0.get('ocs', float('nan')):.4f}"
+    )
     print(
         f"best model         WAPE={best['wape']:.4f}  MAE={best['mae']:.3f}  "
-        f"MASE={best['mase']:.4f}"
+        f"MASE={best['mase']:.4f}  OCS={best.get('ocs', float('nan')):.4f}  "
+        f"bias={best.get('bias', float('nan')):+.3f}"
     )
     print("reports: reports/phase06_results.json, reports/phase06_interpretation.md")
     for f in figs:

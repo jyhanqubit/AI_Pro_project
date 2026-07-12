@@ -98,12 +98,13 @@ Run on this machine (Python 3.12.10, `.venv`):
 - `ruff check .` — passed
 - `ruff format --check .` — passed (76 files)
 - `mypy .` — passed (no issues, 76 source files)
-- `pytest` — **90 passed**
+- `pytest` — **94 passed**
 - `make evaluate` (`python -m ml.forecasting.run <June zip>`) — offline; rolling-origin over
   30,947 usable rows / 139 zones. Best by CV WAPE: **knn** (`n_neighbors=30`, `weights=distance`),
   test WAPE 0.516, MASE 0.794 (beats B0 seasonal naive WAPE 0.658 / MASE 1.013). All 6 algorithms
-  beat B0; top-12 reduced model matches the full 32-feature model. Ablation B1=B2=B3=B4 (event
-  features verified zero on the June window). See `README.md` and `reports/phase06_*`.
+  beat B0; top-12 reduced model matches the full 32-feature model. The domain-customised OCS
+  (shortage-weighted) reorders the board (extra_trees best, knn worst learned model). Ablation
+  B1=B2=B3=B4 (event features verified zero on the June window). See `README.md` and `reports/phase06_*`.
 - `make graph-upsert-demo` — offline; 2 events → 15 nodes / 17 edges; idempotent replay; audit
   clean; events link to 3 H3 zones.
 - `make graph-features-demo` — offline; shows the as-of boundary: cutoff 13:59 → 0 snapshots
@@ -152,6 +153,9 @@ Run on this machine (Python 3.12.10, `.venv`):
     random_forest 0.505, knn 0.516, ridge 0.527; B0 seasonal naive 0.658. CV-selected model: knn.
   - top features by permutation importance: `dep_lag_1`, `dep_lag_168`, `arr_lag_1`, `dep_lag_24`,
     `cal_hour_cos`, `cal_is_evening_rush` — short-term persistence + weekly seasonality + rush timing.
+  - **OCS (domain-customised, shortage-weighted 2:1) reorders the board**: the CV-WAPE pick knn is
+    the *worst* learned model on OCS (0.857) because it under-forecasts most; extra_trees is best
+    on OCS (0.781). All models under-forecast (negative bias) → structural stockout risk.
   - event ablation collapses to B1: 0 graph snapshots at the last June cutoff (verified, §5.2).
 
 ## Known blockers / notes

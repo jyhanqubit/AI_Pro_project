@@ -67,22 +67,29 @@ def build_interpretation(res: dict[str, Any]) -> str:
     )
 
     # --- Algorithm leaderboard ---
+    cs, co = res.get("ocs_shortage_cost", 2.0), res.get("ocs_overflow_cost", 1.0)
     lines.append("## Algorithm leaderboard (GridSearch, cross-validated)\n")
-    lines.append("| algorithm | CV WAPE | test WAPE | test MAE | test MASE | peak-dir acc |")
-    lines.append("|---|---|---|---|---|---|")
+    lines.append(
+        f"OCS = Operational Cost Score (domain-customised; shortage_cost={cs}, "
+        f"overflow_cost={co}); bias = mean(ŷ − y).\n"
+    )
+    lines.append("| algorithm | CV WAPE | test WAPE | test MASE | test OCS | bias | peak-dir acc |")
+    lines.append("|---|---|---|---|---|---|---|")
     order = sorted(algos, key=lambda k: algos[k]["cv_wape"])
     b0 = res["B0_seasonal_naive"]
     lines.append(
-        f"| _B0 seasonal naive_ | - | {_fmt(b0['wape'])} | {_fmt(b0['mae'])} | "
-        f"{_fmt(b0['mase'])} | {_fmt(b0.get('peak_direction_accuracy'))} |"
+        f"| _B0 seasonal naive_ | - | {_fmt(b0['wape'])} | {_fmt(b0['mase'])} | "
+        f"{_fmt(b0.get('ocs'))} | {_fmt(b0.get('bias'))} | "
+        f"{_fmt(b0.get('peak_direction_accuracy'))} |"
     )
     for k in order:
         a = algos[k]
         t = a["test"]
         star = " ⭐" if k == best else ""
         lines.append(
-            f"| {k}{star} | {_fmt(a['cv_wape'])} | {_fmt(t['wape'])} | {_fmt(t['mae'])} | "
-            f"{_fmt(t['mase'])} | {_fmt(t.get('peak_direction_accuracy'))} |"
+            f"| {k}{star} | {_fmt(a['cv_wape'])} | {_fmt(t['wape'])} | {_fmt(t['mase'])} | "
+            f"{_fmt(t.get('ocs'))} | {_fmt(t.get('bias'))} | "
+            f"{_fmt(t.get('peak_direction_accuracy'))} |"
         )
     lines.append("")
 
@@ -96,6 +103,25 @@ def build_interpretation(res: dict[str, Any]) -> str:
         f"MASE < 1 means it beats the weekly seasonal-naive baseline; "
         f"it improves test WAPE over B0 by {_fmt(lift, 1)}%.\n"
     )
+
+    # --- Custom metric: OCS ---
+    lines.append("## Operational Cost Score — the data/domain-customised metric\n")
+    lines.append(
+        f"OCS charges under-forecast bikes (stockout risk) at {cs}× and over-forecast bikes "
+        f"(overflow / wasted relocation) at {co}×, normalised by total demand — scale-free and "
+        "zero-robust like WAPE, to which it reduces when the two costs are equal.\n"
+    )
+    lines.append("| model | OCS | under-forecast units | over-forecast units | bias |")
+    lines.append("|---|---|---|---|---|")
+    lines.append(
+        f"| B0 seasonal naive | {_fmt(b0.get('ocs'))} | {_fmt(b0.get('shortage_units'), 0)} | "
+        f"{_fmt(b0.get('overflow_units'), 0)} | {_fmt(b0.get('bias'))} |"
+    )
+    lines.append(
+        f"| {best} (selected) | {_fmt(bt.get('ocs'))} | {_fmt(bt.get('shortage_units'), 0)} | "
+        f"{_fmt(bt.get('overflow_units'), 0)} | {_fmt(bt.get('bias'))} |"
+    )
+    lines.append("")
 
     # --- Hyperparameters ---
     lines.append("## Best hyperparameters (interpretation)\n")

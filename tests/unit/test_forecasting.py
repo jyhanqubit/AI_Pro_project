@@ -11,12 +11,15 @@ from datetime import UTC, datetime, timedelta
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from ml.forecasting.baselines import seasonal_naive_predict
 from ml.forecasting.metrics import (
+    bias,
     forecast_delta_stability,
     mae,
     mase,
+    operational_cost_score,
     peak_direction_accuracy,
     seasonal_naive_scale,
     wape,
@@ -59,6 +62,38 @@ def test_peak_direction_accuracy():
 def test_delta_stability_zero_when_identical():
     d = forecast_delta_stability([1.0, 2.0, 3.0], [1.0, 2.0, 3.0])
     assert d["mean_abs_delta"] == 0.0 and d["std_delta"] == 0.0
+
+
+# --- Custom metric: Operational Cost Score --------------------------------
+
+
+def test_ocs_reduces_to_wape_with_equal_costs():
+    # Defining property: equal shortage/overflow costs -> OCS == WAPE.
+    y, yhat = [10, 5, 0, 8], [9, 7, 1, 8]
+    ocs = operational_cost_score(y, yhat, shortage_cost=1.0, overflow_cost=1.0)
+    assert ocs["ocs"] == pytest.approx(wape(y, yhat))
+
+
+def test_ocs_penalises_under_forecast_more():
+    # Same absolute error, but under-forecasting costs more than over-forecasting.
+    y = [10, 10]
+    under = operational_cost_score(y, [8, 10], shortage_cost=2.0, overflow_cost=1.0)
+    over = operational_cost_score(y, [12, 10], shortage_cost=2.0, overflow_cost=1.0)
+    assert under["ocs"] > over["ocs"]
+    assert under["shortage_units"] == 2.0 and over["overflow_units"] == 2.0
+
+
+def test_ocs_zero_denominator():
+    assert (
+        operational_cost_score([0, 0], [0, 0], shortage_cost=2.0, overflow_cost=1.0)["ocs"] == 0.0
+    )
+    got = operational_cost_score([0, 0], [1, 0], shortage_cost=2.0, overflow_cost=1.0)["ocs"]
+    assert math.isnan(got)
+
+
+def test_bias_sign():
+    assert bias([5, 5], [6, 6]) == 1.0  # over-forecast
+    assert bias([5, 5], [4, 4]) == -1.0  # under-forecast
 
 
 # --- Seasonal naive baseline ----------------------------------------------

@@ -51,6 +51,29 @@ untouched test window; the test window is scored once for the chosen model.
 - **event-window WAPE** — reported separately; NaN when no row falls in an event window.
 - **peak direction accuracy** — fraction of rows where sign(ŷ_t − y_{t−1}) matches sign(y_t − y_{t−1}).
 - **forecast delta stability** — mean/‌std of the B4−B1 prediction delta.
+- **bias** — mean(ŷ − y); flags systematic over- (positive) or under-forecasting (negative),
+  the latter being the stockout-risk direction.
+- **OCS (Operational Cost Score)** — the **data/domain-customised metric** (below).
+
+### OCS — a metric that reflects this data and this product
+
+Demand-forecast errors here are **operationally asymmetric**: under-forecasting a zone-hour
+risks a **stockout** (a rider finds no bike), while over-forecasting wastes rebalancing and
+risks **dock overflow**. The demand is also intermittent low-count (≈20 % zeros, median 2) with
+wildly different zone scales (mean 0–12), so percentage metrics (MAPE/sMAPE) are unusable and a
+scale-free, zero-robust score is required. OCS combines both:
+
+```
+OCS = ( shortage_cost · Σ max(y − ŷ, 0)  +  overflow_cost · Σ max(ŷ − y, 0) ) / Σ y
+```
+
+- Under-forecast bikes are charged `shortage_cost` (default 2.0), over-forecast bikes
+  `overflow_cost` (default 1.0) — the operational-cost knobs of §11.5 / §14, set in
+  `config/forecasting.py`.
+- Normalising by total demand makes it scale-free and zero-robust, exactly like WAPE.
+- **Reduction property**: with equal costs, `OCS == WAPE`. OCS is a principled generalisation of
+  WAPE that bends it toward the rebalancing objective, and it links directly to the Phase 08
+  cost model. The run also reports the raw under/over-forecast unit totals for interpretation.
 
 ## Ablation ladder (§11.2)
 

@@ -69,19 +69,54 @@ usable row 30,947개 / 139개 Zone, dev 26,918 · test 4,029, B1 feature 32개.
 전 수치는 실제 실행에서 나온 값이며, 재현은 `make evaluate`로 가능합니다. 원본은
 `reports/phase06_results.json`, 상세 해석은 [docs/EVALUATION_PROTOCOL.md](docs/EVALUATION_PROTOCOL.md).
 
+### 지표를 왜 이렇게 골랐나
+
+이 데이터의 성질에서 지표가 정해졌습니다. `departures`는 **평균 2.7 / 중앙값 2 / 최대 87**의
+간헐적 카운트 수요로, **0인 시간이 20.2%**, 2 이하가 64%이고, Zone별 평균 규모가 0~12로 극단적으로
+다릅니다.
+
+- **percentage 계열(MAPE·sMAPE)은 탈락** — 0으로 나눠 폭발합니다.
+- **WAPE**(Σ\|y−ŷ\|/Σ\|y\|) — 합산 정규화라 0에 강하고, 수요 큰 Zone·시간대의 오차를 자동 가중.
+- **MASE**(seasonal naive 대비) — Zone 규모가 제각각이라 **scale-free** 지표가 필수. <1이면 naive보다 나음.
+- **MAE** — "평균 몇 대 틀리나"의 직관적 보조 지표.
+- **peak direction accuracy** — 재배치는 크기보다 **오르내림 방향**이 중요.
+- **bias**(평균 오차) — 체계적 과소예측 = 품절 위험을 감지.
+- **OCS(Operational Cost Score)** — 아래의 **데이터/도메인 맞춤 지표**.
+
 ### 알고리즘 leaderboard (GridSearch, CV WAPE 기준 정렬)
 
-| 알고리즘 | CV WAPE | test WAPE | test MAE | test MASE | peak-dir |
-|---|---|---|---|---|---|
-| _B0 seasonal naive_ | - | 0.6584 | 1.787 | 1.0125 | 0.559 |
-| **knn** ⭐(선택) | 0.5438 | 0.5161 | 1.401 | 0.7936 | 0.632 |
-| extra_trees | 0.5507 | 0.4922 | 1.336 | 0.7569 | 0.640 |
-| hist_gradient_boosting | 0.5522 | 0.4974 | 1.350 | 0.7649 | 0.646 |
-| random_forest | 0.5533 | 0.5047 | 1.370 | 0.7761 | 0.642 |
-| gradient_boosting | 0.5556 | 0.4972 | 1.350 | 0.7646 | 0.636 |
-| ridge | 0.5853 | 0.5268 | 1.430 | 0.8101 | 0.626 |
+OCS는 아래 "맞춤 지표" 절 참고(shortage 2.0 / overflow 1.0). bias = 평균(ŷ − y), 음수면 과소예측.
+
+| 알고리즘 | CV WAPE | test WAPE | test MASE | test OCS | bias | peak-dir |
+|---|---|---|---|---|---|---|
+| _B0 seasonal naive_ | - | 0.6584 | 1.0125 | 1.1473 | −0.867 | 0.559 |
+| **knn** ⭐(CV 선택) | 0.5438 | 0.5161 | 0.7936 | 0.8571 | −0.451 | 0.632 |
+| extra_trees | 0.5507 | 0.4922 | 0.7569 | **0.7809** | −0.231 | 0.640 |
+| hist_gradient_boosting | 0.5522 | 0.4974 | 0.7649 | 0.7897 | −0.237 | 0.646 |
+| random_forest | 0.5533 | 0.5047 | 0.7761 | 0.8015 | −0.241 | 0.642 |
+| gradient_boosting | 0.5556 | 0.4972 | 0.7646 | 0.7905 | −0.243 | 0.636 |
+| ridge | 0.5853 | 0.5268 | 0.8101 | 0.8559 | −0.357 | 0.626 |
 
 ![알고리즘 비교](docs/img/phase06_algorithm_comparison.png)
+
+### OCS — 데이터/도메인 맞춤 지표
+
+수요 예측 오차는 **방향이 비대칭**입니다. **과소예측**(ŷ<y)은 자전거 부족 → 품절(rider가 자전거를
+못 찾음), **과대예측**(ŷ>y)은 dock 초과·헛된 재배치. 보통 부족이 더 아픕니다. 그래서:
+
+$$\text{OCS} = \frac{c_{short}\sum\max(y-\hat y,0) + c_{over}\sum\max(\hat y-y,0)}{\sum y}$$
+
+기본 $c_{short}=2,\ c_{over}=1$ ([config/forecasting.py](config/forecasting.py), §11.5·§14의 비용
+가중치). 합산 정규화라 **0에 강하고 scale-free**이며, **두 비용이 같으면 정확히 WAPE로 환원**됩니다 —
+WAPE를 재배치 목적함수 쪽으로 굽힌 원리적 일반화이고, Phase 08 비용 모델과 직접 이어집니다.
+
+**핵심 발견 — 맞춤 지표가 순위를 바꿉니다.** WAPE로 뽑은 knn은 OCS에서는 학습 모델 중 **가장 나쁩니다**
+(0.857). knn이 더 심하게 과소예측(bias −0.451, 부족 3,730대)하는 반면, tree 계열은 덜 과소예측
+(extra_trees bias −0.231, 부족 3,157대 → OCS 0.781로 최고)하기 때문입니다. **모든 모델이 과소예측
+(음의 bias)** 이라 품절 위험이 구조적으로 존재하고, B0는 특히 심합니다(bias −0.867, OCS 1.147).
+즉 정확도(WAPE)만 보면 knn이지만, **품절 비용까지 보면 extra_trees가 운영상 더 낫다** — 이것이 이
+데이터에 맞춘 지표를 따로 둔 이유입니다. (선택 자체는 프로토콜대로 CV WAPE로 하되, 운영 관점의
+재순위를 함께 보고합니다.)
 
 ### 모델 해석
 

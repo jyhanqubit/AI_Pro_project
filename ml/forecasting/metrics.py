@@ -63,6 +63,42 @@ def mase(
     return mae(y_true, y_pred) / scale
 
 
+def operational_cost_score(
+    y_true: np.ndarray | list[float],
+    y_pred: np.ndarray | list[float],
+    *,
+    shortage_cost: float,
+    overflow_cost: float,
+) -> dict[str, float]:
+    """Domain-customised, asymmetric, demand-normalised error (see config/forecasting.py).
+
+    Under-forecast units (y > yhat) are charged ``shortage_cost`` (stockout risk); over-forecast
+    units (yhat > y) are charged ``overflow_cost`` (overflow / wasted relocation). The weighted
+    cost is divided by total demand, giving a scale-free, zero-robust score. With equal weights
+    OCS == WAPE. Returns the score plus the raw under/over unit totals for interpretation.
+
+    Zero-denominator rule mirrors WAPE: 0.0 when there is no demand and no cost, else NaN.
+    """
+    yt, yp = _arr(y_true), _arr(y_pred)
+    shortage = float(np.sum(np.maximum(yt - yp, 0.0)))  # bikes short (under-forecast)
+    overflow = float(np.sum(np.maximum(yp - yt, 0.0)))  # bikes over (over-forecast)
+    cost = shortage_cost * shortage + overflow_cost * overflow
+    denom = float(np.sum(np.abs(yt)))
+    if denom == 0.0:
+        ocs = 0.0 if cost == 0.0 else float("nan")
+    else:
+        ocs = cost / denom
+    return {"ocs": ocs, "shortage_units": shortage, "overflow_units": overflow}
+
+
+def bias(y_true: np.ndarray | list[float], y_pred: np.ndarray | list[float]) -> float:
+    """Mean signed error (yhat - y): positive = systematic over-forecast, negative = under."""
+    yt, yp = _arr(y_true), _arr(y_pred)
+    if yt.size == 0:
+        return float("nan")
+    return float(np.mean(yp - yt))
+
+
 def peak_direction_accuracy(
     y_true: np.ndarray | list[float],
     y_pred: np.ndarray | list[float],
@@ -104,17 +140,29 @@ def evaluate(
     scale: float,
     y_prev: np.ndarray | list[float] | None = None,
     event_mask: np.ndarray | list[bool] | None = None,
+    shortage_cost: float = 2.0,
+    overflow_cost: float = 1.0,
 ) -> dict[str, float]:
-    """Bundle the section 11.4 metrics; event-window WAPE is reported separately.
+    """Bundle the section 11.4 metrics plus the domain-customised OCS; event-window WAPE is
+    reported separately.
 
     ``event_window_wape`` is NaN when ``event_mask`` selects no rows (documented: on the June
     window the only curated events postdate the data, so no row falls in an event window).
+    ``shortage_cost`` / ``overflow_cost`` default to the config values; experiment.py passes them
+    explicitly so the metric stays reproducible from config.
     """
     out: dict[str, float] = {
         "wape": wape(y_true, y_pred),
         "mae": mae(y_true, y_pred),
         "mase": mase(y_true, y_pred, scale),
+        "bias": bias(y_true, y_pred),
     }
+    ocs = operational_cost_score(
+        y_true, y_pred, shortage_cost=shortage_cost, overflow_cost=overflow_cost
+    )
+    out["ocs"] = ocs["ocs"]
+    out["shortage_units"] = ocs["shortage_units"]
+    out["overflow_units"] = ocs["overflow_units"]
     if y_prev is not None:
         out["peak_direction_accuracy"] = peak_direction_accuracy(y_true, y_pred, y_prev)
     if event_mask is not None:
