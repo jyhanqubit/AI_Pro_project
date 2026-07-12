@@ -32,6 +32,7 @@ make collect-demo    # run all three fixture collectors offline and print a summ
 make build-features  # aggregate demand (H3 zone x local hour) + leakage-safe features
 make extract-events-demo  # extract events from the news fixture (deterministic mock LLM)
 make graph-upsert-demo    # upsert events into the offline event graph (idempotent)
+make graph-features-demo  # build as-of graph features at successive cutoffs (leakage-safe)
 ```
 
 > On Windows without `make`, run the equivalent commands directly, e.g.

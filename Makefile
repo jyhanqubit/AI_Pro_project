@@ -2,7 +2,7 @@
 # Only targets that execute a real, tested workflow are defined.
 # Later phases add: train-baseline, evaluate, api, web, demo.
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -29,3 +29,6 @@ extract-events-demo:  ## Extract events from the demo news fixture (deterministi
 
 graph-upsert-demo:  ## Upsert extracted events into the offline event graph (idempotent)
 	python -m pipelines.graph.demo
+
+graph-features-demo:  ## Build as-of graph features at successive cutoffs (leakage-safe)
+	python -m pipelines.features.graph_features_demo

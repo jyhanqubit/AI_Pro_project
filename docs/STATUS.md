@@ -4,7 +4,23 @@ _Last updated: 2026-07-12_
 
 ## Current completed phase
 
-**Phase 04 — Neo4j Graph Upsert: complete.** (Phases 00–03 also complete.)
+**Phase 05 — As-of Graph Feature Builder: complete.** (Phases 00–04 also complete.)
+
+Implemented `pipelines/features/graph_features.py` + `kernels.py` (§10, §5.2):
+
+- **Pure kernels** (`kernels.py`) — `haversine_km`, `exp_distance_decay`, `half_life_weight`;
+  side-effect free and unit-tested (§10 "mathematical kernel as pure functions").
+- **Builder** (`build_graph_features`) — for a `forecast_cutoff`, emits per-zone
+  `FeatureSnapshot`s using ONLY events with `available_at <= cutoff` (§5.2). Produces the §10
+  feature set: `event_count_{6,24}h_by_type`, `source_weighted_severity`, `unique_source_count`,
+  `duplicate_article_ratio`, `confidence_mean/max`, `distance_decayed_impact`,
+  `time_to/since_event_start`, `event_remaining_duration`, `neighbor_zone_impact`,
+  `capacity_shock_exposure`, `transit_disruption_exposure`. Preserves `source_event_ids`.
+- **Config-reproducible** (`config/graph_features.py`, `GraphFeatureConfig`) — half-life,
+  radius, decay scale, hops, source weights, confidence floor, feature version. Same events +
+  same cutoff + same config → identical output.
+
+### Phase 04 — Neo4j Graph Upsert (complete)
 
 Implemented `pipelines/graph/` — a backend-neutral event graph (§9):
 
@@ -61,12 +77,14 @@ Implemented the demand feature pipeline in `pipelines/features/`:
 Run on this machine (Python 3.12.10, `.venv`):
 
 - `ruff check .` — passed
-- `ruff format --check .` — passed (60 files)
-- `mypy .` — passed (no issues, 60 source files)
-- `pytest` — **70 passed**
-- `make graph-upsert-demo` — offline; 2 events → 15 nodes / 17 edges; replay leaves counts
-  unchanged (idempotent); audit clean (0 orphans, 0 events without provenance); events link to
-  3 H3 zones (Hoboken Terminal + City Hall for the transit disruption, Newport for the concert).
+- `ruff format --check .` — passed (65 files)
+- `mypy .` — passed (no issues, 65 source files)
+- `pytest` — **80 passed**
+- `make graph-upsert-demo` — offline; 2 events → 15 nodes / 17 edges; idempotent replay; audit
+  clean; events link to 3 H3 zones.
+- `make graph-features-demo` — offline; shows the as-of boundary: cutoff 13:59 → 0 snapshots
+  (transit event not yet available); 14:30 → 2 zones (transit_disruption_exposure ≈ 0.63);
+  15:30 → 3 zones as the concert becomes available and the transit event decays.
 - EDA on the real June-2026 data (`docs/EDA.md`, `docs/STATISTICAL_TESTS.md`): derived 7
   leakage-safe features (surge momentum, zone expanding mean, same-day net-flow pressure, and
   two member-share composition lags); feature width now **32**.
@@ -85,7 +103,8 @@ Run on this machine (Python 3.12.10, `.venv`):
 ## Tests passing / failing
 
 - Unit: `test_contracts.py` (19), `test_settings.py` (3), `test_temporal.py` (6),
-  `test_demand_features.py` (12), `test_calendar.py` (5), `test_event_extraction.py` (9) — passing.
+  `test_demand_features.py` (12), `test_calendar.py` (5), `test_event_extraction.py` (9),
+  `test_graph_features.py` (10, incl. the **14:01→14:00 leakage regression**) — passing.
 - Integration: `test_collectors.py` (8), `test_graph.py` (9) — passing (idempotent replay,
   provenance audit, event→zone linkage, parameterized Cypher).
 - Temporal coverage includes **DST spring-forward and fall-back** cases (§5.3) and the
@@ -110,10 +129,10 @@ Run on this machine (Python 3.12.10, `.venv`):
 
 ## Next phase input contract
 
-**Phase 05 — As-of Graph Feature Builder** consumes:
-- The event graph (`store.zones_affected_by_events()` and richer queries) plus event
-  timestamps, at a given `forecast_cutoff`.
-- Produces the numeric `FeatureSnapshot` features in §10 (event_count_*_by_type,
-  source_weighted_severity, distance_decayed_impact, time_to_event_start,
-  transit_disruption_exposure, neighbor_zone_impact, …) as **pure functions**, versioned and
-  reproducible, using only events with `available_at <= forecast_cutoff` (§5.2 leakage rule).
+**Phase 06 — Forecasting, Tuning & Evaluation** consumes:
+- The demand feature rows (`build_demand_features`) joined to as-of graph features
+  (`build_graph_features`) on (zone_id, forecast_cutoff).
+- Implements the ablation ladder B0–B4 (§11.2): seasonal naive → history+calendar → +article
+  counts → +LLM event features → +graph-propagated features, with rolling-origin evaluation
+  (§11.3) and WAPE/MAE/MASE/event-window metrics (§11.4). No random splits; report honestly
+  if event features do not improve performance.
