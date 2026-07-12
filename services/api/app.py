@@ -18,6 +18,7 @@ from config.api import DEMO_FORECAST_HORIZON_H
 from contracts.enums import TargetName
 from contracts.event import EventExtraction
 
+from .rebalancing import solve as solve_rebalancing
 from .replay import DEMO_WINDOW, Driver, ReplayEngine, ZoneForecast, get_engine
 from .schemas import (
     ErrorResponse,
@@ -29,11 +30,15 @@ from .schemas import (
     ForecastsResponse,
     HealthResponse,
     LocationOut,
+    MoveOut,
+    RebalancingRequest,
+    RebalancingResponse,
     ReplayState,
     ScenarioRequest,
     ScenarioResponse,
     ScenarioZone,
     SetCutoffRequest,
+    StationStateOut,
     TraceStep,
 )
 
@@ -96,8 +101,8 @@ def _trace_step(d: Driver) -> TraceStep:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ShockFlow AI API",
-        version="0.7.0",
-        summary="Event-aware demand forecasting & rebalancing decision support (Phase 07).",
+        version="0.8.0",
+        summary="Event-aware demand forecasting & rebalancing decision support (Phase 08).",
     )
 
     # Local/LAN dev CORS: the Next.js operator UI runs on :3000 (localhost, 127.0.0.1, or the
@@ -231,14 +236,77 @@ def create_app() -> FastAPI:
             zones=zones,
         )
 
-    @app.post("/v1/rebalancing/solve", responses={501: {"model": ErrorResponse}})
-    def rebalancing_solve(engine: EngineDep) -> None:
-        raise HTTPException(
-            status_code=501,
-            detail={
-                "error_code": "not_implemented",
-                "message": "Rebalancing is implemented in Phase 08 (classical + quantum research).",
-            },
+    @app.post(
+        "/v1/rebalancing/solve",
+        response_model=RebalancingResponse,
+        responses={400: {"model": ErrorResponse}},
+    )
+    def rebalancing_solve(
+        engine: EngineDep, body: RebalancingRequest | None = None
+    ) -> RebalancingResponse:
+        req = body or RebalancingRequest()
+        cutoff = req.cutoff or engine.cutoff
+        start, end = DEMO_WINDOW
+        if not (start <= cutoff <= end):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error_code": "cutoff_out_of_window",
+                    "message": f"cutoff must be within [{start.isoformat()}, {end.isoformat()}]",
+                },
+            )
+        sol = solve_rebalancing(
+            engine, cutoff, method=req.method, vehicle_capacity=req.vehicle_capacity
+        )
+        note = (
+            "Classical solver over the curated station fixture. Targets are raised by the "
+            "event-aware demo-heuristic forecast delta per zone (Historical Replay), not the "
+            "measured Phase 06 model. Feasibility is checked before the plan is returned; "
+            "Quantum Research Mode (QUBO/QAOA) is never used for operator plans."
+        )
+        return RebalancingResponse(
+            mode=engine.mode,
+            cutoff=cutoff,
+            model_version=engine.model_version,
+            method=sol.method,
+            feasible=sol.feasible,
+            infeasibility_reason=sol.infeasibility_reason,
+            vehicle_capacity=sol.vehicle_capacity,
+            total_moved=sol.plan.total_moved,
+            total_distance_km=sol.cost.distance_km,
+            shortage_units_before=sol.baseline_cost.shortage_units,
+            shortage_units_after=sol.cost.shortage_units,
+            overflow_units_before=sol.baseline_cost.overflow_units,
+            overflow_units_after=sol.cost.overflow_units,
+            shortage_reduction=sol.shortage_reduction,
+            overflow_reduction=sol.overflow_reduction,
+            total_cost=sol.cost.total_cost,
+            baseline_cost=sol.baseline_cost.total_cost,
+            moves=[
+                MoveOut(
+                    origin_station_id=m.origin_id,
+                    destination_station_id=m.destination_id,
+                    quantity=m.quantity,
+                    distance_km=m.distance_km,
+                )
+                for m in sol.plan.moves
+            ],
+            stations=[
+                StationStateOut(
+                    station_id=s.station_id,
+                    name=s.name,
+                    zone_id=s.zone_id,
+                    bikes_before=s.bikes_before,
+                    bikes_after=s.bikes_after,
+                    target=s.target,
+                    base_target=s.base_target,
+                    capacity=s.capacity,
+                    shortage_before=s.shortage_before,
+                    shortage_after=s.shortage_after,
+                )
+                for s in sol.stations
+            ],
+            note=note,
         )
 
     return app

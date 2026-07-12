@@ -112,6 +112,49 @@ export interface ScenarioResponse {
   zones: ScenarioZone[];
 }
 
+export interface MoveOut {
+  origin_station_id: string;
+  destination_station_id: string;
+  quantity: number;
+  distance_km: number;
+}
+
+export interface StationStateOut {
+  station_id: string;
+  name: string;
+  zone_id: string;
+  bikes_before: number;
+  bikes_after: number;
+  target: number;
+  base_target: number;
+  capacity: number;
+  shortage_before: number;
+  shortage_after: number;
+}
+
+export interface RebalancingResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  method: string;
+  feasible: boolean;
+  infeasibility_reason: string | null;
+  vehicle_capacity: number;
+  total_moved: number;
+  total_distance_km: number;
+  shortage_units_before: number;
+  shortage_units_after: number;
+  overflow_units_before: number;
+  overflow_units_after: number;
+  shortage_reduction: number;
+  overflow_reduction: number;
+  total_cost: number;
+  baseline_cost: number;
+  moves: MoveOut[];
+  stations: StationStateOut[];
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -147,5 +190,10 @@ export const api = {
     req<ScenarioResponse>("/v1/scenarios", {
       method: "POST",
       body: JSON.stringify({ cutoff, disabled_event_ids: disabled }),
+    }),
+  rebalancing: (cutoff: string, method: "greedy" | "milp" = "milp") =>
+    req<RebalancingResponse>("/v1/rebalancing/solve", {
+      method: "POST",
+      body: JSON.stringify({ cutoff, method }),
     }),
 };

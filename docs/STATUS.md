@@ -4,7 +4,44 @@ _Last updated: 2026-07-13_
 
 ## Current completed phase
 
-**Phase 06 — Forecasting, Tuning & Evaluation: complete.** (Phases 00–05 also complete.)
+**Phase 08 — Rebalancing & Quantum Research Mode: complete.** (Phases 00–07 also complete.)
+Phase 09 (final audit & portfolio packaging) is the remaining documentation-and-audit pass, in
+progress alongside this update.
+
+### Phase 08 — Rebalancing & Quantum Research Mode (complete)
+
+Implemented `optimization/classical/` and `optimization/quantum/` (§14) plus the API/UI wiring:
+
+- **Classical** (`problem.py`, `objective.py`, `feasibility.py`, `greedy.py`, `enumeration.py`,
+  `milp.py`, `config/rebalancing.py`) — asymmetric operational objective (shortage > overflow,
+  3:1) over post-plan inventory; explicit feasibility checks (outflow ≤ bikes, final ≤ capacity,
+  non-negative integer moves, vehicle-capacity limit) that report infeasibility in plain text;
+  greedy baseline (always feasible), exact **MILP** via `scipy.optimize.milp`, and an enumeration
+  oracle. Verified: **MILP cost == enumeration cost** (optimal) and ≤ greedy; binding vehicle
+  capacity respected.
+- **Quantum Research Mode** (`qubo.py`, `qaoa.py`) — small instance → QUBO with a documented
+  bounded-binary variable mapping and a quadratic imbalance surrogate energy. **QUBO brute-force
+  optimum == exact enumeration optimum** (required, §14.2), encoding matches the surrogate for
+  every bit vector, and on a crafted instance the QUBO plan coincides with the MILP plan. QAOA is
+  optional (lazy `qiskit`); qiskit is absent here, so its test skips with a documented reason.
+  Research only; simulator ≠ hardware; no advantage claim.
+- **API/UI** — `POST /v1/rebalancing/solve` now returns a typed, feasibility-checked plan
+  (`services/api/rebalancing.py`, `schemas.py`, `app.py`); the 501 is gone. Targets are raised in
+  event-exposed zones by the `demo-heuristic-v1` forecast delta as-of the cutoff (labelled demo
+  heuristic, not the measured model). `apps/web/app/rebalancing/page.tsx` renders the plan.
+  `make rebalance-demo` runs the whole thing offline.
+
+### Phase 07 — FastAPI & Next.js UI (complete)
+
+- **API** (`services/api/`) — offline FastAPI replay service: `/v1/health`, `/v1/replay/state`,
+  `/v1/replay/set-cutoff`, `/v1/events`, `/v1/forecasts`, `/v1/zones/{id}/explanation`,
+  `/v1/scenarios`, `/v1/rebalancing/solve`. Every response carries mode/cutoff and model/feature
+  versions; explanations are evidence-backed; the demo forecaster is the labelled
+  `demo-heuristic-v1` (Historical Replay), kept distinct from the measured Phase 06 model.
+- **UI** (`apps/web/`) — Next.js App Router, TS strict: Control Tower, Why Changed, Scenario Lab,
+  Rebalancing Planner. Consumes the API; Historical Replay vs Live visually distinct.
+
+### Phase 06 — Forecasting, Tuning & Evaluation (complete)
 
 Implemented `ml/forecasting/` (§11): a seasonal-naive baseline, a six-algorithm model zoo,
 rolling-origin temporal CV, GridSearch tuning, permutation-importance feature selection, the
@@ -93,12 +130,17 @@ Implemented the demand feature pipeline in `pipelines/features/`:
 
 ## Commands verified
 
-Run on this machine (Python 3.12.10, `.venv`):
+Run on this machine (Python 3.12.10 local; also verified on Python 3.11.15 + Node 22 in the
+web/CI sandbox), `.venv`:
 
 - `ruff check .` — passed
-- `ruff format --check .` — passed (76 files)
-- `mypy .` — passed (no issues, 76 source files)
-- `pytest` — **94 passed**
+- `ruff format --check .` — passed (95 files)
+- `mypy .` — passed (no issues, 95 source files)
+- `pytest` — **114 passed, 1 skipped** (the skip is the optional QAOA test; qiskit absent).
+- `make rebalance-demo` (`python -m optimization.demo`) — offline; at cutoff 15:30 greedy and
+  MILP both move 8 bikes (cost 42.0 → 17.70, shortage 8 → 0, feasible); enumeration optimum
+  matches the MILP; the single-edge QUBO brute-force energy equals exact enumeration (match=True).
+- `apps/web`: `npm run typecheck` and `npm run build` — passed under TS strict (Next.js 15, Node 22).
 - `make evaluate` (`python -m ml.forecasting.run <June zip>`) — offline; rolling-origin over
   30,947 usable rows / 139 zones. Best by CV WAPE: **knn** (`n_neighbors=30`, `weights=distance`),
   test WAPE 0.516, MASE 0.794 (beats B0 seasonal naive WAPE 0.658 / MASE 1.013). All 6 algorithms
@@ -130,8 +172,13 @@ Run on this machine (Python 3.12.10, `.venv`):
 - Unit: `test_contracts.py` (19), `test_settings.py` (3), `test_temporal.py` (6),
   `test_demand_features.py` (12), `test_calendar.py` (5), `test_event_extraction.py` (9),
   `test_graph_features.py` (10, incl. the **14:01→14:00 leakage regression**) — passing.
-- Integration: `test_collectors.py` (8), `test_graph.py` (9) — passing (idempotent replay,
-  provenance audit, event→zone linkage, parameterized Cypher).
+- Integration: `test_collectors.py` (8), `test_graph.py` (9), `test_api.py` (10 — as-of boundary
+  through HTTP, evidence-backed explanations, scenario toggle, **feasible rebalancing plan**) —
+  passing.
+- Rebalancing/optimization: `test_rebalancing.py` (6 — pure objective, feasibility rejection,
+  greedy feasibility, MILP == enumeration and ≤ greedy, binding vehicle capacity), `test_qubo.py`
+  (6 + 1 skipped — bounded encoding coverage, QUBO == surrogate energy, **QUBO == enumeration
+  optimum**, QUBO == MILP plan on crafted instance, QAOA degrades without qiskit).
 - Forecasting: `test_forecasting.py` (10) — WAPE/MASE zero-denominator behaviour, seasonal-naive
   fallback, and the rolling-origin guarantee that every training fold precedes its validation
   window (no temporal leakage, §11.3).
@@ -168,12 +215,21 @@ Run on this machine (Python 3.12.10, `.venv`):
   `docs/KNOWN_LIMITATIONS.md`. `make evaluate` requires the real June zip in `data/raw/citibike/`
   (git-ignored, §7.1); the tiny sample fixture lacks the one-week history the forecast needs.
 
+## Known blockers / notes (Phase 08)
+
+- `qiskit` is not installed in this environment; the QAOA path is exercised only as its
+  "unavailable" branch and its test is skipped with a documented reason (§14.2). Everything else
+  in Quantum Research Mode (QUBO build + brute-force + enumeration validation) runs without it.
+- The rebalancing station inventory is a curated fixture (`data/fixtures/rebalancing_demo.json`);
+  targets use the labelled demo heuristic, not the measured Phase 06 model. See
+  `docs/KNOWN_LIMITATIONS.md`.
+
 ## Next phase input contract
 
-**Phase 07 — FastAPI & Next.js UI** consumes:
-- The forecasting outputs (`ml/forecasting/run.py` → `reports/phase06_results.json`) and the
-  as-of event graph / feature snapshots, surfaced through the §12 API endpoints
-  (`/v1/forecasts`, `/v1/zones/{id}/explanation`, `/v1/replay/*`, `/v1/scenarios`).
-- Drives the §13 operator UI (Control Tower → Why Changed → Scenario Lab → Rebalancing) from
-  fixtures, with Historical Replay and Live visually distinct. Evidence-free explanations are
-  forbidden; the golden-path demo must run entirely offline.
+**Phase 09 — Final Audit & Portfolio Packaging** consumes the completed Phases 00–08 and:
+- Syncs documentation to the implementation (`docs/PRD.md`, `ARCHITECTURE.md`, `DATA_CONTRACTS.md`,
+  `GRAPH_SCHEMA.md`, `OPTIMIZATION.md`, `DEMO_SCRIPT.md`, `EVALUATION_PROTOCOL.md`,
+  `KNOWN_LIMITATIONS.md`, `STATUS.md`, `README.md`).
+- Runs the final honesty audit (no fabricated metrics, no causal claims from feature attribution,
+  no quantum-advantage claims, fixture vs live vs measured clearly separated) with the full gate
+  green, per §18 and §23.

@@ -7,6 +7,8 @@ sections 12, 13). Uncertainty intervals are omitted rather than invented (sectio
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import AwareDatetime, BaseModel, Field
 
 from contracts.enums import EffectDirection, EventType, OperatingMode, TargetName
@@ -135,6 +137,55 @@ class ScenarioResponse(BaseModel):
     model_version: str
     feature_version: str
     zones: list[ScenarioZone]
+
+
+class RebalancingRequest(BaseModel):
+    cutoff: AwareDatetime | None = None
+    method: Literal["greedy", "milp"] = "milp"
+    vehicle_capacity: int | None = Field(default=None, ge=0)
+
+
+class MoveOut(BaseModel):
+    origin_station_id: str
+    destination_station_id: str
+    quantity: int
+    distance_km: float
+
+
+class StationStateOut(BaseModel):
+    station_id: str
+    name: str
+    zone_id: str
+    bikes_before: int
+    bikes_after: int
+    target: int
+    base_target: int
+    capacity: int
+    shortage_before: int
+    shortage_after: int
+
+
+class RebalancingResponse(BaseModel):
+    mode: OperatingMode
+    cutoff: AwareDatetime
+    model_version: str
+    method: str
+    feasible: bool
+    infeasibility_reason: str | None
+    vehicle_capacity: int
+    total_moved: int
+    total_distance_km: float
+    shortage_units_before: int
+    shortage_units_after: int
+    overflow_units_before: int
+    overflow_units_after: int
+    shortage_reduction: int
+    overflow_reduction: int
+    total_cost: float
+    baseline_cost: float
+    moves: list[MoveOut]
+    stations: list[StationStateOut]
+    note: str
 
 
 class ErrorResponse(BaseModel):

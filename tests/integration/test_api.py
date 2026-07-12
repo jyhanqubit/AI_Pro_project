@@ -90,7 +90,37 @@ def test_scenario_toggle_reverts_event_effect(client: TestClient) -> None:
         assert z["scenario_forecast"] == pytest.approx(z["baseline_forecast"])
 
 
-def test_rebalancing_is_deferred_501(client: TestClient) -> None:
-    r = client.post("/v1/rebalancing/solve")
-    assert r.status_code == 501
-    assert r.json()["detail"]["error_code"] == "not_implemented"
+def test_rebalancing_returns_feasible_plan(client: TestClient) -> None:
+    # Before the event: no zone shortage, so the plan is empty but still feasible.
+    _set(client, BEFORE)
+    before = client.post("/v1/rebalancing/solve", json={"cutoff": BEFORE, "method": "milp"}).json()
+    assert before["feasible"] is True
+    assert before["total_moved"] == 0
+    assert before["shortage_units_after"] == 0
+
+    # After the event: raised targets create a shortage that the solver relieves with real moves.
+    after = client.post("/v1/rebalancing/solve", json={"cutoff": CONCERT, "method": "milp"}).json()
+    assert after["feasible"] is True
+    assert after["mode"] == "historical_replay"
+    assert after["model_version"] == "demo-heuristic-v1"
+    assert after["shortage_units_before"] > 0
+    assert after["total_moved"] > 0
+    assert after["shortage_reduction"] > 0
+    assert after["shortage_units_after"] <= after["shortage_units_before"]
+    # Every move is a concrete origin->destination relocation with a distance.
+    assert after["moves"] and all(m["quantity"] > 0 for m in after["moves"])
+    assert all(m["distance_km"] >= 0 for m in after["moves"])
+
+
+def test_rebalancing_greedy_and_milp_both_feasible(client: TestClient) -> None:
+    for method in ("greedy", "milp"):
+        body = {"cutoff": CONCERT, "method": method}
+        r = client.post("/v1/rebalancing/solve", json=body).json()
+        assert r["feasible"] is True
+        assert r["method"] == method
+
+
+def test_rebalancing_cutoff_out_of_window_is_400(client: TestClient) -> None:
+    r = client.post("/v1/rebalancing/solve", json={"cutoff": "2026-07-13T00:00:00-04:00"})
+    assert r.status_code == 400
+    assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"

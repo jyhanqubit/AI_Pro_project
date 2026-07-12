@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo api web
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -42,6 +42,9 @@ train-baseline:  ## Forecasting run: seasonal-naive B0 + tuned model zoo (needs 
 
 evaluate:  ## GridSearch x algorithm zoo, ablation B0-B4, feature selection (needs CITIBIKE_ZIP)
 	python -m ml.forecasting.run $(CITIBIKE_ZIP)
+
+rebalance-demo:  ## Solve the golden-path rebalancing plan offline (greedy, MILP, QUBO validation)
+	python -m optimization.demo
 
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main

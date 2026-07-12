@@ -1,0 +1,12 @@
+{
+  "mode": "demo_fixture",
+  "description": "Curated Jersey City / Hoboken rebalancing instance for the golden-path demo. Coordinates match the place gazetteer (config/places.py) so each station falls in the same H3 zone the event graph uses. base_target is the desired inventory in a normal hour; the API raises it in event-exposed zones as-of the replay cutoff (a labelled demo heuristic, not the measured Phase 06 model). Two quiet-zone stations (Grove St, Exchange Place) hold the surplus; the three event zones start balanced and go into deficit once the transit / venue events become available.",
+  "vehicle_capacity": 18,
+  "stations": [
+    {"station_id": "JC_GROVE", "name": "Grove St PATH", "lat": 40.7196, "lng": -74.0431, "bikes_available": 16, "capacity": 20, "base_target": 6},
+    {"station_id": "JC_EXCHANGE", "name": "Exchange Place", "lat": 40.7166, "lng": -74.0329, "bikes_available": 13, "capacity": 18, "base_target": 5},
+    {"station_id": "JC_HOBOKEN", "name": "Hoboken Terminal", "lat": 40.7360, "lng": -74.0301, "bikes_available": 6, "capacity": 20, "base_target": 6},
+    {"station_id": "JC_CITYHALL", "name": "City Hall", "lat": 40.7377, "lng": -74.0324, "bikes_available": 6, "capacity": 18, "base_target": 6},
+    {"station_id": "JC_NEWPORT", "name": "Newport", "lat": 40.7272, "lng": -74.0337, "bikes_available": 6, "capacity": 16, "base_target": 6}
+  ]
+}

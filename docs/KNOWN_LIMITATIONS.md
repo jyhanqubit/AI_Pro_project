@@ -35,7 +35,32 @@ look complete.
 - **Global model.** One model across all zones; zone identity enters only through demand-scale
   features (expanding/rolling means), not as an explicit fixed effect.
 
+## Rebalancing (Phase 08)
+
+- **Static, single-vehicle, single-period.** The optimizer plans one relocation round toward the
+  as-of targets with one move budget (`vehicle_capacity`). It is not a routed multi-vehicle tour
+  and has no inter-period dynamics; distance is straight-line (`haversine_km`), not road network.
+- **Targets are a labelled demo heuristic.** Station targets are `base_target` (from the curated
+  fixture) plus the event-aware `demo-heuristic-v1` forecast delta in the zone — not the measured
+  Phase 06 model. The station inventory is a curated fixture, not live GBFS.
+- **Small instance.** The demo has five stations; MILP (`scipy.optimize.milp`) and the exact
+  enumeration oracle agree on the optimum at this scale. Enumeration is guarded and only usable on
+  small instances.
+
+## Quantum Research Mode (Phase 08)
+
+- **Research only; simulator, never hardware; no advantage claim.** QUBO/QAOA outputs never feed
+  Demo, Historical Replay, or Live views (§3). No quantum-advantage claim is made.
+- **Quadratic surrogate, small scale.** The QUBO encodes a *quadratic imbalance surrogate* of the
+  operational (asymmetric L1) objective, validated against exact enumeration (encoding matches for
+  every bit vector; QUBO optimum == enumeration optimum). The operator plan always comes from the
+  classical solvers.
+- **QAOA is optional and unverified here.** `qiskit` is not installed in this environment, so the
+  QAOA path returns "unavailable" and its test is skipped with a documented reason. When installed,
+  the sampled optimum is checked against the exact QUBO ground state.
+
 ## Environment
 
-- Local `.venv` runs Python 3.12.10 (repo pins `>=3.11`; the machine lacks 3.11).
+- Local `.venv` runs Python 3.12.10 (repo pins `>=3.11`; the machine lacks 3.11). The web CI/build
+  was verified under Node 22 (`npm run typecheck` and `npm run build` pass).
 - Console output is ASCII-only for Windows cp949 compatibility.

@@ -33,6 +33,9 @@ make build-features  # 수요 집계(H3 Zone x 로컬 시간) + 누수 방지 fe
 make extract-events-demo  # 뉴스 fixture에서 이벤트 추출 (결정적 mock LLM)
 make graph-upsert-demo    # 추출한 이벤트를 오프라인 event graph에 업서트 (idempotent)
 make graph-features-demo  # 여러 cutoff에서 as-of graph feature 생성 (누수 방지)
+make rebalance-demo       # 골든패스 재배치 계획 (greedy / MILP / exact / QUBO 검증), 오프라인
+make api                  # 오프라인 replay API (127.0.0.1:8000, Demo Mode, 키 불필요)
+make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install 필요)
 ```
 
 > 윈도우에서 `make`를 쓸 수 없다면 위 명령에 대응하는 명령을 직접 실행하세요. 예를 들면
@@ -178,6 +181,30 @@ B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 **�
 불가**이며, 입증하려면 curated 이벤트와 겹치는 평가 구간이 필요합니다(가짜 뉴스 생성은 §22로 금지).
 event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_features.py`, 14:01→14:00
 회귀 포함)로 별도 검증됩니다. 한계는 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
+
+## 재배치 & 양자 리서치 모드 (Phase 08)
+
+예측을 실제 운영 조치로 잇는 **Act** 단계입니다(§13, §14). 각 station은 현재 재고·용량·목표(target)
+재고를 갖고, 목표를 맞추도록 이동 예산(`vehicle_capacity`) 안에서 자전거를 정수 단위로 옮깁니다.
+
+- **목적함수(비대칭, §14.1)** — `shortage_cost·부족 + overflow_cost·과잉 + distance_cost·이동거리`.
+  부족(품절 → trip 손실)을 과잉보다 무겁게(기본 3:1) 둡니다. Phase 06의 OCS 지표와 같은 비대칭 철학.
+- **solver 사다리** — ① Greedy(항상 feasible, do-nothing보다 나쁘지 않음) → ② MILP(`scipy.optimize.milp`,
+  정확 최적) → ③ enumeration oracle(작은 instance 완전 탐색). 테스트에서 **MILP 비용 == enumeration
+  비용**(최적)이고 greedy 이하임을 검증합니다.
+- **feasibility 명시(§14.1)** — 출발지 재고 초과, 도착지 용량 초과, 음수/비정수 이동, 차량 용량 초과를
+  명시적으로 거부하고 사람이 읽는 사유를 반환합니다. 계획은 이 검사를 통과해야만 화면에 노출됩니다.
+- **이벤트 연동** — 이벤트가 노출된 zone은 as-of `demo-heuristic-v1` forecast delta만큼 target이
+  올라가 부족이 생기고, solver가 조용한 zone(Grove St, Exchange Place)에서 자전거를 옮겨옵니다.
+  이벤트 전에는 target=base라 계획이 비어 있습니다. (측정된 Phase 06 모델이 아니라 라벨된 데모 heuristic)
+- **양자 리서치 모드(§14.2, 리서치 전용)** — 작은 instance를 QUBO로 매핑하고, **QUBO 최적 == 완전
+  탐색 최적**임을 검증합니다(모든 비트 벡터에서 에너지 일치, crafted instance에서는 MILP 계획과 일치).
+  QAOA는 선택(`qiskit` 없으면 "unavailable" 경로 + 사유 명시 skip). 시뮬레이터이며 하드웨어가 아니고,
+  **양자 우위 주장은 하지 않습니다.**
+
+자세한 매핑과 검증은 [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md)에, 90초 골든패스는
+[docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)에 있습니다. 한계는
+[docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
 ## 상태
 
