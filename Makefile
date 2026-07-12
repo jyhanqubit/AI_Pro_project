@@ -1,8 +1,12 @@
 # ShockFlow AI — standard commands.
 # Only targets that execute a real, tested workflow are defined.
-# Later phases add: train-baseline, evaluate, api, web, demo.
+# Later phases add: api, web, demo.
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo
+# Real Citi Bike history for the forecasting evaluation (git-ignored per section 7.1).
+# Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
+CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
+
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -32,3 +36,9 @@ graph-upsert-demo:  ## Upsert extracted events into the offline event graph (ide
 
 graph-features-demo:  ## Build as-of graph features at successive cutoffs (leakage-safe)
 	python -m pipelines.features.graph_features_demo
+
+train-baseline:  ## Forecasting run: seasonal-naive B0 + tuned model zoo (needs CITIBIKE_ZIP)
+	python -m ml.forecasting.run $(CITIBIKE_ZIP)
+
+evaluate:  ## GridSearch x algorithm zoo, ablation B0-B4, feature selection (needs CITIBIKE_ZIP)
+	python -m ml.forecasting.run $(CITIBIKE_ZIP)

@@ -1,10 +1,29 @@
 # Project Status
 
-_Last updated: 2026-07-12_
+_Last updated: 2026-07-13_
 
 ## Current completed phase
 
-**Phase 05 — As-of Graph Feature Builder: complete.** (Phases 00–04 also complete.)
+**Phase 06 — Forecasting, Tuning & Evaluation: complete.** (Phases 00–05 also complete.)
+
+Implemented `ml/forecasting/` (§11): a seasonal-naive baseline, a six-algorithm model zoo,
+rolling-origin temporal CV, GridSearch tuning, permutation-importance feature selection, the
+B0–B4 ablation, and the §11.4 metrics — run on the real June-2026 data.
+
+- **No leakage in evaluation** (`splits.py`) — the latest 72h are an untouched out-of-sample
+  test; GridSearch cross-validates on the earlier span with 3 expanding-window folds; imputation
+  and scaling are fit per fold. Random K-fold is never used (§11.3).
+- **Model zoo + GridSearch** (`models.py`, `config/forecasting.py`) — ridge, knn, random_forest,
+  extra_trees, gradient_boosting, hist_gradient_boosting, each with a tuned grid; seed 42.
+- **Metrics** (`metrics.py`) — WAPE (defined zero-denominator), MAE, MASE (explicit seasonal
+  scale), event-window WAPE, peak-direction accuracy, forecast-delta stability.
+- **Feature selection** (`feature_selection.py`) — permutation importance on the test holdout;
+  the top-12 reduced model matches the full 32-feature model.
+- **Honest event ablation** — the runner verifies (not assumes) that as-of event/graph features
+  are zero on the June window (curated events postdate the data, §5.2), so B2–B4 reproduce B1.
+  Reported plainly (§11.4, §22); interpretation and figures in `README.md` / `docs/`.
+
+### Phase 05 — As-of Graph Feature Builder (complete)
 
 Implemented `pipelines/features/graph_features.py` + `kernels.py` (§10, §5.2):
 
@@ -77,9 +96,14 @@ Implemented the demand feature pipeline in `pipelines/features/`:
 Run on this machine (Python 3.12.10, `.venv`):
 
 - `ruff check .` — passed
-- `ruff format --check .` — passed (65 files)
-- `mypy .` — passed (no issues, 65 source files)
-- `pytest` — **80 passed**
+- `ruff format --check .` — passed (76 files)
+- `mypy .` — passed (no issues, 76 source files)
+- `pytest` — **90 passed**
+- `make evaluate` (`python -m ml.forecasting.run <June zip>`) — offline; rolling-origin over
+  30,947 usable rows / 139 zones. Best by CV WAPE: **knn** (`n_neighbors=30`, `weights=distance`),
+  test WAPE 0.516, MASE 0.794 (beats B0 seasonal naive WAPE 0.658 / MASE 1.013). All 6 algorithms
+  beat B0; top-12 reduced model matches the full 32-feature model. Ablation B1=B2=B3=B4 (event
+  features verified zero on the June window). See `README.md` and `reports/phase06_*`.
 - `make graph-upsert-demo` — offline; 2 events → 15 nodes / 17 edges; idempotent replay; audit
   clean; events link to 3 H3 zones.
 - `make graph-features-demo` — offline; shows the as-of boundary: cutoff 13:59 → 0 snapshots
@@ -107,6 +131,9 @@ Run on this machine (Python 3.12.10, `.venv`):
   `test_graph_features.py` (10, incl. the **14:01→14:00 leakage regression**) — passing.
 - Integration: `test_collectors.py` (8), `test_graph.py` (9) — passing (idempotent replay,
   provenance audit, event→zone linkage, parameterized Cypher).
+- Forecasting: `test_forecasting.py` (10) — WAPE/MASE zero-denominator behaviour, seasonal-naive
+  fallback, and the rolling-origin guarantee that every training fold precedes its validation
+  window (no temporal leakage, §11.3).
 - Temporal coverage includes **DST spring-forward and fall-back** cases (§5.3) and the
   **lag/rolling leakage** guarantees (§5.4), including "changing the current value does not
   change any past feature".
@@ -119,20 +146,30 @@ Run on this machine (Python 3.12.10, `.venv`):
   - aggregation: **40,479 demand cells across 208 H3 zones**.
   - features: 40,479 rows; 30,947 have a 1-week (168h) lag available.
   - busiest cell: 2026-06-09 17:00 (evening rush) — departures=87, arrivals=13, net=-74.
-- No forecasting models trained yet (Phase 06).
+- **Forecasting (Phase 06)** on the same data (rolling-origin, seed 42; `make evaluate`):
+  - dev 26,918 / out-of-sample test 4,029 rows (last 72h), 3 expanding CV folds, 32 B1 features.
+  - leaderboard (test WAPE): extra_trees 0.492, gradient_boosting 0.497, hist_gb 0.497,
+    random_forest 0.505, knn 0.516, ridge 0.527; B0 seasonal naive 0.658. CV-selected model: knn.
+  - top features by permutation importance: `dep_lag_1`, `dep_lag_168`, `arr_lag_1`, `dep_lag_24`,
+    `cal_hour_cos`, `cal_is_evening_rush` — short-term persistence + weekly seasonality + rush timing.
+  - event ablation collapses to B1: 0 graph snapshots at the last June cutoff (verified, §5.2).
 
 ## Known blockers / notes
 
 - Local `.venv` uses Python 3.12.10 (repo pins `>=3.11`; machine lacks 3.11).
 - News and GBFS are still fixtures/samples (real news feed deferred by user; GBFS live is opt-in).
 - Console output is ASCII-only for Windows cp949 compatibility.
+- **Event lift not demonstrable on the June window**: curated events postdate the trip data, so
+  the as-of event/graph features are zero and B2–B4 = B1 (verified, not assumed). See
+  `docs/KNOWN_LIMITATIONS.md`. `make evaluate` requires the real June zip in `data/raw/citibike/`
+  (git-ignored, §7.1); the tiny sample fixture lacks the one-week history the forecast needs.
 
 ## Next phase input contract
 
-**Phase 06 — Forecasting, Tuning & Evaluation** consumes:
-- The demand feature rows (`build_demand_features`) joined to as-of graph features
-  (`build_graph_features`) on (zone_id, forecast_cutoff).
-- Implements the ablation ladder B0–B4 (§11.2): seasonal naive → history+calendar → +article
-  counts → +LLM event features → +graph-propagated features, with rolling-origin evaluation
-  (§11.3) and WAPE/MAE/MASE/event-window metrics (§11.4). No random splits; report honestly
-  if event features do not improve performance.
+**Phase 07 — FastAPI & Next.js UI** consumes:
+- The forecasting outputs (`ml/forecasting/run.py` → `reports/phase06_results.json`) and the
+  as-of event graph / feature snapshots, surfaced through the §12 API endpoints
+  (`/v1/forecasts`, `/v1/zones/{id}/explanation`, `/v1/replay/*`, `/v1/scenarios`).
+- Drives the §13 operator UI (Control Tower → Why Changed → Scenario Lab → Rebalancing) from
+  fixtures, with Historical Replay and Live visually distinct. Evidence-free explanations are
+  forbidden; the golden-path demo must run entirely offline.
