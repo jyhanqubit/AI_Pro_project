@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from config.api import DEMO_FORECAST_HORIZON_H
 from contracts.enums import TargetName
@@ -97,6 +98,15 @@ def create_app() -> FastAPI:
         title="ShockFlow AI API",
         version="0.7.0",
         summary="Event-aware demand forecasting & rebalancing decision support (Phase 07).",
+    )
+
+    # Local/LAN dev CORS: the Next.js operator UI runs on :3000 (localhost, 127.0.0.1, or the
+    # PC's LAN IP for mobile viewing). Scoped to port 3000; Demo Mode is offline.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origin_regex=r"http://[\w.-]+:3000",
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
     )
 
     @app.get("/v1/health", response_model=HealthResponse)
