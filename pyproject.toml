@@ -29,6 +29,11 @@ ml = [
     "pandas>=2.1",  # tabular panel assembly for the supervised design matrix
     "matplotlib>=3.8",  # interpretation figures (feature importance, ablation)
 ]
+api = [
+    "fastapi>=0.110",  # replay/forecast/explanation API (Phase 07, section 12)
+    "uvicorn>=0.29",  # ASGI server for `make api`
+    "httpx>=0.27",  # TestClient transport for API integration tests
+]
 
 [tool.setuptools]
 # Explicit package list; keeps the scaffold importable under pip -e install.
