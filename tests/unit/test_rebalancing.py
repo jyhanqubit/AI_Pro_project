@@ -93,6 +93,16 @@ def test_feasibility_rejects_bad_moves() -> None:
     assert not check_feasibility(_problem(vehicle_capacity=15), huge).feasible
 
 
+def test_feasibility_reports_unknown_station_without_crashing() -> None:
+    # A move referencing a station absent from the problem must be reported as infeasible,
+    # not raise (the defensive contract, §14.1 "report infeasibility explicitly").
+    p = _problem()
+    plan = RebalancingPlan(moves=(Move("ZZZ", "HOB", 1, 1.0),), solver="bad")
+    report = check_feasibility(p, plan)  # must not raise KeyError
+    assert not report.feasible
+    assert report.reason and "unknown station" in report.reason
+
+
 def test_greedy_is_always_feasible_and_not_worse_than_nothing() -> None:
     p = _problem()
     plan = greedy_plan(p)

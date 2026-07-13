@@ -32,8 +32,12 @@ def check_feasibility(problem: RebalancingProblem, plan: RebalancingPlan) -> Fea
     violations: list[str] = []
     known = {s.station_id for s in problem.stations}
 
-    # Per-station outflow (only bikes present at the origin may leave, section 14.1).
+    # Per-station outflow (only bikes present at the origin may leave, section 14.1). Final
+    # inventory is accumulated here over known-endpoint moves only, so an unknown-station move is
+    # reported as a violation rather than crashing (do not defer to plan.final_inventory, which
+    # would KeyError on an id absent from the problem).
     outflow: dict[str, int] = {s.station_id: 0 for s in problem.stations}
+    final: dict[str, int] = {s.station_id: s.bikes for s in problem.stations}
     for m in plan.moves:
         if m.origin_id not in known or m.destination_id not in known:
             violations.append(f"move references unknown station {m.origin_id}->{m.destination_id}")
@@ -46,6 +50,8 @@ def check_feasibility(problem: RebalancingProblem, plan: RebalancingPlan) -> Fea
             )
             continue
         outflow[m.origin_id] += m.quantity
+        final[m.origin_id] -= m.quantity
+        final[m.destination_id] += m.quantity
 
     for s in problem.stations:
         if outflow[s.station_id] > s.bikes:
@@ -53,7 +59,6 @@ def check_feasibility(problem: RebalancingProblem, plan: RebalancingPlan) -> Fea
                 f"{s.station_id}: outflow {outflow[s.station_id]} exceeds available bikes {s.bikes}"
             )
 
-    final = plan.final_inventory(problem)
     for s in problem.stations:
         f = final[s.station_id]
         if f < 0:
