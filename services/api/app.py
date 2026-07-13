@@ -101,7 +101,7 @@ def _trace_step(d: Driver) -> TraceStep:
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ShockFlow AI API",
-        version="0.8.0",
+        version="0.1.0",  # v0 milestone (Phases 00-08)
         summary="Event-aware demand forecasting & rebalancing decision support (Phase 08).",
     )
 

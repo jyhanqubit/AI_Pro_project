@@ -1,6 +1,6 @@
 {
   "name": "shockflow-web",
-  "version": "0.8.0",
+  "version": "0.1.0",
   "private": true,
   "description": "ShockFlow AI operator UI (Phase 08): Control Tower, Why Changed, Scenario Lab, Rebalancing.",
   "scripts": {
