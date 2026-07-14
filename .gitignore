@@ -27,6 +27,8 @@ data/processed/**
 
 # Curated fixtures ARE versioned intentionally; do not ignore them.
 !data/fixtures/**
+# ...except LIVE-collected news snapshots (generated, non-deterministic, real-world noise).
+data/fixtures/news_live/
 
 # --- Generated artifacts / model binaries / reports ---
 reports/**

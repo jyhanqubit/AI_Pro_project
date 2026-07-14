@@ -201,4 +201,14 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 .term-body { display: grid; gap: 4px; font-size: 14px; }
 .term-k { display: inline-block; min-width: 42px; color: var(--muted); font-size: 12px; font-weight: 600; margin-right: 6px; }
 
+/* A/B experiment definition cells */
+.ab-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; margin-top: 8px; }
+.ab-cell { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--panel); }
+.ab-cell.a { border-left: 3px solid var(--muted); }
+.ab-cell.b { border-left: 3px solid var(--accent); }
+.ab-cell.r { border-left: 3px solid var(--up); }
+.ab-cell strong { display: block; margin: 3px 0; }
+.ab-tag { font-size: 11px; font-weight: 700; color: var(--muted); letter-spacing: 0.3px; }
+@media (max-width: 640px) { .ab-grid { grid-template-columns: 1fr; } }
+
 .pill.increase.active, .pill.active { color: var(--text); background: var(--accent); border-color: var(--accent); }

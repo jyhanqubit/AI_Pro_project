@@ -20,7 +20,13 @@ def run_battery() -> dict:
     cfg = ExperimentConfig(n_clusters=4, n_time_blocks=10)
     stations = build_demo_scenario()
     p = {x.key: x for x in POLICIES}
-    rec_only = PolicySpec("REC", "Recommendation only", recommend=True)
+    rec_only = PolicySpec(
+        "REC", "Recommendation only", recommend=True,
+        description="앱 추천으로 라이더를 여유 스테이션으로 유도. 크레딧 없음.",
+    )
+
+    def arm(spec: PolicySpec) -> dict:
+        return {"policy": spec.key, "label": spec.label, "description": spec.description}
 
     battery = [
         ("AA", "동일한 두 arm — 효과가 0에 가까워야 정상(위양성 없음)", p["P0"], p["P0"]),
@@ -35,6 +41,8 @@ def run_battery() -> dict:
             {
                 "experiment_id": r.experiment_id,
                 "hypothesis": r.hypothesis,
+                "arm_a": arm(control),  # A = control (대조군)
+                "arm_b": arm(treat),  # B = treatment (처리군)
                 "n_units": r.n_units,
                 "itt_effect": r.itt_effect,
                 "itt_ci": list(r.itt_ci),

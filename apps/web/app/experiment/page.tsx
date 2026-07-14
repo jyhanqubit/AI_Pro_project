@@ -106,6 +106,43 @@ export default function ExperimentLab() {
         </p>
       </div>
 
+      {/* 1.5) 각 실험의 A/B 정의 */}
+      <div className="card">
+        <h2>각 실험의 A/B가 무엇인가</h2>
+        <div className="sub">A = 대조군(control), B = 처리군(treatment). ITT는 B − A입니다.</div>
+        <div className="grid" style={{ gap: 10 }}>
+          {d.experiments.map((e) => (
+            <div key={e.experiment_id} className="term">
+              <div className="term-name">
+                {LABEL[e.experiment_id] ?? e.experiment_id}{" "}
+                <span className="muted small">— {e.hypothesis}</span>
+              </div>
+              <div className="ab-grid">
+                <div className="ab-cell a">
+                  <span className="ab-tag">A · 대조</span>
+                  <strong>{e.arm_a.label}</strong>
+                  <div className="muted small">{e.arm_a.description}</div>
+                </div>
+                <div className="ab-cell b">
+                  <span className="ab-tag">B · 처리</span>
+                  <strong>{e.arm_b.label}</strong>
+                  <div className="muted small">{e.arm_b.description}</div>
+                </div>
+                <div className="ab-cell r">
+                  <span className="ab-tag">결과 (B−A)</span>
+                  <strong className={`delta ${e.itt_effect > 0.0005 ? "up" : e.itt_effect < -0.0005 ? "down" : "flat"}`}>
+                    {pp(e.itt_effect)}
+                  </strong>
+                  <div className="muted small">
+                    <Verdict e={e} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 2) 어떤 값을 계산했고, 무슨 뜻인가 */}
       <div className="card">
         <h2>② 어떤 값을 계산했고, 무슨 뜻인가</h2>

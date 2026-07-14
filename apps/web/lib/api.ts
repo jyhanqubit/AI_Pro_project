@@ -155,9 +155,17 @@ export interface RebalancingResponse {
   note: string;
 }
 
+export interface ExperimentArm {
+  policy: string;
+  label: string;
+  description: string;
+}
+
 export interface ExperimentOut {
   experiment_id: string;
   hypothesis: string;
+  arm_a: ExperimentArm;
+  arm_b: ExperimentArm;
   n_units: number;
   itt_effect: number;
   itt_ci: [number, number];

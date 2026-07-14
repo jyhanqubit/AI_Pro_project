@@ -52,3 +52,10 @@ Resolution:
 - **V1-00** (this session): created V1 contract package, config, docs, tracking files, and
   `tests/unit/test_v1_contracts.py`. Ran full regression — see counts above.
 - **Rec track audit**: recorded torch/faiss blocker; V1-07B/C `BLOCKED_EXTERNAL`.
+- **News collection (real)**: `GdeltNewsProvider` now hits GDELT DOC 2.0 (free, key-less) with
+  retry/backoff — opt-in (`make v1-collect-news-live`, `ENABLE_GDELT_LIVE=true`), disabled in
+  Demo/tests. Proven live: fetched 75 real articles; a tight JC/Hoboken mobility query yields
+  ~33 mostly-relevant **June-2026** items (+ keyword noise — honest). Snapshots to a git-ignored
+  fixture. Real-news event-lift claim stays `BLOCKED_DATA` until overlap passes the coverage gate.
+  See `docs/V1_NEWS_COLLECTION.md`. Experiment Lab UI now shows each test's **A/B definitions**
+  (A=대조 policy, B=처리 policy + descriptions).

@@ -67,12 +67,12 @@ def test_title_hash_dedup(tmp_path: Path) -> None:
 
 def test_gdelt_disabled_is_degraded_not_fabricated(tmp_path: Path) -> None:
     res = backfill_news(
-        GdeltNewsProvider(enabled=False), _cfg(), checkpoint_path=tmp_path / "g.json"
+        GdeltNewsProvider("test query", enabled=False), _cfg(), checkpoint_path=tmp_path / "g.json"
     )
     assert res.report.degraded is True
     assert res.report.accepted_count == 0  # no fabricated articles
     with pytest.raises(ProviderUnavailable):
-        GdeltNewsProvider(enabled=False).fetch()
+        GdeltNewsProvider("test query", enabled=False).fetch()
 
 
 def test_coverage_report_and_gate(tmp_path: Path) -> None:
@@ -88,7 +88,7 @@ def test_coverage_report_and_gate(tmp_path: Path) -> None:
 
 def test_gate_fails_when_degraded(tmp_path: Path) -> None:
     res = backfill_news(
-        GdeltNewsProvider(enabled=False), _cfg(), checkpoint_path=tmp_path / "g.json"
+        GdeltNewsProvider("test query", enabled=False), _cfg(), checkpoint_path=tmp_path / "g.json"
     )
     gate = coverage_gate(coverage_report(res.report), _cfg())
     assert gate.passed is False
@@ -97,3 +97,24 @@ def test_gate_fails_when_degraded(tmp_path: Path) -> None:
 
 def test_normalised_title_hash_is_stable() -> None:
     assert title_hash("  PATH  Signal  Failure ") == title_hash("path signal failure")
+
+
+# --- GDELT provider: offline-only checks (no network; unit tests must not hit the internet) ------
+def test_gdelt_url_and_query_build() -> None:
+    p = GdeltNewsProvider("Hoboken PATH", enabled=True, start="20260601000000", max_records=50)
+    url = p._url()
+    assert url.startswith("https://api.gdeltproject.org/api/v2/doc/doc?")
+    assert "maxrecords=50" in url and "format=json" in url and "startdatetime=20260601000000" in url
+
+
+def test_gdelt_payload_mapping_is_title_only_no_fabrication() -> None:
+    raw = {
+        "url": "https://example.com/a", "title": "PATH service change at Hoboken",
+        "domain": "example.com", "seendate": "20260612T131500Z",
+    }
+    pl = GdeltNewsProvider._to_payload(raw)
+    assert pl["text"] == ""  # GDELT gives no body -> empty, never fabricated
+    assert pl["source"] == "example.com"
+    assert pl["published_at"] == pl["first_seen_at"]  # seendate used for both (documented)
+    assert pl["published_at"].startswith("2026-06-12T13:15:00")
+    assert len(pl["url_hash"]) == 64

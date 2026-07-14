@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import json
 import re
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
@@ -52,21 +56,101 @@ class FixtureNewsProvider:
         return out
 
 
+_GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
+
+
 class GdeltNewsProvider:
-    """Real GDELT historical provider (V1_Prompt §7). Disabled offline — no fabricated data."""
+    """Real GDELT DOC 2.0 news provider (V1_Prompt §7).
+
+    Hits GDELT's free, key-less DOC API when ``enabled`` (opt-in — live network). Disabled by
+    default so Demo/tests stay offline (unit/integration tests must not touch the internet). GDELT
+    DOC returns title + metadata only (no full body); ``text`` is left empty (title-only snippet),
+    never fabricated. ``seendate`` is GDELT's first-seen time (UTC); we use it for both
+    ``published_at`` and ``first_seen_at`` (documented approximation).
+    """
 
     name = "gdelt"
 
-    def __init__(self, enabled: bool = False) -> None:
+    def __init__(
+        self,
+        query: str,
+        *,
+        enabled: bool = False,
+        start: str | None = None,  # "YYYYMMDDHHMMSS" (UTC)
+        end: str | None = None,
+        max_records: int = 75,
+        source_lang: str = "english",
+        timeout: float = 30.0,
+        retries: int = 4,
+        backoff_s: float = 8.0,
+    ) -> None:
+        self.query = query
         self.enabled = enabled
+        self.start = start
+        self.end = end
+        self.max_records = max_records
+        self.source_lang = source_lang
+        self.timeout = timeout
+        self.retries = retries
+        self.backoff_s = backoff_s
+
+    def _url(self) -> str:
+        params = {
+            "query": self.query,
+            "mode": "artlist",
+            "format": "json",
+            "maxrecords": str(self.max_records),
+            "sort": "datedesc",
+            "sourcelang": self.source_lang,
+        }
+        if self.start:
+            params["startdatetime"] = self.start
+        if self.end:
+            params["enddatetime"] = self.end
+        return f"{_GDELT_DOC}?{urllib.parse.urlencode(params)}"
 
     def fetch(self) -> list[dict]:
         if not self.enabled:
             raise ProviderUnavailable(
-                "GDELT live fetch disabled (no key/network). Use FixtureNewsProvider offline; "
-                "real-news coverage stays BLOCKED_DATA until the live path is available (§7)."
+                "GDELT live fetch disabled by default (opt-in). Set enabled=True / "
+                "ENABLE_GDELT_LIVE=true to collect real news; offline uses FixtureNewsProvider."
             )
-        raise ProviderUnavailable("GDELT live client not implemented on the required offline path")
+        url = self._url()
+        last: Exception | None = None
+        for attempt in range(self.retries):
+            try:
+                headers = {"User-Agent": "ShockFlowAI/1.0 research"}
+                req = urllib.request.Request(url, headers=headers)
+                with urllib.request.urlopen(req, timeout=self.timeout) as r:  # noqa: S310
+                    raw = r.read().decode("utf-8", "replace")
+                articles = json.loads(raw).get("articles", []) if raw.strip() else []
+                return [self._to_payload(a) for a in articles if a.get("url") and a.get("title")]
+            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError) as e:
+                last = e
+                if attempt < self.retries - 1:
+                    time.sleep(self.backoff_s * (attempt + 1))  # linear backoff (GDELT 429s)
+        raise ProviderUnavailable(f"GDELT fetch failed after {self.retries} attempts: {last}")
+
+    @staticmethod
+    def _to_payload(a: dict) -> dict:
+        seen = _parse_gdelt_date(a["seendate"])
+        url = a["url"]
+        return {
+            "article_id": sha256_hex(url.encode())[:16],
+            "title": a["title"],
+            "text": "",  # GDELT DOC gives no body; title-only snippet (not fabricated)
+            "source": a.get("domain", "gdelt"),
+            "published_at": seen,
+            "first_seen_at": seen,
+            "url_hash": sha256_hex(url.encode()),
+            "url": url,
+        }
+
+
+def _parse_gdelt_date(s: str) -> str:
+    """'20260714T131500Z' -> ISO-8601 UTC string."""
+    dt = datetime.strptime(s, "%Y%m%dT%H%M%SZ").replace(tzinfo=UTC)
+    return dt.isoformat()
 
 
 def title_hash(title: str) -> str:
@@ -150,8 +234,8 @@ def backfill_news(
         if key in seen or keyt in seen:
             excluded["duplicate"] = excluded.get("duplicate", 0) + 1
             continue
-        # Validate timestamps + schema via the contract.
-        data = dict(payload)
+        # Validate timestamps + schema via the contract (drop non-contract keys like raw 'url').
+        data = {k: v for k, v in payload.items() if k != "url"}
         data.setdefault("mode", mode.value)
         data.setdefault("raw_payload_path", str(getattr(provider, "path", provider.name)))
         for f in ("published_at", "first_seen_at"):
