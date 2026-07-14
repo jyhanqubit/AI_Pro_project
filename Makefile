@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo evaluate-recommendation evaluate-recommendation-sample api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation api web
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -51,6 +51,15 @@ evaluate-recommendation:  ## V1-07A: measure RENT/RETURN baselines B0-B3 on real
 
 evaluate-recommendation-sample:  ## V1-07A: fast smoke on the tiny fixture
 	python -m ml.recsys.evaluate --sample
+
+train-recommendation-retriever:  ## V1-07B: train + eval the dual-encoder retriever on real data
+	python -m ml.recsys.retriever_eval
+
+evaluate-recommendation-e2e:  ## V1-07C: train reranker + measure the full recommender (real data)
+	python -m ml.recsys.reranker_eval
+
+v1-policy-simulation:  ## V1-07D: simulate P0-P5 incentive/policy comparison (SIMULATED, offline)
+	python -m ml.pricing.evaluate
 
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main

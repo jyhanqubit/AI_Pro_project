@@ -124,3 +124,29 @@ def test_rebalancing_cutoff_out_of_window_is_400(client: TestClient) -> None:
     r = client.post("/v1/rebalancing/solve", json={"cutoff": "2026-07-13T00:00:00-04:00"})
     assert r.status_code == 400
     assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"
+
+
+def test_recommendations_stations_returns_topk_with_reason_codes(client: TestClient) -> None:
+    body = {"mode": "rent", "lat": 40.7196, "lng": -74.0431}
+    r = client.post("/v1/recommendations/stations", json=body)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["operating_mode"] == "policy_simulation"
+    assert data["claim_state"] == "simulated"  # never presented as a measured result
+    assert "note" in data
+    if not data["no_feasible_candidate"]:
+        assert 1 <= len(data["stations"]) <= 3
+        top = data["stations"][0]
+        # Component scores are kept separate (audit), not a single opaque number.
+        for k in ("retrieval_score", "rerank_score", "final_policy_score"):
+            assert k in top
+        assert isinstance(top["reason_codes"], list)
+
+
+def test_recommendations_compare_event_impact_no_overlap(client: TestClient) -> None:
+    body = {"mode": "rent", "lat": 40.7196, "lng": -74.0431}
+    r = client.post("/v1/recommendations/compare-event-impact", json=body)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["event_status"] == "insufficient_event_overlap"
+    assert data["event_off_top3"] == data["event_on_top3"]

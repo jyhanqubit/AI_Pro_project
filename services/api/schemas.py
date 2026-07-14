@@ -191,3 +191,13 @@ class RebalancingResponse(BaseModel):
 class ErrorResponse(BaseModel):
     error_code: str
     message: str
+
+
+class RecommendationApiRequest(BaseModel):
+    """RENT/RETURN station recommendation query (V1_Prompt §15)."""
+
+    mode: Literal["rent", "return"]
+    lat: float = Field(ge=-90.0, le=90.0)
+    lng: float = Field(ge=-180.0, le=180.0)
+    is_member: bool = True
+    cutoff: AwareDatetime | None = None

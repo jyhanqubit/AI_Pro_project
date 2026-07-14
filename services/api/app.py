@@ -33,6 +33,7 @@ from .schemas import (
     MoveOut,
     RebalancingRequest,
     RebalancingResponse,
+    RecommendationApiRequest,
     ReplayState,
     ScenarioRequest,
     ScenarioResponse,
@@ -188,11 +189,14 @@ def create_app() -> FastAPI:
         zf = engine.zone_forecast(zone_id, engine.cutoff)
         drivers = engine.drivers(zone_id, engine.cutoff)
         note = (
-            "예보는 데모 heuristic(demo-heuristic-v1, 과거 재생)에서 나온 값입니다. 변화(Δ)는 그래프 "
-            "이벤트 노출 지표를 그대로 반영한 값이며, 학습된 모델의 출력이 아닙니다. 아래 항목은 "
-            "이벤트별 근거를 보여줍니다."
+            "예보는 데모 heuristic(demo-heuristic-v1, 과거 재생)에서 나온 값입니다. "
+            "변화(Δ)는 그래프 이벤트 노출 지표를 그대로 반영한 값이며, 학습된 모델의 "
+            "출력이 아닙니다. 아래 항목은 이벤트별 근거를 보여줍니다."
             if drivers
-            else "현재 시각 기준으로 공개된 이벤트가 없어요. 이벤트 반영 예보가 평상시 예보와 같습니다."
+            else (
+                "현재 시각 기준으로 공개된 이벤트가 없어요. "
+                "이벤트 반영 예보가 평상시 예보와 같습니다."
+            )
         )
         assert zf is not None  # zone_id is a demo zone
         return ExplanationResponse(
@@ -308,6 +312,38 @@ def create_app() -> FastAPI:
             ],
             note=note,
         )
+
+    @app.post("/v1/recommendations/stations")
+    def recommend_stations(body: RecommendationApiRequest) -> dict:
+        """RENT/RETURN Top-3 with reason codes (V1_Prompt §15). Simulated demo model."""
+        from .recommendations import DEMO_NOTE, RecsysUnavailable, recommend
+
+        try:
+            result, failures = recommend(body.mode, body.lat, body.lng, body.cutoff, body.is_member)
+        except RecsysUnavailable as e:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "recsys_unavailable", "message": str(e)},
+            ) from e
+        payload = result.model_dump(mode="json")
+        payload["note"] = DEMO_NOTE
+        payload["failures"] = [f.__dict__ for f in failures]
+        return payload
+
+    @app.post("/v1/recommendations/compare-event-impact")
+    def compare_event_impact_endpoint(body: RecommendationApiRequest) -> dict:
+        """Event ON/OFF Top-3 overlap over a frozen candidate set (V1_Prompt §15)."""
+        from .recommendations import DEMO_NOTE, RecsysUnavailable, compare_event_impact
+
+        try:
+            out = compare_event_impact(body.mode, body.lat, body.lng, body.cutoff)
+        except RecsysUnavailable as e:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "recsys_unavailable", "message": str(e)},
+            ) from e
+        out["note"] = DEMO_NOTE
+        return out
 
     return app
 

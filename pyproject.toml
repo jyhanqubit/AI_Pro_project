@@ -55,6 +55,7 @@ packages = [
     "pipelines.graph",
     "ml",
     "ml.forecasting",
+    "ml.pricing",
     "optimization",
     "optimization.classical",
     "optimization.quantum",

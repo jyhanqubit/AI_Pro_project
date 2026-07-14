@@ -36,3 +36,31 @@ class RecsysConfig:
 
     seed: int = 42
     version: str = RECSYS_CONFIG_VERSION
+
+
+RETRIEVER_CONFIG_VERSION = "recformer-retriever-v1"
+
+
+@dataclass(frozen=True)
+class RetrieverConfig:
+    """ShockFlowRecFormerRetriever hyperparameters (V1_Prompt §14). Defaults per the prompt."""
+
+    d_model: int = 96
+    embedding_dim: int = 96
+    nhead: int = 4
+    num_layers: int = 2
+    dim_feedforward: int = 384
+    dropout: float = 0.1
+    max_event_tokens: int = 5
+    temperature: float = 0.07
+    retrieval_top_k: int = 20
+
+    # Training
+    batch_size: int = 256
+    lr: float = 1e-3
+    epochs: int = 3
+    hard_negatives: int = 4  # nearest non-chosen candidates added as hard negatives
+    max_train_samples: int = 20000  # bound CPU training; logged, never silent
+
+    seed: int = 42
+    version: str = RETRIEVER_CONFIG_VERSION
