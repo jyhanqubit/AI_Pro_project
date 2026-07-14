@@ -206,6 +206,26 @@ event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_featu
 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)에 있습니다. 한계는
 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
+## V1 (모델·추천·실험·이상탐지·라이브)
+
+v0 위에 backward-compatible 증분으로 V1을 구현했습니다 — 측정된 모델 스토리(B0–B4),
+어텐션 듀얼인코더 추천 + reranker + 정책, 동적 인센티브·정책 시뮬레이션, 클러스터드 스위치백 실험,
+이상 탐지, 라이브 섀도(pending label), **FAISS 뉴스 벡터 스토어**(누적 수집·의미 검색·같은 사건 클러스터).
+웹 콘솔은 8개 화면. 모든 값은 measured / pending / simulated / blocked 중 하나로 정직하게 표기합니다.
+
+```bash
+make v1-collect-news-live     # (opt-in) 실제 GDELT 뉴스 수집 → FAISS 스토어에 누적
+make v1-build-event-features  # 증분 그래프 피처 == 전체 재빌드 검증
+make v1-evaluate-anomalies    # 4개 이상 탐지기 (합성 결함 시나리오)
+make v1-experiment-dry-run    # A/A + 정책 스위치백 (simulated)
+make v1-live-fixture          # 라이브 섀도 마이크로배치 (pending label)
+make v1-news-vectorstore      # FAISS 의미 검색 + 같은 사건 클러스터
+```
+
+전체 계획·실행 로그·감사는 [docs/V1_PORTFOLIO_SUMMARY.md](docs/V1_PORTFOLIO_SUMMARY.md),
+[docs/V1_DEMO_SCRIPT.md](docs/V1_DEMO_SCRIPT.md),
+[docs/V1_EXECUTION_LOG.md](docs/V1_EXECUTION_LOG.md), `reports/v1/V1_FINAL_AUDIT.md` 참고.
+
 ## 상태
 
 현재 진행 중인 단계와 검증된 명령, 남은 걸림돌은 [docs/STATUS.md](docs/STATUS.md)에서 확인하세요.

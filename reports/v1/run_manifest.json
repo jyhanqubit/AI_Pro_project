@@ -1,6 +1,6 @@
 {
   "repository_revision": "35404e3",
-  "version_tag": "v0",
+  "version_tag": "v1",
   "python_version": "3.10.0",
   "node_version": "v24.18.0",
   "seed": 42,
@@ -18,7 +18,7 @@
     "V1-07C": "PASSED",
     "V1-07D": "PASSED",
     "V1-08": "PASSED",
-    "V1-09": "TODO"
+    "V1-09": "PASSED"
   },
   "executed_commands": [
     "pytest -q",

@@ -1,12 +1,30 @@
 # Project Status
 
-_Last updated: 2026-07-13_
+_Last updated: 2026-07-15_
 
-## Current completed phase
+## Current status — V1 complete (with honest data blocks)
+
+**v0 (Phases 00–09) complete**, and **V1 (V1-00 … V1-09) implemented** on top as backward-compatible
+increments. See `docs/V1_EXECUTION_LOG.md` for per-phase detail and `reports/v1/V1_FINAL_AUDIT.md`
+for the final audit.
+
+- Done: V1-00 contracts · V1-01 news backfill (+ **real GDELT** opt-in) · V1-02 incremental features
+  (== full rebuild) · V1-03 model registry (measured B0-B4) · V1-04 event-lift gate · V1-05
+  live-shadow (pending labels) · V1-06 anomaly detection · V1-07A–D recommendation + pricing
+  (measured retriever / simulated policy) · V1-08 clustered-switchback experiments (simulated) ·
+  V1-09 UI (8 screens) + offline golden-path E2E + audit + packaging. Plus a **FAISS news vector
+  store** (accumulating news, semantic search, same-event clustering).
+- Honest blocks: **event lift** = `insufficient_event_overlap` (claim disabled); **real-news
+  coverage** = `BLOCKED_DATA` until a real backfill passes the gate; **recommendation / pricing /
+  experiments** = `simulated`; **live-shadow** predictions = `pending`.
+- Tests: **199 passed, 1 skipped** (`make test`); web `tsc` clean; ruff clean; offline E2E green.
+- Commands verified: see the `make` targets below (each runs a real, tested workflow).
+
+---
+
+## v0 milestone detail (Phases 00–09)
 
 **Phase 08 — Rebalancing & Quantum Research Mode: complete.** (Phases 00–07 also complete.)
-Phase 09 (final audit & portfolio packaging) is the remaining documentation-and-audit pass, in
-progress alongside this update.
 
 ### Phase 08 — Rebalancing & Quantum Research Mode (complete)
 
