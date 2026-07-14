@@ -337,6 +337,19 @@ def create_app() -> FastAPI:
 
         return run_battery()
 
+    @app.get("/v1/model/lift")
+    def model_lift() -> dict:
+        """Measured M0/M1 ablation + event-lift verdict for the Model Lift Lab (§9, §10)."""
+        from ml.forecasting.registry import RegistryUnavailable, event_lift_summary
+
+        try:
+            return event_lift_summary()
+        except RegistryUnavailable as e:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "results_unavailable", "message": str(e)},
+            ) from e
+
     @app.post("/v1/recommendations/compare-event-impact")
     def compare_event_impact_endpoint(body: RecommendationApiRequest) -> dict:
         """Event ON/OFF Top-3 overlap over a frozen candidate set (V1_Prompt §15)."""

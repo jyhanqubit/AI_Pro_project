@@ -186,6 +186,28 @@ export interface ExperimentsResponse {
   experiments: ExperimentOut[];
 }
 
+export interface AblationArm {
+  arm: string;
+  label: string;
+  wape: number;
+  mae: number;
+  mase: number;
+}
+
+export interface ModelLiftResponse {
+  model_version: string;
+  feature_version: string;
+  target: string;
+  n_test: number | null;
+  ablation: AblationArm[];
+  m0_baseline: { wape: number; mae: number; mase: number };
+  m1_event_aware: { wape: number; mae: number; mase: number };
+  model_attributed_wape_lift: number;
+  event_lift_verdict: string;
+  event_verification: Record<string, unknown>;
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -228,4 +250,5 @@ export const api = {
       body: JSON.stringify({ cutoff, method }),
     }),
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
+  modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),
 };
