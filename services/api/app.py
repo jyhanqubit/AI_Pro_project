@@ -337,6 +337,13 @@ def create_app() -> FastAPI:
 
         return run_battery()
 
+    @app.get("/v1/anomalies")
+    def anomalies_endpoint() -> dict:
+        """Anomaly Center: 4 detector families over the synthetic-fault scenario (§12)."""
+        from .anomaly import anomalies
+
+        return anomalies()
+
     @app.get("/v1/news/search")
     def news_search(q: str, k: int = 5) -> dict:
         """Semantic search over the accumulating news vector store (FAISS)."""

@@ -11,6 +11,7 @@ const OPERATOR_TABS = [
   { href: "/scenario", label: "시나리오 비교" },
   { href: "/rebalancing", label: "재배치 계획" },
   { href: "/model-lift", label: "모델 Lift" },
+  { href: "/anomaly", label: "이상 탐지" },
   { href: "/experiment", label: "실험 랩" },
 ];
 

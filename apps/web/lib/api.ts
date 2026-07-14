@@ -234,6 +234,30 @@ export interface NewsClustersResponse {
   clusters: NewsCluster[];
 }
 
+export interface AnomalyAlertOut {
+  anomaly_id: string;
+  detector: string;
+  anomaly_type: string;
+  station_id: string;
+  zone_id: string;
+  detected_at: string;
+  score: number;
+  severity: number;
+  root_cause_status: string;
+  linked_event_ids: string[];
+  evidence_article_ids: string[];
+  is_synthetic_fault: boolean;
+}
+export interface AnomaliesResponse {
+  mode: string;
+  n_alerts: number;
+  synthetic_fault_count: number;
+  by_type: Record<string, number>;
+  by_root_cause: Record<string, number>;
+  note: string;
+  alerts: AnomalyAlertOut[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -281,4 +305,5 @@ export const api = {
     req<NewsSearchResponse>(`/v1/news/search?q=${encodeURIComponent(q)}&k=${k}`),
   newsClusters: (threshold = 0.3) =>
     req<NewsClustersResponse>(`/v1/news/clusters?threshold=${threshold}`),
+  anomalies: () => req<AnomaliesResponse>("/v1/anomalies"),
 };
