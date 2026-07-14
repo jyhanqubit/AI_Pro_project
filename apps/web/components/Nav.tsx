@@ -3,22 +3,27 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const TABS = [
-  { href: "/", label: "Control Tower" },
-  { href: "/why", label: "Why Changed" },
-  { href: "/scenario", label: "Scenario Lab" },
-  { href: "/rebalancing", label: "Rebalancing" },
+// Rider-facing home first, then the operator tools.
+const RIDER_TABS = [{ href: "/", label: "자전거 찾기" }];
+const OPERATOR_TABS = [
+  { href: "/why", label: "수요 급증 원인" },
+  { href: "/scenario", label: "시나리오 비교" },
+  { href: "/rebalancing", label: "재배치 계획" },
 ];
 
 export function Nav() {
   const path = usePathname();
+  const link = (t: { href: string; label: string }) => (
+    <Link key={t.href} href={t.href} className={path === t.href ? "active" : ""}>
+      {t.label}
+    </Link>
+  );
   return (
     <nav className="tabs">
-      {TABS.map((t) => (
-        <Link key={t.href} href={t.href} className={path === t.href ? "active" : ""}>
-          {t.label}
-        </Link>
-      ))}
+      {RIDER_TABS.map(link)}
+      <span className="tabs-divider" aria-hidden="true" />
+      <span className="tabs-group-label">운영자</span>
+      {OPERATOR_TABS.map(link)}
     </nav>
   );
 }

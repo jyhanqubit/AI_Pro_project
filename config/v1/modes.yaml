@@ -1,0 +1,30 @@
+# V1 operating modes (V1_Prompt §6). Superset of the v0 four; Demo/offline-safe by default.
+# A live-collector failure must never break Demo or Historical Replay (CLAUDE.md §3).
+default_mode: demo_fixture
+
+modes:
+  demo_fixture:
+    description: Deterministic fixtures; no API keys; fully offline.
+    live_collectors: false
+  historical_replay:
+    description: Default presentation mode; replay by available_at.
+    live_collectors: false
+  live_shadow:
+    description: Live collection + inference WITHOUT acting; predictions are pending_label.
+    live_collectors: true
+    enabled_by_default: false
+  policy_simulation:
+    description: Choice/policy simulator; outputs are is_simulated=true, never business results.
+    live_collectors: false
+  experiment_dry_run:
+    description: Experiment plumbing exercised without real exposure.
+    live_collectors: false
+  research:
+    description: QUBO/QAOA and offline research; never fed to serving views.
+    live_collectors: false
+
+feature_flags:
+  ENABLE_GBFS_LIVE: false
+  ENABLE_GDELT_LIVE: false
+  ENABLE_LIVE_LLM: false
+  LLM_PROVIDER: mock

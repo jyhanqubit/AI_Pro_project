@@ -1,0 +1,54 @@
+{
+  "repository_revision": "35404e3",
+  "version_tag": "v0",
+  "python_version": "3.10.0",
+  "node_version": "v24.18.0",
+  "seed": 42,
+  "operating_mode": "demo_fixture",
+  "phase_status": {
+    "V1-00": "PASSED",
+    "V1-01": "TODO",
+    "V1-02": "TODO",
+    "V1-03": "TODO",
+    "V1-04": "TODO",
+    "V1-05": "TODO",
+    "V1-06": "TODO",
+    "V1-07A": "PASSED",
+    "V1-07B": "TODO",
+    "V1-07C": "TODO",
+    "V1-07D": "TODO",
+    "V1-08": "TODO",
+    "V1-09": "TODO"
+  },
+  "executed_commands": [
+    "pytest -q",
+    "npx tsc --noEmit (apps/web)"
+  ],
+  "test_counts": {
+    "baseline": { "passed": 115, "skipped": 1, "failed": 0 }
+  },
+  "model_feature_policy_versions": {
+    "contract_schema_version": "v1.0.0",
+    "demand_feature_version": "gfv1",
+    "event_feature_version": null,
+    "m0_baseline": null,
+    "m1_event_aware": null,
+    "retriever": null,
+    "reranker": null,
+    "incentive_policy": null
+  },
+  "data_manifests": [],
+  "known_blockers": [
+    "No live LLM/GDELT wired yet: real news backfill (V1-01) and live LLM extraction run fixture paths only; real-news accuracy/lift claims disabled until data path is available.",
+    "GBFS inventory covers only demo stations, so 98% of recommendation candidates carry an inventory-missing mask; inventory-aware baselines have limited signal."
+  ],
+  "recsys_v1_07a": {
+    "data_source": "real:JC-202606",
+    "n_trips": 109897,
+    "n_samples": 219407,
+    "n_test": 43881,
+    "best_baseline": "B0_nearest_feasible",
+    "B0_hit_rate_at_1": 0.845,
+    "note": "B0 nearest-feasible strongest; capacity/MLP baselines do not beat distance (inventory unknown 98%). See reports/v1/recsys/V1_RECSYS_BASELINES.md"
+  }
+}

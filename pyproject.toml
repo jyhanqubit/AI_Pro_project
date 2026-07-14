@@ -34,12 +34,18 @@ api = [
     "uvicorn>=0.29",  # ASGI server for `make api`
     "httpx>=0.27",  # TestClient transport for API integration tests
 ]
+recsys = [
+    "torch>=2.2,<2.9",  # V1-07B/C dual-encoder retriever + cross-attention reranker (CPU wheel)
+    # FAISS is optional; ExactTorchIndex is the required default (V1_Prompt §14).
+]
 
 [tool.setuptools]
 # Explicit package list; keeps the scaffold importable under pip -e install.
 packages = [
     "contracts",
+    "contracts.v1",
     "config",
+    "ml.recsys",
     "services",
     "services.api",
     "pipelines",

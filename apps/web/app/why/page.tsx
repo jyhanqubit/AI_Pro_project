@@ -4,30 +4,37 @@ import { useReplay } from "../providers";
 import { useApi } from "@/lib/useApi";
 import { api, type ExplanationResponse, type ForecastsResponse, type TraceStep } from "@/lib/api";
 import { deltaClass, signed } from "@/lib/format";
+import { zoneLabel } from "@/lib/places";
+
+const EFFECT_KO: Record<string, string> = {
+  increase: "수요 증가",
+  decrease: "수요 감소",
+  unknown: "영향 불명",
+};
 
 function Driver({ d }: { d: TraceStep }) {
   return (
     <div className="card" style={{ padding: 14 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
         <strong>{d.event_title}</strong>
-        <span className={`pill ${d.demand_effect}`}>{d.demand_effect}</span>
+        <span className={`pill ${d.demand_effect}`}>{EFFECT_KO[d.demand_effect] ?? d.demand_effect}</span>
       </div>
       <div className="sub">
-        {d.event_type} · severity {d.severity.toFixed(2)} · confidence {d.confidence.toFixed(2)}
+        {d.event_type} · 심각도 {d.severity.toFixed(2)} · 신뢰도 {d.confidence.toFixed(2)}
       </div>
 
       <div className="trace">
-        <span className="node">Article {d.source_article_ids[0]}</span>
+        <span className="node">기사 {d.source_article_ids[0]}</span>
         <span className="arrow">→</span>
-        <span className="node">Event</span>
+        <span className="node">이벤트</span>
         <span className="arrow">→</span>
-        <span className="node">H3 Zone</span>
+        <span className="node">지역(H3)</span>
         <span className="arrow">→</span>
-        <span className="node">Feature</span>
+        <span className="node">지표</span>
       </div>
 
       <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>
-        Grounded evidence:
+        근거 문장:
       </div>
       {d.evidence_spans.map((s, i) => (
         <div key={i} className="evidence">
@@ -36,7 +43,7 @@ function Driver({ d }: { d: TraceStep }) {
       ))}
 
       <div className="muted" style={{ fontSize: 13, marginTop: 8 }}>
-        Contributed graph features:
+        기여한 그래프 지표:
       </div>
       <div className="table-wrap">
         <table>
@@ -67,16 +74,16 @@ export default function WhyChanged() {
   );
 
   if (fc.error)
-    return <div className="notice error">Cannot reach the API ({fc.error}).</div>;
-  if (!zone) return <div className="notice">No zones yet — advance the replay clock.</div>;
+    return <div className="notice error">API에 연결할 수 없습니다 ({fc.error}).</div>;
+  if (!zone) return <div className="notice">아직 반영된 이벤트가 없어요 — 재생 시각을 앞으로 옮겨보세요.</div>;
 
   return (
     <div className="grid" style={{ gap: 16 }}>
       <div className="card">
-        <h2>Why did this zone change?</h2>
-        <div className="sub">Article → Event → H3 Zone → Feature, with grounded evidence.</div>
+        <h2>이 지역은 왜 수요가 바뀌었나요?</h2>
+        <div className="sub">기사 → 이벤트 → 지역(H3) → 지표 순서로, 근거 문장과 함께 추적합니다.</div>
         <label className="muted" style={{ fontSize: 13 }}>
-          Zone:{" "}
+          지역:{" "}
           <select
             value={zone}
             onChange={(e) => setSelectedZone(e.target.value)}
@@ -84,7 +91,7 @@ export default function WhyChanged() {
           >
             {zones.map((z) => (
               <option key={z} value={z}>
-                {z}
+                {zoneLabel(z)}
               </option>
             ))}
           </select>
@@ -92,20 +99,20 @@ export default function WhyChanged() {
       </div>
 
       {ex.loading || !ex.data ? (
-        <div className="notice">Loading explanation…</div>
+        <div className="notice">설명을 불러오는 중…</div>
       ) : (
         <>
           <div className="grid cols-3">
             <div className="card">
-              <div className="sub">Baseline</div>
+              <div className="sub">평상시 예보</div>
               <div className="metric">{ex.data.baseline_forecast.toFixed(2)}</div>
             </div>
             <div className="card">
-              <div className="sub">Event-aware</div>
+              <div className="sub">이벤트 반영 예보</div>
               <div className="metric">{ex.data.event_aware_forecast.toFixed(2)}</div>
             </div>
             <div className="card">
-              <div className="sub">Model-attributed Δ</div>
+              <div className="sub">모델 기여 변화(Δ)</div>
               <div className={`metric delta ${deltaClass(ex.data.forecast_delta)}`}>
                 {signed(ex.data.forecast_delta)}
               </div>

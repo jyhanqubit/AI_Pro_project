@@ -6,19 +6,19 @@ import { Nav } from "@/components/Nav";
 import { ReplayControl } from "@/components/ReplayControl";
 
 export const metadata: Metadata = {
-  title: "ShockFlow AI — Operator Console",
+  title: "ShockFlow AI — 자전거 수요 예보",
   description:
-    "Event-aware demand forecasting & rebalancing decision support (Phase 07, offline demo).",
+    "이벤트를 반영한 지역별 자전거 수요·재고 예보. 어느 지역에 자전거가 많을지 미리 확인하세요 (오프라인 데모).",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body>
         <ReplayProvider>
           <header className="topbar">
             <span className="brand">
-              ShockFlow AI <small>Operator Console</small>
+              ShockFlow AI <small>자전거 수요 예보</small>
             </span>
             <Nav />
           </header>
@@ -28,10 +28,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             </div>
             {children}
             <p className="footer-note">
-              Historical Replay demo — forecasts come from a labelled demo heuristic
-              (<span className="mono">demo-heuristic-v1</span>), not the measured Phase 06 model.
-              The event-aware delta is a transparent function of the graph event-exposure feature.
-              Runs fully offline from the news fixture.
+              과거 재생(Historical Replay) 데모입니다. 예보는 측정된 Phase 06 모델이 아니라
+              라벨이 붙은 데모 heuristic(<span className="mono">demo-heuristic-v1</span>)에서 나오며,
+              이벤트로 인한 수요 변화(Δ)는 그래프 이벤트 노출 지표를 그대로 반영한 값입니다.
+              실제 서비스 데이터가 아닌 오프라인 뉴스·재고 fixture로 완전히 동작합니다.
             </p>
           </div>
         </ReplayProvider>

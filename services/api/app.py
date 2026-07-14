@@ -188,11 +188,11 @@ def create_app() -> FastAPI:
         zf = engine.zone_forecast(zone_id, engine.cutoff)
         drivers = engine.drivers(zone_id, engine.cutoff)
         note = (
-            "Forecast from the demo heuristic (demo-heuristic-v1), Historical Replay; the delta "
-            "is a transparent function of the graph event-exposure feature, not a trained-model "
-            "output. Drivers show grounded evidence per event."
+            "예보는 데모 heuristic(demo-heuristic-v1, 과거 재생)에서 나온 값입니다. 변화(Δ)는 그래프 "
+            "이벤트 노출 지표를 그대로 반영한 값이며, 학습된 모델의 출력이 아닙니다. 아래 항목은 "
+            "이벤트별 근거를 보여줍니다."
             if drivers
-            else "No events available as-of this cutoff; event-aware forecast equals baseline."
+            else "현재 시각 기준으로 공개된 이벤트가 없어요. 이벤트 반영 예보가 평상시 예보와 같습니다."
         )
         assert zf is not None  # zone_id is a demo zone
         return ExplanationResponse(
@@ -259,10 +259,10 @@ def create_app() -> FastAPI:
             engine, cutoff, method=req.method, vehicle_capacity=req.vehicle_capacity
         )
         note = (
-            "Classical solver over the curated station fixture. Targets are raised by the "
-            "event-aware demo-heuristic forecast delta per zone (Historical Replay), not the "
-            "measured Phase 06 model. Feasibility is checked before the plan is returned; "
-            "Quantum Research Mode (QUBO/QAOA) is never used for operator plans."
+            "큐레이션된 station fixture 위에서 동작하는 고전 solver입니다. 이벤트가 노출된 지역은 "
+            "데모 heuristic 예보 델타(과거 재생)만큼 목표 재고가 올라가며, 측정된 Phase 06 모델이 "
+            "아닙니다. 계획은 노출 전에 feasibility를 검증하며, Quantum Research Mode(QUBO/QAOA)는 "
+            "운영 계획에 절대 사용하지 않습니다."
         )
         return RebalancingResponse(
             mode=engine.mode,

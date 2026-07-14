@@ -1,0 +1,16 @@
+# Version stamps persisted with V1 artifacts so every result is reproducible from config
+# (V1_Prompt §2, §9). Bump these when the corresponding artifact changes.
+contract_schema_version: v1.0.0
+
+model_versions:
+  m0_baseline: null        # set when the M0 artifact is trained (V1-03)
+  m1_event_aware: null     # set when the M1 artifact is trained (V1-03)
+feature_versions:
+  demand_feature_version: gfv1
+  event_feature_version: null   # set when V1 event features land (V1-02)
+policy_versions:
+  retriever: null          # ShockFlowRecFormerRetriever (V1-07B)
+  reranker: null           # ShockFlowRecFormerReranker (V1-07C)
+  incentive_policy: null   # dynamic credit policy (V1-07D)
+
+seed: 42

@@ -1,0 +1,25 @@
+# Claim gates (V1_Prompt §4, §10, §20). A claim may only be surfaced when its gate is satisfied
+# by a real executed run; otherwise the artifact keeps a non-measured claim_state and the claim is
+# disabled in the UI/report. No fabricated metrics (invariant 6).
+
+claim_states: [measured, pending, simulated, dry_run, research]
+
+event_lift_gate:            # §10 — may we claim news/graph features reduce demand error?
+  require_nonzero_test_event_features: true
+  require_same_split_and_target: true
+  require_real_historical_news: true
+  require_real_demand_labels: true
+  require_paired_comparison: true
+  require_uncertainty_interval: true
+
+recommendation_gate:        # §13–§15
+  require_no_leakage_of_selected_station: true
+  require_chronological_split: true
+  require_as_of_features_only: true
+
+experiment_claim:           # §17 — never call a simulated result a causal lift
+  allow_causal_lift_claim_only_if: real_randomized_experiment_with_real_users
+
+# Model-comparison vs randomized-experiment: a forecast/model comparison is NOT an A/B test.
+# See docs/V1_EXPERIMENTATION.md for the distinction.
+forbid_calling_model_comparison_ab_test: true
