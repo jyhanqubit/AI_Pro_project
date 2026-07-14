@@ -56,6 +56,7 @@ packages = [
     "ml",
     "ml.forecasting",
     "ml.pricing",
+    "ml.experiment",
     "optimization",
     "optimization.classical",
     "optimization.quantum",
