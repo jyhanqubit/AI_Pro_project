@@ -55,6 +55,7 @@ packages = [
     "pipelines.events",
     "pipelines.features",
     "pipelines.graph",
+    "pipelines.live",
     "ml",
     "ml.forecasting",
     "ml.pricing",

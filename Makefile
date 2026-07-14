@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -78,6 +78,9 @@ v1-news-vectorstore:  ## FAISS news vector store demo (semantic search + near-du
 
 v1-evaluate-anomalies:  ## V1-06: run the 4 anomaly detectors on the synthetic-fault scenario
 	python -m ml.anomaly.demo
+
+v1-live-fixture:  ## V1-05: live-shadow fixture stream (micro-batches, pending_label, offline)
+	python -m pipelines.live.demo
 
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main

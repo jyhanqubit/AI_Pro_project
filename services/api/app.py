@@ -373,10 +373,13 @@ def create_app() -> FastAPI:
     @app.get("/v1/model/lift")
     def model_lift() -> dict:
         """Measured M0/M1 ablation + event-lift verdict for the Model Lift Lab (§9, §10)."""
+        from ml.forecasting.event_lift import event_lift_gate
         from ml.forecasting.registry import RegistryUnavailable, event_lift_summary
 
         try:
-            return event_lift_summary()
+            summary = event_lift_summary()
+            summary["gate"] = event_lift_gate()  # V1-04 claim gate
+            return summary
         except RegistryUnavailable as e:
             raise HTTPException(
                 status_code=503,
