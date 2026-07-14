@@ -88,8 +88,38 @@ def main() -> int:
           f"accepted={rep.accepted_count} sources={rep.unique_source_count}")
     print(f"coverage gate passed: {gate.passed}  {gate.reasons or ''}")
     print(f"snapshot -> {snap.relative_to(_ROOT)} ({rep.accepted_count} articles)")
+
+    # Accumulate into the persistent FAISS news vector store (grows across collection runs).
+    _accumulate_vectorstore(res.articles)
     print("Now point extraction/features at this snapshot for real event impact (V1-02+).")
     return 0
+
+
+def _accumulate_vectorstore(articles) -> None:
+    """Upsert collected articles into the persistent FAISS store (idempotent). Optional extra."""
+    try:
+        from config.vectorstore import VectorStoreConfig
+        from ml.vectorstore import NewsRecord, NewsVectorStore
+        from ml.vectorstore.news_store import VectorStoreUnavailable
+    except ImportError:
+        print("[vector store skipped] install the [vectorstore] extra to accumulate news vectors.")
+        return
+    try:
+        cfg = VectorStoreConfig()
+        store = NewsVectorStore.load_or_new(cfg.store_dir, cfg)
+        added = store.add(
+            [
+                NewsRecord(
+                    article_id=a.article_id, title=a.title, source=a.source,
+                    published_at=a.published_at.isoformat(), url_hash=a.url_hash,
+                )
+                for a in articles
+            ]
+        )
+        store.save(cfg.store_dir)
+        print(f"vector store: +{added} new (total {len(store)}) -> {cfg.store_dir}")
+    except VectorStoreUnavailable as e:
+        print(f"[vector store skipped] {e}")
 
 
 if __name__ == "__main__":

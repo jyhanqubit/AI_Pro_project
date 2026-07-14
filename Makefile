@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore api web
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -72,6 +72,9 @@ v1-collect-news-live:  ## V1-01: OPT-IN live GDELT collection (needs internet) -
 
 v1-build-event-features:  ## V1-02: incremental graph-feature refresh == full rebuild (offline)
 	python -m pipelines.features.incremental_demo
+
+v1-news-vectorstore:  ## FAISS news vector store demo (semantic search + near-dup + persistence)
+	python -m ml.vectorstore.demo
 
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main

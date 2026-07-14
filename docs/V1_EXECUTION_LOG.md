@@ -52,6 +52,12 @@ Resolution:
 - **V1-00** (this session): created V1 contract package, config, docs, tracking files, and
   `tests/unit/test_v1_contracts.py`. Ran full regression — see counts above.
 - **Rec track audit**: recorded torch/faiss blocker; V1-07B/C `BLOCKED_EXTERNAL`.
+- **FAISS vector store** (for accumulating real-time news): installed `faiss-cpu` (pinned as
+  `[vectorstore]` extra). `ml/vectorstore/`: offline deterministic char-n-gram embedder +
+  persistent `NewsVectorStore` (semantic search, near-dup detection, idempotent accumulation across
+  collection runs). `make v1-collect-news-live` upserts each run into it. Completed the recsys
+  `FaissIndex` (== ExactTorchIndex, verified). 6 tests (faiss-skipped if absent). Not a numbered
+  phase — infra for the growing news corpus.
 - **News collection (real)**: `GdeltNewsProvider` now hits GDELT DOC 2.0 (free, key-less) with
   retry/backoff — opt-in (`make v1-collect-news-live`, `ENABLE_GDELT_LIVE=true`), disabled in
   Demo/tests. Proven live: fetched 75 real articles; a tight JC/Hoboken mobility query yields

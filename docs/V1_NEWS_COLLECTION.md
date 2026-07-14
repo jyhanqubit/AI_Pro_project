@@ -56,6 +56,24 @@ Article (title, source, available_at)
 A news item only moves the forecast when its `available_at ≤ cutoff` (no leakage) and it maps to a
 served H3 zone. The effect is **model-attributed**, never claimed as causal.
 
+## 3b. FAISS vector store — accumulating news
+
+As real-time collection accumulates news, a **persistent FAISS vector store** (`ml/vectorstore/`)
+indexes an embedding per article for semantic search, near-duplicate detection (stronger than the
+exact title hash), and same-event grouping. It is offline by default (a deterministic char-n-gram
+**lexical embedder** — no external model download) and **accumulates across runs**: `add` is
+idempotent on `article_id`, and the index + metadata persist under `data/processed/vectorstore/`.
+`make v1-collect-news-live` upserts each collection into it automatically.
+
+```bash
+make v1-news-vectorstore          # demo: semantic search + near-dup + persistence (offline)
+pip install -e .[vectorstore]     # installs faiss-cpu (optional extra)
+```
+
+The same FAISS path is available to the recommendation retriever (`ml/recsys/index.py::FaissIndex`,
+an `IndexFlatIP` whose Top-K equals the default `ExactTorchIndex` — verified in tests). It earns its
+keep at scale (approximate indexes); the small 251-station demo still uses the exact index.
+
 ## 4. Why the demo shows a zero event effect
 
 The bundled curated events sit on 2026-07-12, but the measured trip data is **June 2026** — they do

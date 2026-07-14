@@ -63,15 +63,44 @@ class ExactTorchIndex:
         return [[self.station_ids[int(j)] for j in row] for row in indices]
 
 
-def try_build_faiss_index(station_ids: list[str], embeddings: Tensor):
-    """Optional FAISS index (§14). Returns None when faiss is not installed (documented skip)."""
+class FaissIndex:
+    """Optional FAISS retrieval (§14), interface-compatible with ExactTorchIndex.
+
+    Uses ``IndexFlatIP`` (exact inner product), so its Top-K equals ExactTorchIndex's — FAISS earns
+    its keep at scale (approximate indexes), but the flat index keeps the swap verifiable. Needs the
+    ``[vectorstore]`` extra; ``try_build`` returns None when faiss is absent (documented skip).
+    """
+
+    def __init__(self, station_ids: list[str], embeddings: Tensor, key: IndexKey) -> None:
+        import faiss  # noqa: PLC0415
+
+        if embeddings.shape[0] != len(station_ids):
+            raise ValueError("embeddings/station_ids length mismatch")
+        self.station_ids = station_ids
+        self.key = key
+        self._mat = embeddings.detach().cpu().numpy().astype("float32")
+        self._index = faiss.IndexFlatIP(self._mat.shape[1])
+        self._index.add(self._mat)
+
+    def is_stale(self, key: IndexKey) -> bool:
+        return self.key.fingerprint() != key.fingerprint()
+
+    def search(self, query: Tensor, k: int) -> tuple[Tensor, Tensor]:
+        q = query.detach().cpu().numpy().astype("float32")
+        k = min(k, len(self.station_ids))
+        scores, indices = self._index.search(q, k)
+        return torch.from_numpy(scores), torch.from_numpy(indices).long()
+
+    def ids_for(self, indices: Tensor) -> list[list[str]]:
+        return [[self.station_ids[int(j)] for j in row if int(j) >= 0] for row in indices]
+
+
+def try_build_faiss_index(
+    station_ids: list[str], embeddings: Tensor, key: IndexKey
+) -> FaissIndex | None:
+    """Build a FaissIndex, or None when faiss is not installed (documented skip)."""
     try:
-        import faiss  # type: ignore
+        import faiss  # noqa: F401, PLC0415
     except ImportError:
         return None
-    import numpy as np
-
-    mat = embeddings.detach().cpu().numpy().astype("float32")
-    index = faiss.IndexFlatIP(mat.shape[1])
-    index.add(mat)
-    return index, station_ids, np  # caller uses index.search
+    return FaissIndex(station_ids, embeddings, key)

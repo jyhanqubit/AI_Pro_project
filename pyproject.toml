@@ -36,7 +36,9 @@ api = [
 ]
 recsys = [
     "torch>=2.2,<2.9",  # V1-07B/C dual-encoder retriever + cross-attention reranker (CPU wheel)
-    # FAISS is optional; ExactTorchIndex is the required default (V1_Prompt §14).
+]
+vectorstore = [
+    "faiss-cpu>=1.8",  # persistent ANN index: recsys FaissIndex + accumulating news vector store
 ]
 
 [tool.setuptools]
@@ -57,6 +59,7 @@ packages = [
     "ml.forecasting",
     "ml.pricing",
     "ml.experiment",
+    "ml.vectorstore",
     "optimization",
     "optimization.classical",
     "optimization.quantum",
