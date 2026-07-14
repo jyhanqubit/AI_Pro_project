@@ -195,4 +195,10 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 .event-line { display: flex; gap: 12px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); }
 .event-line:last-child { border-bottom: none; }
 
+/* Experiment Lab glossary terms */
+.term { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; background: var(--panel-2); }
+.term-name { font-weight: 700; margin-bottom: 6px; }
+.term-body { display: grid; gap: 4px; font-size: 14px; }
+.term-k { display: inline-block; min-width: 42px; color: var(--muted); font-size: 12px; font-weight: 600; margin-right: 6px; }
+
 .pill.increase.active, .pill.active { color: var(--text); background: var(--accent); border-color: var(--accent); }

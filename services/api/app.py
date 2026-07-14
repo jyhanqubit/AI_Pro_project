@@ -330,6 +330,13 @@ def create_app() -> FastAPI:
         payload["failures"] = [f.__dict__ for f in failures]
         return payload
 
+    @app.get("/v1/experiments/switchback")
+    def experiments_switchback() -> dict:
+        """SIMULATED clustered-switchback battery results for the Experiment Lab (§17, §18)."""
+        from .experiments import run_battery
+
+        return run_battery()
+
     @app.post("/v1/recommendations/compare-event-impact")
     def compare_event_impact_endpoint(body: RecommendationApiRequest) -> dict:
         """Event ON/OFF Top-3 overlap over a frozen candidate set (V1_Prompt §15)."""

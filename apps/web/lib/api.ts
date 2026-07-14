@@ -155,6 +155,29 @@ export interface RebalancingResponse {
   note: string;
 }
 
+export interface ExperimentOut {
+  experiment_id: string;
+  hypothesis: string;
+  n_units: number;
+  itt_effect: number;
+  itt_ci: [number, number];
+  cuped_itt_effect: number;
+  cuped_ci: [number, number];
+  srm_ok: boolean;
+  ci_excludes_zero: boolean;
+  status: string;
+}
+
+export interface ExperimentsResponse {
+  design: string;
+  randomization_unit: string;
+  metric_name: string;
+  is_simulated: boolean;
+  disclaimer: string;
+  aa_validation_passed: boolean;
+  experiments: ExperimentOut[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -196,4 +219,5 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ cutoff, method }),
     }),
+  experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
 };
