@@ -208,6 +208,32 @@ export interface ModelLiftResponse {
   note: string;
 }
 
+export interface NewsHit {
+  article_id: string;
+  title: string;
+  source: string;
+  published_at: string;
+  score: number;
+}
+export interface NewsSearchResponse {
+  query: string;
+  n_indexed: number;
+  embedder: string;
+  results: NewsHit[];
+}
+export interface NewsCluster {
+  cluster_id: number;
+  size: number;
+  representative_title: string;
+  article_ids: string[];
+}
+export interface NewsClustersResponse {
+  n_indexed: number;
+  threshold: number;
+  n_clusters: number;
+  clusters: NewsCluster[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -251,4 +277,8 @@ export const api = {
     }),
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
   modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),
+  newsSearch: (q: string, k = 5) =>
+    req<NewsSearchResponse>(`/v1/news/search?q=${encodeURIComponent(q)}&k=${k}`),
+  newsClusters: (threshold = 0.3) =>
+    req<NewsClustersResponse>(`/v1/news/clusters?threshold=${threshold}`),
 };

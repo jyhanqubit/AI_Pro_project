@@ -337,6 +337,32 @@ def create_app() -> FastAPI:
 
         return run_battery()
 
+    @app.get("/v1/news/search")
+    def news_search(q: str, k: int = 5) -> dict:
+        """Semantic search over the accumulating news vector store (FAISS)."""
+        from .news import NewsSearchUnavailable, search
+
+        try:
+            return search(q, k=k)
+        except NewsSearchUnavailable as e:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "vectorstore_unavailable", "message": str(e)},
+            ) from e
+
+    @app.get("/v1/news/clusters")
+    def news_clusters(threshold: float = 0.3) -> dict:
+        """Same-event clusters over the news vector store."""
+        from .news import NewsSearchUnavailable, clusters
+
+        try:
+            return clusters(threshold=threshold)
+        except NewsSearchUnavailable as e:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "vectorstore_unavailable", "message": str(e)},
+            ) from e
+
     @app.get("/v1/model/lift")
     def model_lift() -> dict:
         """Measured M0/M1 ablation + event-lift verdict for the Model Lift Lab (§9, §10)."""

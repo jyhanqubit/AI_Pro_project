@@ -72,6 +72,23 @@ def test_persist_and_reload_accumulates(tmp_path: Path) -> None:
     assert s2.search("Grove Street PATH", k=1)[0][0].article_id == "n1"
 
 
+def test_same_event_clustering() -> None:
+    from ml.vectorstore.cluster import cluster_news
+
+    store = NewsVectorStore()
+    store.add([
+        _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),
+        _rec(2, "PATH service halted after signal problem at Hoboken"),
+        _rec(3, "Hoboken PATH trains suspended due to signal failure"),
+        _rec(4, "Jersey City budget vote scheduled for next week"),
+    ])
+    clusters = cluster_news(store, threshold=0.3)
+    biggest = clusters[0]
+    assert biggest.size == 3  # the three PATH wire copies group into one event
+    assert set(biggest.article_ids) == {"n1", "n2", "n3"}
+    assert any(c.size == 1 and c.article_ids == ["n4"] for c in clusters)  # unrelated stays apart
+
+
 def test_recsys_faiss_index_matches_exact_torch_index() -> None:
     """The optional FaissIndex (IndexFlatIP) must return the same Top-K as ExactTorchIndex."""
     import torch

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 const RIDER_TABS = [{ href: "/", label: "자전거 찾기" }];
 const OPERATOR_TABS = [
   { href: "/why", label: "수요 급증 원인" },
+  { href: "/news", label: "뉴스 검색" },
   { href: "/scenario", label: "시나리오 비교" },
   { href: "/rebalancing", label: "재배치 계획" },
   { href: "/model-lift", label: "모델 Lift" },
