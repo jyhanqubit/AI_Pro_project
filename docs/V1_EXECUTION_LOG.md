@@ -17,7 +17,7 @@ Read this file to resume after any context compaction.
 | Phase | Status | Notes |
 |-------|--------|-------|
 | V1-00 Contract migration & audit | **PASSED** | Added `contracts/v1/*` (6 modes, ClaimState, 11 contracts), `config/v1/*.yaml`, `docs/V1_*.md`. v0 untouched; v0 tests still green. New contract tests added. |
-| V1-01 Historical news backfill & coverage gate | TODO | Needs real GDELT → expect `BLOCKED_DATA` for real-news claim; build fixture provider + coverage gate offline. |
+| V1-01 Historical news backfill & coverage gate | **PASSED (real-news claim BLOCKED_DATA)** | `config/backfill.py` + `pipelines/collectors/{backfill,coverage,backfill_demo}.py`. NewsProvider interface: `FixtureNewsProvider` (offline default) + `GdeltNewsProvider` (disabled → degraded, no fabricated data). Ontology+city filter, url+title-hash dedup, **restart-safe checkpoint (idempotent)**, coverage report (§7 fields; event/feature fields null until V1-02), coverage gate. Demo: raw 4 → accepted 3, gate passes. Real GDELT offline → real-news accuracy claim **BLOCKED_DATA** (no timestamp shifts). 8 tests. `make v1-backfill-news`. |
 | V1-02 Real event extraction & incremental features | TODO | |
 | V1-03 Model registry & dual inference | TODO | |
 | V1-04 Event-lift evaluation | TODO | Claim gated on V1-01 real news. |

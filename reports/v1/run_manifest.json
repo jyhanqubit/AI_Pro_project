@@ -7,7 +7,7 @@
   "operating_mode": "demo_fixture",
   "phase_status": {
     "V1-00": "PASSED",
-    "V1-01": "TODO",
+    "V1-01": "PASSED_BLOCKED_DATA",
     "V1-02": "TODO",
     "V1-03": "TODO",
     "V1-04": "TODO",
