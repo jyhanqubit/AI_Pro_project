@@ -44,13 +44,15 @@ class BackfillConfig:
     _extra: tuple[str, ...] = field(default_factory=tuple)
 
 
-# Default GDELT DOC query for the served area's mobility-relevant news (opt-in live collection).
-# Strong Jersey City / Hoboken anchor AND mobility-specific terms only — broad words like
-# "event/storm/train" pull in national noise, so they are deliberately excluded.
+# Default GDELT DOC query for the served area's **bike-demand-relevant** news (opt-in live
+# collection). Anchored on Jersey City / Hoboken, and targeted at what actually shifts bike-share
+# demand: the bike system itself, plus the mobility disruptions and crowd-draws that push riders
+# onto bikes. Broad words are excluded to keep the signal-to-noise usable.
 DEFAULT_GDELT_QUERY = (
-    '("Jersey City" OR Hoboken OR "Journal Square") '
-    '("NJ Transit" OR PATH train OR "light rail" OR commute OR "road closure" OR '
-    'detour OR "street closure" OR "service change" OR "station closed")'
+    '("Jersey City" OR Hoboken OR "Journal Square" OR "Hudson County") '
+    '("Citi Bike" OR CitiBike OR "bike share" OR "bike lane" OR bicycle OR cycling OR '
+    'e-bike OR "NJ Transit" OR PATH train OR "light rail" OR commute OR "road closure" OR '
+    'detour OR "street closure" OR concert OR festival OR flood)'
 )
 
 
