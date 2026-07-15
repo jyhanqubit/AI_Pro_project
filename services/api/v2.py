@@ -449,3 +449,129 @@ def allocate_extra_bikes(engine: ReplayEngine, cutoff: datetime, extra: int) -> 
             "Phase 06 모델이 아닙니다."
         ),
     }
+
+
+def _alias_index() -> dict[str, tuple[str, ...]]:
+    """Per-station lowercased match terms for the copilot slot resolver (from the gazetteer)."""
+    out: dict[str, tuple[str, ...]] = {}
+    for sid, p in _gazetteer().items():
+        out[sid] = tuple(t.lower() for t in (p.ko, p.en, p.area, sid, *p.aliases) if t)
+    return out
+
+
+def _views_by_id(views: list[StationView]) -> dict[str, StationView]:
+    return {v.station_id: v for v in views}
+
+
+def rider_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
+    """Answer a rider's natural-language query, grounded entirely in the as-of tool results.
+
+    The intent is parsed deterministically (``rider_copilot.parse``); the answer text copies live
+    numbers from ``station_views`` / available events verbatim — nothing is fabricated. Unsupported
+    queries return ``supported=False`` with a clarification instead of a made-up answer.
+    """
+    from .rider_copilot import parse
+
+    parsed = parse(query, _alias_index())
+    views = station_views(engine, cutoff)
+    by_id = _views_by_id(views)
+    good = sorted(
+        (v for v in views if v.level in ("plenty", "ok")),
+        key=lambda v: (_LEVEL_RANK[v.level], -v.surplus),
+    )
+    low = sorted(
+        (v for v in views if v.level in ("low", "tight")),
+        key=lambda v: (-_LEVEL_RANK[v.level], v.shortage * -1),
+    )
+    events = engine.available_events(cutoff)
+
+    supported = True
+    stations: list[StationView] = []
+    answer = ""
+
+    if parsed.intent in ("status_at_location", "return_at_location") and parsed.station_id:
+        v = by_id[parsed.station_id]
+        stations = [v]
+        if parsed.intent == "return_at_location":
+            answer = f"{v.ko}은(는) 지금 반납 여유가 {v.docks_free}칸이에요 (정원 {v.capacity}대)."
+        else:
+            answer = (
+                f"{v.ko}은(는) 지금 자전거 {v.bikes}대예요. 상태: {v.level_label}. "
+                f"반납 여유는 {v.docks_free}칸입니다."
+            )
+            if v.demand_delta > 0.001:
+                answer += " 이벤트로 이 지역 수요가 늘고 있어요."
+            elif v.level in ("low", "tight") and good:
+                answer += f" 재고가 빠듯하면 {good[0].ko}({good[0].bikes}대)도 확인해 보세요."
+
+    elif parsed.intent == "best_availability":
+        stations = good[:3]
+        if stations:
+            names = ", ".join(f"{v.ko}({v.bikes}대)" for v in stations)
+            answer = f"지금 빌리기 좋은 곳은 {names}예요."
+        else:
+            answer = "지금은 어느 곳도 넉넉하지 않아요. 곧 부족한 지역을 피해 서두르는 게 좋아요."
+
+    elif parsed.intent == "shortage_warning":
+        stations = low[:3]
+        if stations:
+            names = ", ".join(v.ko for v in stations)
+            alt = f" 여유 지역({', '.join(v.ko for v in good[:2])})을 이용하세요." if good else ""
+            answer = f"곧 부족할 수 있는 곳: {names}.{alt}"
+        else:
+            answer = "지금은 부족한 대여소가 없어요. 어디서든 빌리기 좋아요."
+
+    elif parsed.intent == "best_return":
+        stations = sorted(views, key=lambda v: -v.docks_free)[:3]
+        names = ", ".join(f"{v.ko}({v.docks_free}칸)" for v in stations)
+        answer = f"반납 여유가 많은 곳: {names}."
+
+    elif parsed.intent == "events":
+        if events:
+            lines = "; ".join(f"{i + 1}) {e.event_title}" for i, e in enumerate(events))
+            answer = (
+                f"지금 영향을 주는 이벤트 {len(events)}건: {lines}. 관련 지역 수요가 늘 수 있어요."
+            )
+            if parsed.station_id:
+                v = by_id[parsed.station_id]
+                stations = [v]
+        else:
+            answer = "현재 시각 기준으로 공개된 이벤트는 없어요. 수요는 평상시 수준입니다."
+
+    elif parsed.intent == "help":
+        answer = (
+            "대여소 찾기, 빌리기 좋은 곳, 곧 부족한 곳, 반납 여유, 지금 이벤트를 알려드릴 수 "
+            "있어요. 예: '시청 근처 자전거 있어?', '반납 어디가 여유로워?', '지금 무슨 일 있어?'"
+        )
+
+    else:  # unknown -> clarification, never a fabricated answer
+        supported = False
+        answer = (
+            "질문을 이해하지 못했어요. 대여소 찾기, 빌리기 좋은 곳, 곧 부족한 곳, 반납 여유, "
+            "지금 이벤트를 물어봐 주세요. 예: '뉴포트 자전거 있어?'"
+        )
+
+    return {
+        "mode": engine.mode,
+        "cutoff": engine.cutoff,
+        "model_version": engine.model_version,
+        "query": query,
+        "intent": parsed.intent,
+        "supported": supported,
+        "answer": answer,
+        "stations": [_view_out(v) for v in stations],
+        "events": [
+            {
+                "event_id": e.event_id,
+                "event_type": str(e.event_type),
+                "event_title": e.event_title,
+                "demand_effect": str(e.demand_effect),
+            }
+            for e in (events if parsed.intent == "events" else [])
+        ],
+        "note": (
+            "규칙 기반(비-LLM) 도우미입니다. 모든 수치는 현재 재생 시각(as-of)의 실제 재고에서 "
+            "그대로 가져온 값이며 임의로 생성하지 않습니다. 이해하지 못한 질문에는 답을 지어내지 "
+            "않고 되물어봅니다."
+        ),
+    }

@@ -36,6 +36,7 @@ from .schemas import (
     RebalancingResponse,
     RecommendationApiRequest,
     ReplayState,
+    RiderAskRequest,
     ScenarioRequest,
     ScenarioResponse,
     ScenarioZone,
@@ -377,6 +378,13 @@ def create_app() -> FastAPI:
         from .v2 import station_search
 
         return station_search(engine, q, engine.cutoff, limit=k)
+
+    @app.post("/v2/rider/ask")
+    def rider_ask_endpoint(engine: EngineDep, body: RiderAskRequest) -> dict:
+        """V2 rider copilot: deterministic, tool-grounded answers to a natural-language query."""
+        from .v2 import rider_ask
+
+        return rider_ask(engine, body.query, engine.cutoff)
 
     @app.get("/v2/operator/statistics")
     def operator_statistics_endpoint(engine: EngineDep) -> dict:

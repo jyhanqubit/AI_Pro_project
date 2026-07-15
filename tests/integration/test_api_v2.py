@@ -229,3 +229,59 @@ def test_allocate_cutoff_out_of_window_is_400(client: TestClient) -> None:
     )
     assert r.status_code == 400
     assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"
+
+
+# ---- rider copilot (deterministic, grounded) -------------------------------------------------
+
+
+def test_ask_status_is_grounded_in_search(client: TestClient) -> None:
+    # The copilot's station numbers must match the search endpoint exactly (no fabrication).
+    _set(client, CONCERT)
+    ask = client.post("/v2/rider/ask", json={"query": "시청 자전거 있어?"}).json()
+    assert ask["supported"] is True
+    assert ask["intent"] == "status_at_location"
+    assert ask["stations"], "a located status answer carries the station it describes"
+    s = ask["stations"][0]
+    hit = client.get("/v2/rider/stations/search", params={"q": "시청"}).json()["stations"][0]
+    assert s["station_id"] == hit["station_id"]
+    assert s["bikes"] == hit["bikes"]
+    assert s["docks_free"] == hit["docks_free"]
+    # The bike count is quoted verbatim in the answer text.
+    assert f"{s['bikes']}대" in ask["answer"]
+
+
+def test_ask_best_availability_lists_good_stations(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/rider/ask", json={"query": "빌리기 좋은 곳 어디야"}).json()
+    assert ask["intent"] == "best_availability"
+    assert ask["stations"]
+    assert all(s["level"] in ("plenty", "ok") for s in ask["stations"])
+
+
+def test_ask_events_matches_available_events(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/rider/ask", json={"query": "지금 무슨 일 있어?"}).json()
+    events = client.get("/v1/events").json()["events"]
+    assert ask["intent"] == "events"
+    assert len(ask["events"]) == len(events)
+
+
+def test_ask_unsupported_returns_clarification_not_fabrication(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/rider/ask", json={"query": "날씨 어때?"}).json()
+    assert ask["supported"] is False
+    assert ask["intent"] == "unknown"
+    assert ask["stations"] == []
+
+
+def test_ask_is_deterministic(client: TestClient) -> None:
+    _set(client, CONCERT)
+    a = client.post("/v2/rider/ask", json={"query": "곧 부족한 곳 알려줘"}).json()
+    b = client.post("/v2/rider/ask", json={"query": "곧 부족한 곳 알려줘"}).json()
+    assert a["answer"] == b["answer"]
+    assert [s["station_id"] for s in a["stations"]] == [s["station_id"] for s in b["stations"]]
+
+
+def test_ask_empty_query_is_rejected(client: TestClient) -> None:
+    r = client.post("/v2/rider/ask", json={"query": ""})
+    assert r.status_code == 422  # Pydantic min_length

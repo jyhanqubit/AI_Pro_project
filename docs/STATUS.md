@@ -49,6 +49,10 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
 - **Rider map view** — a ☰ 목록 / 🗺 지도 toggle on the rider home; the map is a self-contained SVG
   that projects stations by real lat/lng (offline, no tile provider / API key), colours markers by
   availability with 🔥 surge rings, and opens the station detail sheet on click.
+- **Rider copilot** — a no-LLM natural-language ask on the rider home (`POST /v2/rider/ask`).
+  A deterministic parser (`services/api/rider_copilot.py`) classifies a Korean/English query into an
+  allowlisted intent and answers **only from live tool results** (numbers copied verbatim, nothing
+  fabricated); unsupported queries return a clarification, not a made-up answer.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

@@ -401,6 +401,26 @@ export interface AllocationResponse {
   note: string;
 }
 
+export interface CopilotEvent {
+  event_id: string;
+  event_type: string;
+  event_title: string;
+  demand_effect: EffectDirection;
+}
+
+export interface RiderAskResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  query: string;
+  intent: string;
+  supported: boolean;
+  answer: string;
+  stations: StationHit[];
+  events: CopilotEvent[];
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -455,6 +475,11 @@ export const api = {
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
   operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
+  riderAsk: (query: string, cutoff?: string) =>
+    req<RiderAskResponse>("/v2/rider/ask", {
+      method: "POST",
+      body: JSON.stringify({ query, cutoff: cutoff ?? null }),
+    }),
   allocateExtraBikes: (extraBikes: number, cutoff?: string) =>
     req<AllocationResponse>("/v2/operator/rebalancing/allocate", {
       method: "POST",

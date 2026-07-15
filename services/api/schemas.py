@@ -208,3 +208,10 @@ class ExtraBikeAllocationRequest(BaseModel):
 
     extra_bikes: int = Field(ge=0, le=1000, description="Extra bikes to inject into the network")
     cutoff: AwareDatetime | None = None
+
+
+class RiderAskRequest(BaseModel):
+    """A rider's natural-language query for the deterministic copilot (V2)."""
+
+    query: str = Field(min_length=1, max_length=200)
+    cutoff: AwareDatetime | None = None

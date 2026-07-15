@@ -254,6 +254,17 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 }
 .search-clear:hover { color: var(--text); border: none; }
 
+/* Rider copilot (natural-language ask) */
+.copilot h2 { font-size: 16px; }
+.copilot-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.copilot-answer {
+  margin-top: 12px; padding: 12px 14px; border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+}
+.copilot-answer.unsupported { border-left-color: var(--muted); }
+.copilot-answer .answer-text { margin: 0; font-size: 15px; line-height: 1.6; }
+
 .chips-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 
 /* List / map view toggle (rider home) */

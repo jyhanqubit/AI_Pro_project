@@ -8,6 +8,7 @@ import {
   api,
   type AvailabilityLevel,
   type EventOut,
+  type RiderAskResponse,
   type StationHit,
   type StationSearchResponse,
 } from "@/lib/api";
@@ -153,6 +154,96 @@ function StationSheet({
   );
 }
 
+// Rider copilot: ask in natural language. The answer + every number come from the deterministic,
+// tool-grounded backend (/v2/rider/ask) — no LLM key, nothing fabricated.
+const COPILOT_CHIPS = [
+  "빌리기 좋은 곳",
+  "곧 부족한 곳",
+  "반납 여유",
+  "지금 무슨 일 있어?",
+];
+
+function RiderCopilot({
+  cutoff,
+  onOpen,
+}: {
+  cutoff: string | null;
+  onOpen: (id: string) => void;
+}) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<RiderAskResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function ask(query: string) {
+    const text = query.trim();
+    if (!text || !cutoff) return;
+    setLoading(true);
+    try {
+      setRes(await api.riderAsk(text, cutoff));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="card copilot">
+      <h2>🚲 자전거 도우미에게 물어보세요</h2>
+      <div className="sub">
+        자연어로 물어보면 지금 재고를 바탕으로 답해드려요 (규칙 기반 · 오프라인).
+      </div>
+
+      <div className="searchbar" style={{ marginTop: 10 }}>
+        <span className="search-icon" aria-hidden="true">💬</span>
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && ask(q)}
+          placeholder="예: 시청 근처 자전거 있어? · 반납 어디가 여유로워?"
+          aria-label="자전거 도우미 질문"
+        />
+        <button className="btn primary" onClick={() => ask(q)} disabled={loading || !cutoff}>
+          {loading ? "…" : "물어보기"}
+        </button>
+      </div>
+
+      <div className="copilot-chips">
+        {COPILOT_CHIPS.map((c) => (
+          <button
+            key={c}
+            className="chip"
+            onClick={() => {
+              setQ(c);
+              void ask(c);
+            }}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+
+      {error && <div className="notice error" style={{ marginTop: 10 }}>{error}</div>}
+
+      {res && (
+        <div className={`copilot-answer ${res.supported ? "" : "unsupported"}`}>
+          <p className="answer-text">{res.answer}</p>
+          {res.stations.length > 0 && (
+            <div className="station-list" style={{ marginTop: 10 }}>
+              {res.stations.map((s) => (
+                <StationRow key={s.station_id} s={s} onOpen={() => onOpen(s.station_id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RiderHome() {
   const router = useRouter();
   const { state, refreshKey, setSelectedZone } = useReplay();
@@ -215,6 +306,9 @@ export default function RiderHome() {
           몰리는 지역도 함께 알려드려요.
         </p>
       </div>
+
+      {/* Natural-language copilot (deterministic, tool-grounded) */}
+      <RiderCopilot cutoff={cutoff} onOpen={(id) => setOpenId(id)} />
 
       {/* Search bar — bike-share app style */}
       <div className="searchbar">

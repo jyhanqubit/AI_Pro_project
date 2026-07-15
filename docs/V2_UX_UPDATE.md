@@ -125,6 +125,26 @@ detail sheet on click/Enter. It is clearly captioned a schematic (개략도) —
 streets. The equirectangular projection compresses longitude by `cos(lat)` and fits the station
 bounding box into a padded viewport.
 
+### 8. Rider copilot — deterministic, tool-grounded natural-language ask
+
+A no-LLM natural-language helper on the rider home (V2-04's rider copilot, deterministic-provider
+variant). `POST /v2/rider/ask` classifies a Korean/English query into one allowlisted intent and
+answers **only from live tool results** — every number is copied from `station_views` / available
+events, nothing is fabricated. Unsupported queries return `supported: false` with a clarification
+instead of a made-up answer.
+
+- Parser (`services/api/rider_copilot.py`) is a **pure function** of (query, aliases): intents are
+  `status_at_location`, `return_at_location`, `best_availability`, `shortage_warning`, `best_return`,
+  `events`, `help`, `unknown`. Slot resolution reuses the station gazetteer aliases. Deterministic
+  and unit-tested in isolation.
+- Grounding (`v2.rider_ask`) assembles the answer text + the station cards it describes from the
+  as-of state; the bike counts quoted in the text match the search endpoint exactly (asserted).
+- UI: a "🚲 자전거 도우미에게 물어보세요" card at the top of the rider home with a chat input and quick
+  chips (빌리기 좋은 곳 / 곧 부족한 곳 / 반납 여유 / 지금 무슨 일 있어?). Answers render as a grounded
+  bubble with the relevant station rows (which open the detail sheet). Files:
+  `services/api/rider_copilot.py`, `v2.rider_ask`, `RiderAskRequest`, and the `RiderCopilot`
+  component in `apps/web/app/page.tsx`.
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at
