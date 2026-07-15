@@ -52,7 +52,20 @@ header.topbar {
 }
 .brand { font-weight: 700; letter-spacing: 0.2px; }
 .brand small { color: var(--muted); font-weight: 400; margin-left: 6px; }
+/* Top-level rider/operator role switch (segmented control) */
+.role-switch {
+  display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px;
+  background: var(--panel-2); border: 1px solid var(--border);
+}
+.role-switch button {
+  border: none; background: none; color: var(--muted); font-weight: 700; font-size: 13px;
+  padding: 6px 14px; border-radius: 999px; cursor: pointer;
+}
+.role-switch button:hover { color: var(--text); border: none; }
+.role-switch button.active { background: var(--accent); color: #06121d; }
+
 nav.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+nav.tabs a.rider-back { color: var(--accent); font-weight: 600; }
 nav.tabs a {
   padding: 6px 12px; border-radius: 8px; color: var(--muted);
   border: 1px solid transparent;

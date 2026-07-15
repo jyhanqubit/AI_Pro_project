@@ -42,6 +42,10 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   (12 routes), ruff + mypy clean on the new modules. The 9 `torch`-dependent recsys/model tests
   can't run here (the PyTorch wheel index is blocked by the container proxy) — they are unrelated
   to this change.
+- **Rider / operator experience split** — a top-level role switch (🚲 라이더 / 🛠 운영자, persisted).
+  Rider mode is a clean consumer view (operator tools hidden, read-only replay clock); operator mode
+  shows the full tool tab bar + replay control. Deep-links to operator routes auto-select operator
+  mode. Plus a **Noto Sans KR** gothic font (self-hosted via `next/font`) for Korean readability.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

@@ -99,6 +99,28 @@ relocation solver (which conserves the total): here we **add** bikes.
   `placed`, `leftover`, `shortage_units_before/after`, `overflow_units_before/after`,
   `cost_before/after`, `benefit`, and the per-station `added`.
 
+### 6. Rider / operator experience split — top-level role switch
+
+The app now separates the two audiences (V2 goal "Rider / Operator 최상위 경험 분리"):
+
+- A segmented **role switch** in the top bar (🚲 라이더 / 🛠 운영자), persisted to `localStorage`.
+- **Rider mode** is a clean consumer view: the operator tab bar is hidden, and the replay strip is
+  a compact **read-only** clock (`RiderClock`) — the mode + as-of time are shown honestly (never
+  fixture-as-live), but the scrubber/presets are an operator control. A drill-in to "why is this
+  busy?" (`/why`) shows a "← 자전거 찾기" back link.
+- **Operator mode** shows the full tool tab bar (통계·원인·뉴스·시나리오·재배치·모델 Lift·이상 탐지·실험)
+  and the full replay control (event presets + scrubber).
+- Deep-linking to an operator-only route (e.g. `/statistics`) auto-selects operator mode, so shared
+  links land in the right experience. Not a security boundary — Demo Mode has no auth.
+- Files: `apps/web/app/role.tsx` (context), `components/RoleSwitch.tsx`, `components/ReplayArea.tsx`,
+  `components/RiderClock.tsx`, role-aware `components/Nav.tsx`.
+
+### Typography
+
+Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at
+runtime; weights 400/500/700/800), with a platform-gothic fallback stack (Apple SD Gothic Neo /
+Malgun Gothic), line-height 1.6, and `word-break: keep-all`.
+
 ## Files
 
 | Area | File | Change |
