@@ -381,3 +381,47 @@ def test_ops_unsupported_returns_clarification(client: TestClient) -> None:
 
 def test_ops_empty_query_is_rejected(client: TestClient) -> None:
     assert client.post("/v2/operator/ask", json={"query": ""}).status_code == 422
+
+
+# ---- hybrid geo-semantic search (V2-03) ------------------------------------------------------
+
+
+def test_hybrid_geo_query_ranks_nearest_and_hydrates_live(client: TestClient) -> None:
+    _set(client, CONCERT)
+    r = client.get(
+        "/v2/rider/search/hybrid",
+        params={"q": "City Hall 근처 자전거", "lat": 40.7377, "lng": -74.0324, "k": 3},
+    ).json()
+    assert r["provider"] == "local-hybrid"
+    assert r["degraded"] is False
+    stations = [x for x in r["results"] if x["kind"] == "station"]
+    assert stations[0]["station"]["station_id"] == "JC_CITYHALL"
+    assert stations[0]["distance_km"] == 0.0
+    # Live inventory is hydrated from the operational store and matches the search endpoint.
+    hit = client.get("/v2/rider/stations/search", params={"q": "시청"}).json()["stations"][0]
+    assert stations[0]["station"]["bikes"] == hit["bikes"]
+
+
+def test_hybrid_typo_resolves(client: TestClient) -> None:
+    _set(client, CONCERT)
+    r = client.get("/v2/rider/search/hybrid", params={"q": "호보켄터미널", "k": 2}).json()
+    stations = [x for x in r["results"] if x["kind"] == "station"]
+    assert stations[0]["station"]["station_id"] == "JC_HOBOKEN"
+
+
+def test_hybrid_help_query_returns_help_doc(client: TestClient) -> None:
+    _set(client, CONCERT)
+    r = client.get("/v2/rider/search/hybrid", params={"q": "요금 할증 얼마", "k": 2}).json()
+    assert any(x["kind"] == "help" and x["doc_id"] == "help_pricing" for x in r["results"])
+
+
+# ---- predictive lift (V2-02) -----------------------------------------------------------------
+
+
+def test_predictive_lift_is_honestly_blocked_offline(client: TestClient) -> None:
+    d = client.get("/v2/model/predictive-lift").json()
+    # The demo fixture cannot pass the coverage gate → claim disabled, honestly (no fabrication).
+    assert d["coverage_ok"] is False
+    assert d["verdict"] == "blocked_data"
+    assert d["claim_enabled"] is False
+    assert d["coverage"]["unique_events"] >= 1  # real measured coverage numbers

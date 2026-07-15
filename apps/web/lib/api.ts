@@ -477,6 +477,24 @@ export interface OpsAskResponse {
   note: string;
 }
 
+export interface PredictiveLiftResponse {
+  protocol: string;
+  coverage: {
+    unique_events: number;
+    unique_sources: number;
+    event_types: number;
+    affected_zone_hours: number;
+  };
+  coverage_gate: Record<string, number>;
+  coverage_conditions: Record<string, boolean>;
+  coverage_ok: boolean;
+  verdict: string;
+  claim_enabled: boolean;
+  mean_gain: number;
+  ci_95: [number, number];
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -520,6 +538,7 @@ export const api = {
     }),
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
   modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),
+  predictiveLift: () => req<PredictiveLiftResponse>("/v2/model/predictive-lift"),
   newsSearch: (q: string, k = 5) =>
     req<NewsSearchResponse>(`/v1/news/search?q=${encodeURIComponent(q)}&k=${k}`),
   newsClusters: (threshold = 0.3) =>

@@ -184,6 +184,39 @@ so the UI can jump to the matching screen (V2-07: "copilot answer가 dashboard d
   Files: `services/api/ops_copilot.py`, `v2.ops_ask`, `OpsAskRequest`, `OpsCopilot` in
   `apps/web/app/statistics/page.tsx`.
 
+### 11. Hybrid geo-semantic search (V2-03, offline)
+
+Provider-based search. `GET /v2/rider/search/hybrid?q=&lat=&lng=&k=` fuses three rankers with
+Reciprocal Rank Fusion: **BM25** lexical, a **char-n-gram vector** (typo / Korean-alias tolerance,
+reusing the deterministic `LexicalEmbedder`), and **geo_distance** when a query point is supplied.
+Hits are re-hydrated with live inventory from the operational store (the search index is never the
+source of truth for numbers).
+
+- Providers (`ml/search/`): `LocalHybridProvider` (default, offline, the only tested path) and an
+  optional `ElasticsearchProvider` (flag `ENABLE_ELASTIC`, lazy import; if the cluster is missing
+  the factory **degrades to local** and reports `degraded: true` — never a fabricated result).
+- Corpus indexes the five demo stations (with geo) plus a small help set; gold relevance set in
+  `data/fixtures/search_gold.json` (Korean names, English, aliases, a typo, a geo-near query, help).
+- `make v2-evaluate-search` reports **Recall@10 / MRR@10 / NDCG@5 / geo-valid@5 / p50-p95 latency**
+  measured on the offline provider (all 1.0 on the gold set; p50 ≈ 0.1 ms). Files:
+  `config/search_v2.py`, `ml/search/*`, `v2.hybrid_search`.
+
+### 12. Predictive lift protocol (V2-02, honestly blocked offline)
+
+Formalises the "do event features reduce holdout error?" measurement with the honest V2 claim rule.
+`ml/forecasting/predictive_lift.py` is a pure, tested protocol: `chronological_split` (train/val/test
+with an embargo/purge gap), `block_bootstrap_ci` (paired improvement CI resampled over **event
+blocks**), and `lift_verdict` — a *measured improvement* is asserted only when the coverage gate
+passes **and** the 95% CI lies strictly above 0; otherwise the verdict is
+`no_lift` / `negative_lift` / `inconclusive` / `blocked_data` and the claim stays disabled.
+
+- The protocol is validated on synthetic data with known outcomes (`tests/unit/test_predictive_lift.py`).
+- The demo run (`make v2-evaluate-predictive-lift`, `GET /v2/model/predictive-lift`) measures the
+  **real** coverage of the demo fixture (2 events, 15 affected zone-hours — far below the gate) and
+  therefore reports **`blocked_data`** honestly, matching V1's `insufficient_event_overlap`. No
+  paired gain is fabricated. Surfaced in the Model Lift Lab with the coverage-gate table. A measured
+  claim requires a real overlapping-news backfill + training run (blocked in this offline env).
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at

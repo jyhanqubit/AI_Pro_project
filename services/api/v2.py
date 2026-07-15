@@ -843,3 +843,58 @@ def signed_delta(x: float) -> str:
     """'+3.9' / '-1.2' formatting for a demand delta (copilot verbalisation helper)."""
     v = f"{x:.1f}"
     return f"+{v}" if x > 0 else v
+
+
+def hybrid_search(
+    engine: ReplayEngine,
+    query: str,
+    cutoff: datetime,
+    *,
+    lat: float | None = None,
+    lng: float | None = None,
+    k: int = 10,
+) -> dict:
+    """V2-03 hybrid geo-semantic search, hydrated with as-of live inventory.
+
+    Ranking comes from the search provider (BM25 + vector + geo, RRF); the authoritative live
+    numbers are re-hydrated from the operational store (station_views) — never taken from the
+    search index. Elastic degrades to the offline local provider when unavailable.
+    """
+    from config.search_v2 import load_search_config
+    from ml.search import build_search_provider
+
+    handle = build_search_provider(load_search_config())
+    hits = handle.provider.search(query, lat=lat, lng=lng, k=k)
+    by_id = _views_by_id(station_views(engine, cutoff))
+
+    results = []
+    for h in hits:
+        row: dict = {
+            "doc_id": h.doc_id,
+            "kind": h.kind,
+            "title": h.title,
+            "score": round(h.score, 6),
+            "distance_km": h.distance_km,
+            "components": h.components,
+        }
+        if h.kind == "station" and h.station_id in by_id:
+            v = by_id[h.station_id]
+            row["station"] = _view_out(v)  # live inventory hydrated from the operational store
+        results.append(row)
+
+    return {
+        "mode": engine.mode,
+        "cutoff": engine.cutoff,
+        "query": query,
+        "provider": handle.provider.name,
+        "degraded": handle.degraded,
+        "provider_reason": handle.reason,
+        "geo": {"lat": lat, "lng": lng} if lat is not None and lng is not None else None,
+        "count": len(results),
+        "results": results,
+        "note": (
+            "하이브리드 검색(BM25 + 문자 n-gram 벡터 + geo, RRF 융합) 순위입니다. 실시간 "
+            "재고/가격의 source of truth는 운영 store이며, 검색 인덱스 값이 아니라 as-of 재고로 "
+            "hydrate합니다. Elasticsearch가 없으면 오프라인 local provider로 degrade합니다."
+        ),
+    }

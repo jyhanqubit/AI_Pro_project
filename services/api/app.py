@@ -381,6 +381,19 @@ def create_app() -> FastAPI:
 
         return station_search(engine, q, engine.cutoff, limit=k)
 
+    @app.get("/v2/rider/search/hybrid")
+    def rider_hybrid_search(
+        engine: EngineDep,
+        q: str = "",
+        lat: float | None = None,
+        lng: float | None = None,
+        k: int = 10,
+    ) -> dict:
+        """V2-03 hybrid geo-semantic search (BM25 + vector + geo, RRF); degrades to local."""
+        from .v2 import hybrid_search
+
+        return hybrid_search(engine, q, engine.cutoff, lat=lat, lng=lng, k=k)
+
     @app.post("/v2/rider/ask")
     def rider_ask_endpoint(engine: EngineDep, body: RiderAskRequest) -> dict:
         """V2 rider copilot: deterministic, tool-grounded answers to a natural-language query."""
@@ -435,6 +448,13 @@ def create_app() -> FastAPI:
                 },
             )
         return allocate_extra_bikes(engine, cutoff, body.extra_bikes)
+
+    @app.get("/v2/model/predictive-lift")
+    def predictive_lift_endpoint() -> dict:
+        """V2-02 predictive-lift verdict on the demo fixture (honestly blocked_data, offline)."""
+        from ml.forecasting.predictive_lift_demo import run
+
+        return run()
 
     @app.get("/v1/model/lift")
     def model_lift() -> dict:

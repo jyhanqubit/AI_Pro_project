@@ -64,6 +64,16 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   (`operator_statistics` / `pricing_quotes`) — no arbitrary SQL, no fabricated numbers; facts are
   asserted to match the statistics endpoint. Answers can return a **deep-link** to the matching
   screen. Rendered as a card on `/statistics`.
+- **Hybrid geo-semantic search** (V2-03) — provider-based (`GET /v2/rider/search/hybrid`): BM25 +
+  char-n-gram vector + geo, fused with RRF; hits re-hydrated from the operational store. Offline
+  `LocalHybridProvider` is the tested path; optional `ElasticsearchProvider` degrades to local when
+  unavailable. `make v2-evaluate-search` reports Recall@10 / MRR / NDCG@5 / geo-valid (all 1.0 on the
+  gold set).
+- **Predictive lift protocol** (V2-02) — pure, tested machinery (chronological split + purge/embargo,
+  event-block bootstrap CI, honest verdict rule). The demo run (`GET /v2/model/predictive-lift`,
+  `make v2-evaluate-predictive-lift`) measures real coverage and honestly reports **`blocked_data`**
+  (demo fixture far below the gate); a measured claim needs a real news backfill + training. Surfaced
+  in the Model Lift Lab.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

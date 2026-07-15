@@ -62,6 +62,7 @@ packages = [
     "ml.experiment",
     "ml.vectorstore",
     "ml.anomaly",
+    "ml.search",
     "optimization",
     "optimization.classical",
     "optimization.quantum",

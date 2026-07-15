@@ -1,0 +1,16 @@
+{
+  "description": "Gold relevance set for the V2-03 hybrid geo-semantic search evaluation. Each case lists the query, an optional geo point (lat/lng), and the relevant doc_ids. Covers Korean names, English names, aliases, a typo, a geo-near query, and a help query — the query types the V2-03 acceptance names.",
+  "cases": [
+    {"query": "시청", "relevant": ["station:JC_CITYHALL"]},
+    {"query": "City Hall 근처 자전거", "lat": 40.7377, "lng": -74.0324, "relevant": ["station:JC_CITYHALL"]},
+    {"query": "호보켄 터미널", "relevant": ["station:JC_HOBOKEN"]},
+    {"query": "hoboken", "relevant": ["station:JC_HOBOKEN"]},
+    {"query": "Grove Street", "relevant": ["station:JC_GROVE"]},
+    {"query": "뉴포트 자전거", "relevant": ["station:JC_NEWPORT"]},
+    {"query": "waterfront", "relevant": ["station:JC_NEWPORT"]},
+    {"query": "exchange place", "relevant": ["station:JC_EXCHANGE"]},
+    {"query": "호보켄터미널", "relevant": ["station:JC_HOBOKEN"]},
+    {"query": "요금 할증 얼마", "relevant": ["help_pricing"]},
+    {"query": "자전거 반납 어떻게", "relevant": ["help_return"]}
+  ]
+}
