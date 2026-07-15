@@ -1,88 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  api,
-  type NewsClustersResponse,
-  type NewsSearchResponse,
-  type NewsSyncResponse,
-} from "@/lib/api";
+import { api, type NewsClustersResponse, type NewsSearchResponse } from "@/lib/api";
+import { NewsSync } from "@/components/NewsSync";
 
 // 뉴스 벡터 검색 화면: FAISS 벡터 스토어에 누적된 뉴스에서 의미 기반 검색 +
 // 같은 사건(same-event) 클러스터를 보여준다. 실시간 수집이 쌓일수록 커진다.
-
-// 실시간 뉴스 동기화: 버튼을 누르면 무료·키 불필요 GDELT DOC 2.0에서 실제 뉴스를 끌어와
-// 벡터 스토어에 누적한다. 네트워크가 없으면 가짜 데이터 없이 degraded로 정직하게 표시한다.
-function NewsSync({ onSynced }: { onSynced: () => void }) {
-  const [res, setRes] = useState<NewsSyncResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function sync() {
-    setLoading(true);
-    try {
-      const r = await api.newsSync();
-      setRes(r);
-      setError(null);
-      if (r.status === "live" && r.added_to_index > 0) onSynced();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="card">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div>
-          <h2>실시간 뉴스 동기화</h2>
-          <div className="sub">
-            무료·키 불필요 GDELT DOC 2.0에서 최신 모빌리티 뉴스를 지금 끌어옵니다.
-          </div>
-        </div>
-        <button className="btn primary" onClick={sync} disabled={loading}>
-          {loading ? "동기화 중…" : "🔄 뉴스 동기화"}
-        </button>
-      </div>
-
-      {error && <div className="notice error" style={{ marginTop: 10 }}>{error}</div>}
-
-      {res && res.status === "live" && (
-        <div style={{ marginTop: 12 }}>
-          <div>
-            <span className="badge live"><span className="dot" /> LIVE</span>{" "}
-            <span className="muted small">
-              {res.fetched}건 수집 · 인덱스 +{res.added_to_index} · 출처 {res.unique_sources}곳
-            </span>
-          </div>
-          <div className="grid" style={{ gap: 8, marginTop: 10 }}>
-            {res.articles.slice(0, 8).map((a) => (
-              <div key={a.article_id} className="event-line">
-                <div>
-                  <strong>{a.title}</strong>
-                  <div className="muted small">
-                    {a.source} · {a.published_at?.slice(0, 16).replace("T", " ")}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="muted small" style={{ marginTop: 8 }}>{res.note}</p>
-        </div>
-      )}
-
-      {res && res.status === "degraded" && (
-        <div className="notice warn" style={{ marginTop: 12 }}>
-          <strong>degraded</strong> — 실시간 뉴스를 가져오지 못했습니다(네트워크 없음). 가짜 데이터를
-          만들지 않고 정직하게 표시합니다. 아웃바운드 네트워크가 있는 환경에 배포하면 그대로
-          동작합니다.
-          <div className="muted small mono" style={{ marginTop: 6 }}>{res.degraded_reason}</div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function NewsSearch() {
   const [query, setQuery] = useState("PATH suspended near Hoboken");

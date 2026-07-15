@@ -262,7 +262,8 @@ make api-lan                      # API를 0.0.0.0:8000 으로 (LAN 노출)
 make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig getifaddr en0, Linux: hostname -I)
 ```
 
-자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md) 참고.
+자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화·
+Elasticsearch·LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
 
 ## 상태
 

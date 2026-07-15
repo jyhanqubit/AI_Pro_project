@@ -571,9 +571,8 @@ def rider_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
             for e in (events if parsed.intent == "events" else [])
         ],
         "note": (
-            "규칙 기반(비-LLM) 도우미입니다. 모든 수치는 현재 재생 시각(as-of)의 실제 재고에서 "
-            "그대로 가져온 값이며 임의로 생성하지 않습니다. 이해하지 못한 질문에는 답을 지어내지 "
-            "않고 되물어봅니다."
+            "규칙 기반(비-LLM) 도우미입니다. 모든 수치는 현재 재생 시각(as-of)의 재고에서 그대로 "
+            "가져온 값입니다. 이해하지 못한 질문에는 다시 물어봐 주세요. (데모용 데이터입니다.)"
         ),
     }
 
@@ -834,7 +833,7 @@ def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
         "note": (
             "규칙 기반(비-LLM) 운영 도우미입니다. 모든 수치는 대시보드와 동일한 API artifact"
             "(operator_statistics / pricing_quotes)에서 그대로 가져오며, 임의 SQL은 실행하지 "
-            "않습니다(허용된 의도만). 이해하지 못한 질문에는 답을 지어내지 않고 되물어봅니다."
+            "않습니다(허용된 의도만). 이해하지 못한 질문에는 다시 물어봐 주세요."
         ),
     }
 

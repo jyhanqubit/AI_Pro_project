@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { signed } from "@/lib/format";
 import { StationMap } from "@/components/StationMap";
+import { NewsSync } from "@/components/NewsSync";
 
 // Rider home, redesigned V2 (usability update).
 // Inspired by consumer bike-share apps (따릉이 / Citi Bike): a prominent search bar,
@@ -155,7 +156,7 @@ function StationSheet({
 }
 
 // Rider copilot: ask in natural language. The answer + every number come from the deterministic,
-// tool-grounded backend (/v2/rider/ask) — no LLM key, nothing fabricated.
+// tool-grounded backend (/v2/rider/ask) — no LLM key; numbers are copied straight from live state.
 const COPILOT_CHIPS = [
   "빌리기 좋은 곳",
   "곧 부족한 곳",
@@ -309,6 +310,9 @@ export default function RiderHome() {
 
       {/* Natural-language copilot (deterministic, tool-grounded) */}
       <RiderCopilot cutoff={cutoff} onOpen={(id) => setOpenId(id)} />
+
+      {/* Pull the latest news that could affect nearby availability */}
+      <NewsSync compact />
 
       {/* Search bar — bike-share app style */}
       <div className="searchbar">

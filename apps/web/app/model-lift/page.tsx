@@ -5,7 +5,7 @@ import { useApi } from "@/lib/useApi";
 import { api, type ModelLiftResponse, type PredictiveLiftResponse } from "@/lib/api";
 
 // Model Lift Lab: 뉴스/이벤트/그래프 피처가 실제 예측 오차를 줄이는지(=이벤트 lift)를
-// 측정된 Phase 06 B0~B4 ablation으로 보여준다. 측정값만, 조작 없음.
+// 측정된 Phase 06 B0~B4 ablation으로 보여준다. 측정된 값만 표시한다.
 
 function Bar({ v, max }: { v: number; max: number }) {
   const pct = max > 0 ? Math.round((v / max) * 100) : 0;
@@ -124,8 +124,8 @@ export default function ModelLiftLab() {
       {noLift && (
         <div className="notice warn">
           ⚠ 이벤트 lift = <strong>측정 불가 (insufficient_event_overlap)</strong>. 큐레이션된 이벤트가
-          평가창 이후라 이벤트 피처가 전부 0 → B2~B4가 B1과 동일합니다. 숫자를 만들지 않고 정직하게
-          표기합니다.
+          평가창 이후라 이벤트 피처가 전부 0 → B2~B4가 B1과 동일합니다. 측정된 결과 그대로 표기합니다.
+          (데모용 데이터입니다.)
         </div>
       )}
 

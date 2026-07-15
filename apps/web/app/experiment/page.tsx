@@ -162,7 +162,7 @@ export default function ExperimentLab() {
           <Term
             term="A/A 검증"
             what="같은 정책끼리(P0 vs P0) 비교한 대조 실험."
-            mean={`효과가 0에 가깝고 CI가 0을 포함해야 정상. 이는 '실험 설계 자체가 가짜 효과를 만들지 않는다'는 증거. 현재 CI ${
+            mean={`효과가 0에 가깝고 CI가 0을 포함해야 정상. 실험 설계가 없는 효과를 만들어내지 않는지 확인하는 대조군. 현재 CI ${
               aa ? `[${pp(aa.itt_ci[0])}, ${pp(aa.itt_ci[1])}]` : ""
             } → ${d.aa_validation_passed ? "0 포함, 통과" : "0 미포함, 재점검 필요"}.`}
           />

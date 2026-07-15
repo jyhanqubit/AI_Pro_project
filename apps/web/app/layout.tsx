@@ -41,10 +41,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               <ReplayArea />
               {children}
               <p className="footer-note">
-                과거 재생(Historical Replay) 데모입니다. 예보는 측정된 Phase 06 모델이 아니라
-                라벨이 붙은 데모 heuristic(<span className="mono">demo-heuristic-v1</span>)에서 나오며,
-                이벤트로 인한 수요 변화(Δ)는 그래프 이벤트 노출 지표를 그대로 반영한 값입니다.
-                실제 서비스 데이터가 아닌 오프라인 뉴스·재고 fixture로 완전히 동작합니다.
+                데모용 데이터입니다. 과거 재생(Historical Replay) 모드로, 예보는 데모용
+                heuristic(<span className="mono">demo-heuristic-v1</span>)에서 나오며 수요 변화(Δ)는
+                그래프 이벤트 노출 지표를 반영합니다. 뉴스 동기화 시 불러온 실시간 뉴스에는 LIVE 배지가
+                붙습니다.
               </p>
             </div>
           </RoleProvider>
