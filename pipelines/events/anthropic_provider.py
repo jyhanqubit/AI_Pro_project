@@ -146,7 +146,7 @@ class AnthropicLlmProvider(LlmProvider):
         if self._client is not None:
             return self._client
         try:
-            import anthropic  # type: ignore[import-not-found]
+            import anthropic
         except ImportError as exc:  # SDK not installed -> honest degrade, no fabrication
             raise AnthropicProviderUnavailable(
                 "the 'anthropic' package is not installed (pip install anthropic)"

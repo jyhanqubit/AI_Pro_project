@@ -141,7 +141,42 @@ it never blocks search.
 
 ---
 
-## 7. Pre-deploy checks
+## 7. Databases (both optional — offline runs without either)
+
+Demo Mode and the golden-path pipeline run fully offline: the graph upsert uses an in-memory store
+and station data lives in JSON fixtures / SQLite. Bring up a real database only when you want live
+persistence. `docker-compose.yml` provisions both.
+
+**Relational store (station network + inventory) — SQLite default, Postgres optional:**
+
+```bash
+pip install -e '.[rdb]'
+make db-load                                  # -> SQLite at data/processed/shockflow.db
+#   loads the station fixtures (H3 zones resolved) + an inventory snapshot, idempotently
+
+# Postgres instead (same code, no changes):
+docker compose up -d postgres
+pip install -e '.[rdb]' 'psycopg[binary]'
+export DATABASE_URL='postgresql+psycopg://shockflow:shockflow@localhost:5432/shockflow'
+make db-load
+```
+
+**Graph store (event graph) — in-memory default, live Neo4j optional:**
+
+```bash
+docker compose up -d neo4j                    # bolt://localhost:7687, browser http://localhost:7474
+pip install -e '.[graph]'
+export NEO4J_URI=bolt://localhost:7687 NEO4J_USER=neo4j NEO4J_PASSWORD=shockflow_dev
+make graph-upsert-neo4j                        # writes the event graph to the live server
+#   without NEO4J_PASSWORD the pipeline stays on the offline in-memory store (make graph-upsert-demo)
+```
+
+The forecasting graph features are pure functions and never require Neo4j — it is the graph
+upsert/audit surface only, not the forecasting critical path.
+
+---
+
+## 8. Pre-deploy checks
 
 ```bash
 make test                 # backend suite (torch-optional tests skip if torch absent)

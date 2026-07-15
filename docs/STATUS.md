@@ -342,6 +342,18 @@ web/CI sandbox), `.venv`:
   the tiny sample fixture lacks that history, so `ml/forecasting/run.py` now writes an honest
   **`blocked_data`** marker (no fabricated metrics, exact real-run command printed) to a separate
   file instead of crashing or clobbering a measured `reports/phase06_results.json`.
+- **Relational store (opt-in `[rdb]`)** — `services/db/` (SQLAlchemy Core) persists the station
+  network + inventory snapshots + a load-audit trail into **SQLite by default** (`make db-load`,
+  zero-config, offline) or **Postgres** via `DATABASE_URL` — same code, parameterized statements,
+  idempotent upsert, non-destructive `init`. Verified end-to-end: 45 stations loaded from the JSON
+  fixtures with resolved H3 zones, idempotent re-load. `tests/integration/test_db.py` (in-memory
+  SQLite, skips without the extra).
+- **Live Neo4j graph (opt-in `[graph]`)** — a `build_graph_store()` factory selects the backend:
+  offline `InMemoryGraphStore` by default, live `Neo4jGraphStore` when `NEO4J_PASSWORD` is set
+  (`make graph-upsert-neo4j`, `--backend neo4j`). `docker-compose.yml` provisions Neo4j (and
+  Postgres) for local dev. The forecasting graph features are pure functions and never depend on the
+  graph DB — Neo4j is the §9 upsert/audit surface only. Factory selection is unit-tested
+  (`tests/unit/test_graph_factory.py`); the live-server path needs Docker (not exercised in-sandbox).
 - **Real LLM event extraction (opt-in)** — a Claude-backed `AnthropicLlmProvider`
   (`pipelines/events/anthropic_provider.py`, `LLM_PROVIDER=anthropic`, `make evaluate … --provider
   anthropic`) alongside the deterministic mock. Structured output via strict tool use; **evidence
