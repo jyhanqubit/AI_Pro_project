@@ -253,6 +253,15 @@ curl "127.0.0.1:8000/v2/operator/timeline"
 make web    # /  (라이더 홈)  및  /statistics  (운영 통계)
 ```
 
+**휴대폰에서 보기 (같은 Wi-Fi):** 라이더 UI는 모바일 반응형입니다. 두 개의 터미널에서 아래를 실행한 뒤,
+폰 브라우저에서 `http://<PC IP>:3000` 으로 접속하세요. 여전히 완전 오프라인(키 불필요)이며 로컬 네트워크만
+접근할 수 있습니다.
+
+```bash
+make api-lan                      # API를 0.0.0.0:8000 으로 (LAN 노출)
+make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig getifaddr en0, Linux: hostname -I)
+```
+
 자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md) 참고.
 
 ## 상태

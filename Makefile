@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -87,3 +87,13 @@ api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 
 web:  ## Run the Next.js operator UI dev server (apps/web; needs npm install first)
 	cd apps/web && npm run dev
+
+# --- Phone / LAN viewing (same Wi-Fi) --------------------------------------------------------
+# Open the demo on your phone: run `make api-lan` and `make web-lan LAN_IP=<your PC IP>` in two
+# terminals, then browse to http://<your PC IP>:3000 on the phone. Still fully offline (no API key);
+# only your local network can reach it. Find your IP: macOS `ipconfig getifaddr en0`, Linux `hostname -I`.
+api-lan:  ## Serve the API on all interfaces for phone/LAN viewing (offline, same Wi-Fi)
+	SHOCKFLOW_API_HOST=0.0.0.0 python -m services.api.main
+
+web-lan:  ## Serve the UI on the LAN. Usage: make web-lan LAN_IP=192.168.0.10
+	cd apps/web && NEXT_PUBLIC_API_BASE=http://$(LAN_IP):8000 npx next dev -H 0.0.0.0
