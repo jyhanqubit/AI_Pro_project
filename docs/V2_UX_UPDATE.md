@@ -145,6 +145,27 @@ instead of a made-up answer.
   `services/api/rider_copilot.py`, `v2.rider_ask`, `RiderAskRequest`, and the `RiderCopilot`
   component in `apps/web/app/page.tsx`.
 
+### 9. Dynamic fare simulator (V2-05, simulated shadow)
+
+Extends the V1 credit-only incentive with a **bounded scarcity surcharge**. `POST /v2/pricing/quote`
+returns a SIMULATED SHADOW quote per station — never applied to a rider, always labelled simulated
+(there is no real elasticity/conversion log).
+
+- **Pure kernel** (`ml/pricing/dynamic.py`, config in `config/pricing_v2.py`): a
+  `scarcity_pressure_score` (weighted sum of shortage probability, normalized gap, event impact, and
+  a nearby-surplus *relief* term, all in [0,1]) maps to a bounded tier (1.00/1.10/1.25/1.50). Surplus
+  stations get a balancing pickup credit instead. Deterministic; unit-tested.
+- **Guardrails enforced in the kernel** (cannot be bypassed): hard multiplier cap (1.50);
+  **safety/emergency event → base fare** (no surcharge); **stale data → base fare**; a station is
+  never both surcharged and credited; `base_fare + scarcity_surcharge == final_price` (auditable
+  component sum). Pricing depends only on station scarcity — **no rider identity, reduced-fare
+  status, or protected attribute is ever an input**; fairness is measured across zone/time only.
+- **UI**: an operator `/pricing` screen ("요금 시뮬레이터") with a prominent SIMULATED · SHADOW banner,
+  what-if scenario toggles (정상 / stale 데이터 / 안전사고 이벤트) that demonstrate the base-fare
+  fallbacks, and per-station cards showing the tier, surcharge/credit, the scarcity component bars,
+  the guardrail reason, and a deterministic quote id. Files: `config/pricing_v2.py`,
+  `ml/pricing/dynamic.py`, `v2.pricing_quotes`, `PricingQuoteRequest`, `apps/web/app/pricing/page.tsx`.
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at

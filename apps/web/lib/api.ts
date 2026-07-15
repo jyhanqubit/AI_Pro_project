@@ -421,6 +421,49 @@ export interface RiderAskResponse {
   note: string;
 }
 
+export interface PriceQuote {
+  station_id: string;
+  ko: string;
+  en: string;
+  zone_id: string;
+  level: AvailabilityLevel;
+  level_label: string;
+  bikes: number;
+  target: number;
+  capacity: number;
+  demand_delta: number;
+  scarcity_score: number;
+  components: {
+    shortage_probability: number;
+    normalized_gap: number;
+    event_impact: number;
+    neighbor_buffer: number;
+  };
+  base_fare: number;
+  tier_multiplier: number;
+  scarcity_surcharge: number;
+  final_price: number;
+  balancing_credit: number;
+  tier_reason: string;
+  guardrails: { stale: boolean; safety_block: boolean; capped: boolean };
+  quote_id: string;
+}
+
+export interface PricingResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  pricing_config_version: string;
+  is_simulated: boolean;
+  shadow: boolean;
+  disclaimer: string;
+  scenario: { stale: boolean; safety: boolean };
+  base_fare: number;
+  tiers: number[];
+  quotes: PriceQuote[];
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -479,6 +522,15 @@ export const api = {
     req<RiderAskResponse>("/v2/rider/ask", {
       method: "POST",
       body: JSON.stringify({ query, cutoff: cutoff ?? null }),
+    }),
+  pricingQuote: (opts?: { stale?: boolean; safety?: boolean; cutoff?: string }) =>
+    req<PricingResponse>("/v2/pricing/quote", {
+      method: "POST",
+      body: JSON.stringify({
+        stale: opts?.stale ?? false,
+        safety: opts?.safety ?? false,
+        cutoff: opts?.cutoff ?? null,
+      }),
     }),
   allocateExtraBikes: (extraBikes: number, cutoff?: string) =>
     req<AllocationResponse>("/v2/operator/rebalancing/allocate", {

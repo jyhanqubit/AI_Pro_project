@@ -22,6 +22,7 @@ const OPERATOR_ONLY = new Set([
   "/news",
   "/scenario",
   "/rebalancing",
+  "/pricing",
   "/model-lift",
   "/anomaly",
   "/experiment",

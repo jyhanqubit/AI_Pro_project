@@ -215,3 +215,11 @@ class RiderAskRequest(BaseModel):
 
     query: str = Field(min_length=1, max_length=200)
     cutoff: AwareDatetime | None = None
+
+
+class PricingQuoteRequest(BaseModel):
+    """Dynamic-fare shadow-quote request (V2-05). ``stale`` / ``safety`` are what-if toggles."""
+
+    cutoff: AwareDatetime | None = None
+    stale: bool = False
+    safety: bool = False

@@ -16,6 +16,7 @@ fabricates demand, price, or inventory (section 22); the demand delta is the lab
 
 from __future__ import annotations
 
+import hashlib
 import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -573,5 +574,116 @@ def rider_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
             "규칙 기반(비-LLM) 도우미입니다. 모든 수치는 현재 재생 시각(as-of)의 실제 재고에서 "
             "그대로 가져온 값이며 임의로 생성하지 않습니다. 이해하지 못한 질문에는 답을 지어내지 "
             "않고 되물어봅니다."
+        ),
+    }
+
+
+def pricing_quotes(
+    engine: ReplayEngine,
+    cutoff: datetime,
+    *,
+    stale: bool = False,
+    safety: bool = False,
+) -> dict:
+    """SIMULATED SHADOW fare quotes for every station as-of the cutoff (V2-05).
+
+    Each quote applies the deterministic scarcity kernel with hard guardrails. ``stale`` and
+    ``safety`` are explicit what-if scenario toggles (clearly labelled) that demonstrate the
+    base-fare fallbacks; the real safety block is also derived from any available SAFETY_INCIDENT
+    event. Never applied to a rider (shadow mode); all results are labelled simulated.
+    """
+    from config.pricing_v2 import (
+        NO_SURCHARGE_EVENT_TYPES,
+        SIMULATED_DISCLAIMER,
+        DynamicFareConfig,
+    )
+    from ml.pricing.dynamic import price_quote
+
+    cfg = DynamicFareConfig()
+    views = station_views(engine, cutoff)
+    events = engine.available_events(cutoff)
+    # A safety/emergency event anywhere in the system suppresses surcharge (conservative).
+    real_safety = any(str(e.event_type) in NO_SURCHARGE_EVENT_TYPES for e in events)
+    safety_block = safety or real_safety
+    total_surplus = sum(max(0, v.surplus) for v in views)
+
+    quotes = []
+    for v in views:
+        neighbor_spare = float(total_surplus - max(0, v.surplus))  # spare bikes elsewhere
+        q = price_quote(
+            bikes=v.bikes,
+            target=v.target,
+            capacity=v.capacity,
+            surplus=v.surplus,
+            demand_delta=v.demand_delta,
+            neighbor_spare=neighbor_spare,
+            stale=stale,
+            safety_block=safety_block,
+            cfg=cfg,
+        )
+        digest = hashlib.sha1(
+            f"{v.station_id}|{cutoff.isoformat()}|{q.tier_multiplier}|{cfg.version}|"
+            f"stale={stale}|safety={safety_block}".encode()
+        ).hexdigest()[:10]
+        quotes.append(
+            {
+                "station_id": v.station_id,
+                "ko": v.ko,
+                "en": v.en,
+                "zone_id": v.zone_id,
+                "level": v.level,
+                "level_label": v.level_label,
+                "bikes": v.bikes,
+                "target": v.target,
+                "capacity": v.capacity,
+                "demand_delta": v.demand_delta,
+                "scarcity_score": q.scarcity_score,
+                "components": {
+                    "shortage_probability": round(q.components.shortage_probability, 4),
+                    "normalized_gap": round(q.components.normalized_gap, 4),
+                    "event_impact": round(q.components.event_impact, 4),
+                    "neighbor_buffer": round(q.components.neighbor_buffer, 4),
+                },
+                "base_fare": q.base_fare,
+                "tier_multiplier": q.tier_multiplier,
+                "scarcity_surcharge": q.scarcity_surcharge,
+                "final_price": q.final_price,
+                "balancing_credit": q.balancing_credit,
+                "tier_reason": q.tier_reason,
+                "guardrails": {
+                    "stale": q.stale,
+                    "safety_block": q.safety_block,
+                    "capped": q.capped,
+                },
+                "quote_id": digest,
+            }
+        )
+    # Show the most-surcharged first.
+    quotes.sort(
+        key=lambda x: (
+            -cast(float, x["tier_multiplier"]),
+            -cast(float, x["scarcity_score"]),
+            cast(str, x["station_id"]),
+        )
+    )
+
+    return {
+        "mode": engine.mode,
+        "cutoff": engine.cutoff,
+        "model_version": engine.model_version,
+        "pricing_config_version": cfg.version,
+        "is_simulated": True,
+        "shadow": True,
+        "disclaimer": SIMULATED_DISCLAIMER,
+        "scenario": {"stale": stale, "safety": safety_block},
+        "base_fare": cfg.base_fare,
+        "tiers": list(cfg.tiers),
+        "quotes": quotes,
+        "note": (
+            "SIMULATED SHADOW 요금입니다 — 실제 라이더에게 적용되지 않습니다. 할증은 station "
+            "부족(scarcity) pressure로만 결정되며, 라이더 신원·감면요금·보호속성은 입력에 쓰이지 "
+            "않습니다. 안전/긴급 이벤트나 stale 데이터에는 할증하지 않고 기본요금으로 되돌립니다. "
+            "component 합(base+surcharge)은 최종가와 일치하며, 상한은 1.50배입니다. 탄력성/전환 "
+            "추정치가 없으므로 모든 결과는 simulated로 표기합니다."
         ),
     }

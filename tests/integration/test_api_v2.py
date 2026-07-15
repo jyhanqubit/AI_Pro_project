@@ -285,3 +285,51 @@ def test_ask_is_deterministic(client: TestClient) -> None:
 def test_ask_empty_query_is_rejected(client: TestClient) -> None:
     r = client.post("/v2/rider/ask", json={"query": ""})
     assert r.status_code == 422  # Pydantic min_length
+
+
+# ---- dynamic fare (V2-05, simulated shadow) --------------------------------------------------
+
+
+def test_pricing_is_labelled_simulated_shadow(client: TestClient) -> None:
+    _set(client, CONCERT)
+    d = client.post("/v2/pricing/quote", json={}).json()
+    assert d["is_simulated"] is True
+    assert d["shadow"] is True
+    assert "SIMULATED" in d["disclaimer"]
+    assert d["quotes"]
+
+
+def test_pricing_component_sum_and_cap(client: TestClient) -> None:
+    _set(client, CONCERT)
+    d = client.post("/v2/pricing/quote", json={}).json()
+    for q in d["quotes"]:
+        # base + surcharge reconciles with final price, and the multiplier is bounded.
+        assert q["base_fare"] + q["scarcity_surcharge"] == pytest.approx(q["final_price"])
+        assert q["tier_multiplier"] <= 1.50
+        # A station is never both surcharged and credited.
+        assert not (q["scarcity_surcharge"] > 0 and q["balancing_credit"] > 0)
+
+
+def test_pricing_stale_scenario_falls_back_to_base(client: TestClient) -> None:
+    _set(client, CONCERT)
+    d = client.post("/v2/pricing/quote", json={"stale": True}).json()
+    assert d["scenario"]["stale"] is True
+    assert all(q["tier_multiplier"] == 1.0 for q in d["quotes"])
+    assert all(q["scarcity_surcharge"] == 0.0 for q in d["quotes"])
+    assert all(q["tier_reason"] == "stale" for q in d["quotes"])
+
+
+def test_pricing_safety_scenario_blocks_surcharge(client: TestClient) -> None:
+    _set(client, CONCERT)
+    d = client.post("/v2/pricing/quote", json={"safety": True}).json()
+    assert all(q["scarcity_surcharge"] == 0.0 for q in d["quotes"])
+    assert all(q["guardrails"]["safety_block"] is True for q in d["quotes"])
+
+
+def test_pricing_is_deterministic(client: TestClient) -> None:
+    _set(client, CONCERT)
+    a = client.post("/v2/pricing/quote", json={}).json()
+    b = client.post("/v2/pricing/quote", json={}).json()
+    assert [(q["station_id"], q["final_price"], q["quote_id"]) for q in a["quotes"]] == [
+        (q["station_id"], q["final_price"], q["quote_id"]) for q in b["quotes"]
+    ]

@@ -53,6 +53,12 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   A deterministic parser (`services/api/rider_copilot.py`) classifies a Korean/English query into an
   allowlisted intent and answers **only from live tool results** (numbers copied verbatim, nothing
   fabricated); unsupported queries return a clarification, not a made-up answer.
+- **Dynamic fare simulator** (V2-05) — a bounded scarcity surcharge (1.00/1.10/1.25/1.50) +
+  balancing credit, as a **SIMULATED SHADOW** quote (never applied to a rider). Pure kernel
+  (`ml/pricing/dynamic.py`) with guardrails enforced in-kernel: safety/emergency event → base,
+  stale data → base, hard 1.50 cap, `base + surcharge == final` (auditable), and **no rider
+  identity / reduced-fare / protected attribute** ever used. Operator `/pricing` screen with what-if
+  scenario toggles. `POST /v2/pricing/quote`.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---
