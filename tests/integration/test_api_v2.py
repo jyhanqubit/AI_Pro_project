@@ -34,8 +34,9 @@ def _set(client: TestClient, cutoff: str) -> None:
 
 def test_search_empty_query_returns_all_ranked_by_availability(client: TestClient) -> None:
     _set(client, CONCERT)
-    body = client.get("/v2/rider/stations/search").json()
-    assert body["count"] == 5
+    body = client.get("/v2/rider/stations/search", params={"k": 50}).json()
+    stats = client.get("/v2/operator/statistics").json()
+    assert body["count"] == stats["station_count"]  # returns the whole network
     # Ranked best-availability first: level rank must be non-decreasing down the list.
     rank = {"plenty": 0, "ok": 1, "tight": 2, "low": 3}
     ranks = [rank[s["level"]] for s in body["stations"]]
@@ -88,8 +89,9 @@ def test_search_respects_as_of_boundary_for_demand_delta(client: TestClient) -> 
 def test_statistics_totals_are_consistent(client: TestClient) -> None:
     _set(client, CONCERT)
     d = client.get("/v2/operator/statistics").json()
-    # Availability counts partition the stations.
-    assert sum(d["availability_counts"].values()) == d["station_count"] == 5
+    # Availability counts partition the stations (multi-region network).
+    assert sum(d["availability_counts"].values()) == d["station_count"]
+    assert d["station_count"] >= 15
     # Per-zone bikes/capacity reconcile with the system totals.
     assert sum(z["bikes"] for z in d["zones"]) == d["total_bikes"]
     assert sum(z["capacity"] for z in d["zones"]) == d["total_capacity"]

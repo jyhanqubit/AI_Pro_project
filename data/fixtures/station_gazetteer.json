@@ -1,40 +1,21 @@
 {
-  "description": "Rider-facing place metadata for the five demo stations (Korean + English names, district, and search aliases). This is static place metadata, NOT demand data: it lets the V2 station-search endpoint match Korean/English/typo queries offline. Names mirror apps/web/lib/places.ts and config/places.py so the UI and API stay in sync.",
+  "description": "Rider-facing place metadata for the multi-region demo station network (Jersey City, Hoboken, Manhattan, Brooklyn): Korean + English names, district, and search aliases. Static place metadata, NOT demand data. Names mirror data/fixtures/rebalancing_demo.json.",
   "stations": [
-    {
-      "station_id": "JC_GROVE",
-      "ko": "그로브 스트리트",
-      "en": "Grove St PATH",
-      "area": "저지시티",
-      "aliases": ["grove", "grove street", "그로브", "그로브스트리트", "path", "패스"]
-    },
-    {
-      "station_id": "JC_EXCHANGE",
-      "ko": "익스체인지 플레이스",
-      "en": "Exchange Place",
-      "area": "저지시티",
-      "aliases": ["exchange", "exchange place", "익스체인지", "익스체인지플레이스"]
-    },
-    {
-      "station_id": "JC_HOBOKEN",
-      "ko": "호보켄 터미널",
-      "en": "Hoboken Terminal",
-      "area": "호보켄",
-      "aliases": ["hoboken", "호보켄", "호보켄터미널", "terminal", "터미널"]
-    },
-    {
-      "station_id": "JC_CITYHALL",
-      "ko": "저지시티 시청",
-      "en": "City Hall",
-      "area": "저지시티",
-      "aliases": ["city hall", "cityhall", "시청", "저지시티시청"]
-    },
-    {
-      "station_id": "JC_NEWPORT",
-      "ko": "뉴포트",
-      "en": "Newport",
-      "area": "저지시티",
-      "aliases": ["newport", "뉴포트", "waterfront", "워터프론트"]
-    }
+    {"station_id": "JC_GROVE", "ko": "그로브 스트리트", "en": "Grove St PATH", "area": "저지시티", "aliases": ["grove", "grove street", "그로브", "그로브스트리트", "path", "패스"]},
+    {"station_id": "JC_EXCHANGE", "ko": "익스체인지 플레이스", "en": "Exchange Place", "area": "저지시티", "aliases": ["exchange", "exchange place", "익스체인지", "익스체인지플레이스"]},
+    {"station_id": "JC_HOBOKEN", "ko": "호보켄 터미널", "en": "Hoboken Terminal", "area": "호보켄", "aliases": ["hoboken", "호보켄", "호보켄터미널", "terminal", "터미널"]},
+    {"station_id": "JC_CITYHALL", "ko": "저지시티 시청", "en": "City Hall", "area": "저지시티", "aliases": ["city hall", "cityhall", "시청", "저지시티시청"]},
+    {"station_id": "JC_NEWPORT", "ko": "뉴포트", "en": "Newport", "area": "저지시티", "aliases": ["newport", "뉴포트", "waterfront", "워터프론트"]},
+    {"station_id": "JC_JOURNAL", "ko": "저널 스퀘어", "en": "Journal Square", "area": "저지시티", "aliases": ["journal", "journal square", "저널", "저널스퀘어"]},
+    {"station_id": "JC_PAULUS", "ko": "폴러스 훅", "en": "Paulus Hook", "area": "저지시티", "aliases": ["paulus", "paulus hook", "폴러스", "폴러스훅"]},
+    {"station_id": "HB_WASHINGTON", "ko": "워싱턴 스트리트", "en": "Washington St", "area": "호보켄", "aliases": ["washington", "washington st", "워싱턴", "워싱턴스트리트"]},
+    {"station_id": "HB_14ST", "ko": "14번가 페리", "en": "14th St Ferry", "area": "호보켄", "aliases": ["14th", "14st", "ferry", "14번가", "페리"]},
+    {"station_id": "NY_WALL", "ko": "월 스트리트", "en": "Wall St", "area": "맨해튼", "aliases": ["wall", "wall st", "월스트리트", "월가", "financial"]},
+    {"station_id": "NY_SOHO", "ko": "소호", "en": "SoHo Broome St", "area": "맨해튼", "aliases": ["soho", "소호", "broome", "브룸"]},
+    {"station_id": "NY_UNION", "ko": "유니언 스퀘어", "en": "Union Square", "area": "맨해튼", "aliases": ["union", "union square", "유니언", "유니언스퀘어"]},
+    {"station_id": "NY_TIMES", "ko": "타임스 스퀘어", "en": "Times Square", "area": "맨해튼", "aliases": ["times", "times square", "타임스", "타임스스퀘어"]},
+    {"station_id": "NY_CENTRAL", "ko": "센트럴파크 남측", "en": "Central Park South", "area": "맨해튼", "aliases": ["central park", "센트럴파크", "central", "센트럴"]},
+    {"station_id": "BK_DUMBO", "ko": "덤보", "en": "DUMBO", "area": "브루클린", "aliases": ["dumbo", "덤보", "brooklyn bridge"]},
+    {"station_id": "BK_WILLIAMSBURG", "ko": "윌리엄스버그", "en": "Williamsburg", "area": "브루클린", "aliases": ["williamsburg", "윌리엄스버그", "윌리엄스", "브루클린"]}
   ]
 }
