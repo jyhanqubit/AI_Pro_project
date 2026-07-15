@@ -1,0 +1,40 @@
+{
+  "description": "Rider-facing place metadata for the five demo stations (Korean + English names, district, and search aliases). This is static place metadata, NOT demand data: it lets the V2 station-search endpoint match Korean/English/typo queries offline. Names mirror apps/web/lib/places.ts and config/places.py so the UI and API stay in sync.",
+  "stations": [
+    {
+      "station_id": "JC_GROVE",
+      "ko": "그로브 스트리트",
+      "en": "Grove St PATH",
+      "area": "저지시티",
+      "aliases": ["grove", "grove street", "그로브", "그로브스트리트", "path", "패스"]
+    },
+    {
+      "station_id": "JC_EXCHANGE",
+      "ko": "익스체인지 플레이스",
+      "en": "Exchange Place",
+      "area": "저지시티",
+      "aliases": ["exchange", "exchange place", "익스체인지", "익스체인지플레이스"]
+    },
+    {
+      "station_id": "JC_HOBOKEN",
+      "ko": "호보켄 터미널",
+      "en": "Hoboken Terminal",
+      "area": "호보켄",
+      "aliases": ["hoboken", "호보켄", "호보켄터미널", "terminal", "터미널"]
+    },
+    {
+      "station_id": "JC_CITYHALL",
+      "ko": "저지시티 시청",
+      "en": "City Hall",
+      "area": "저지시티",
+      "aliases": ["city hall", "cityhall", "시청", "저지시티시청"]
+    },
+    {
+      "station_id": "JC_NEWPORT",
+      "ko": "뉴포트",
+      "en": "Newport",
+      "area": "저지시티",
+      "aliases": ["newport", "뉴포트", "waterfront", "워터프론트"]
+    }
+  ]
+}

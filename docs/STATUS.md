@@ -2,7 +2,38 @@
 
 _Last updated: 2026-07-15_
 
-## Current status — V1 complete (with honest data blocks)
+## Current status — V2 usability update (UI, search, operator analytics)
+
+A backward-compatible, usability-focused increment on top of V1. Scope: a redesigned rider home in
+the style of consumer bike-share apps, station **search**, and a stronger **operator statistics /
+analytics** screen. No forecasting/pricing/experiment claims change — everything stays offline and
+honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phase 06 model).
+
+- **Rider home redesign** (`apps/web/app/page.tsx`) — prominent search bar, availability summary +
+  filter chips (전체 / 빌리기 좋아요 / 곧 부족), a clean station list, and a tap-to-open station
+  detail sheet with the event-aware demand shift and a "why busy" trace link.
+- **Station search** — new offline endpoint `GET /v2/rider/stations/search` (Korean / English /
+  alias / typo-tolerant substring match over `data/fixtures/station_gazetteer.json`), which
+  hydrates each hit with as-of live inventory from the operational fixture (never inferred from the
+  query text). Empty query returns all stations ranked by availability.
+- **Operator statistics** — new endpoint `GET /v2/operator/statistics` (real aggregations: system
+  utilization, availability distribution, shortage load, event mix by type/effect, demand-delta
+  spread, per-zone breakdown) rendered on a new `/statistics` screen with a stacked availability
+  bar, event-type / top-surge bar lists, and a per-zone table. All values reconcile with the v1
+  endpoints and respect the as-of leakage boundary.
+- New code: `services/api/v2.py`, `data/fixtures/station_gazetteer.json`,
+  `apps/web/app/statistics/page.tsx`; endpoints wired in `services/api/app.py`; typed client in
+  `apps/web/lib/api.ts`.
+- Tests: **9 new** integration tests in `tests/integration/test_api_v2.py` (search matching, live
+  hydration, as-of boundary, statistics consistency) — all pass. Full non-torch suite: **197
+  passed, 1 skipped**; web `tsc` clean, `next build` green (12 routes), ruff + mypy clean on the new
+  module. The 9 `torch`-dependent recsys/model tests can't run here (the PyTorch wheel index is
+  blocked by the container proxy) — they are unrelated to this change.
+- See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
+
+---
+
+## Previous status — V1 complete (with honest data blocks)
 
 **v0 (Phases 00–09) complete**, and **V1 (V1-00 … V1-09) implemented** on top as backward-compatible
 increments. See `docs/V1_EXECUTION_LOG.md` for per-phase detail and `reports/v1/V1_FINAL_AUDIT.md`

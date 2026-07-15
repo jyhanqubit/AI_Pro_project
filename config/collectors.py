@@ -33,6 +33,7 @@ CITIBIKE_SAMPLE_FIXTURE = FIXTURES_DIR / "citibike_sample.csv"
 NEWS_DEMO_FIXTURE = FIXTURES_DIR / "news_demo.jsonl"
 GBFS_STATION_STATUS_FIXTURE = FIXTURES_DIR / "gbfs_station_status.json"
 REBALANCING_DEMO_FIXTURE = FIXTURES_DIR / "rebalancing_demo.json"
+STATION_GAZETTEER_FIXTURE = FIXTURES_DIR / "station_gazetteer.json"
 
 # GBFS live endpoint (used only when ENABLE_GBFS_LIVE=true; disabled by default).
 GBFS_STATION_STATUS_URL = "https://gbfs.citibikenyc.com/gbfs/en/station_status.json"

@@ -370,6 +370,20 @@ def create_app() -> FastAPI:
                 detail={"error_code": "vectorstore_unavailable", "message": str(e)},
             ) from e
 
+    @app.get("/v2/rider/stations/search")
+    def rider_station_search(engine: EngineDep, q: str = "", k: int = 20) -> dict:
+        """V2 rider station search (offline). Empty ``q`` returns all stations by availability."""
+        from .v2 import station_search
+
+        return station_search(engine, q, engine.cutoff, limit=k)
+
+    @app.get("/v2/operator/statistics")
+    def operator_statistics_endpoint(engine: EngineDep) -> dict:
+        """V2 operator analytics: real aggregate statistics of the as-of replay state."""
+        from .v2 import operator_statistics
+
+        return operator_statistics(engine, engine.cutoff)
+
     @app.get("/v1/model/lift")
     def model_lift() -> dict:
         """Measured M0/M1 ablation + event-lift verdict for the Model Lift Lab (§9, §10)."""

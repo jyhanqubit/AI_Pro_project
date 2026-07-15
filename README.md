@@ -226,6 +226,27 @@ make v1-news-vectorstore      # FAISS 의미 검색 + 같은 사건 클러스터
 [docs/V1_DEMO_SCRIPT.md](docs/V1_DEMO_SCRIPT.md),
 [docs/V1_EXECUTION_LOG.md](docs/V1_EXECUTION_LOG.md), `reports/v1/V1_FINAL_AUDIT.md` 참고.
 
+## V2 사용성 업데이트 (UI·검색·운영 통계)
+
+V1 위에 backward-compatible 증분으로 사용성에 초점을 맞춘 업데이트를 더했습니다. 새 모델·가격·실험
+주장은 없으며, 모든 값은 오프라인에서 계산되고 수요 변화(Δ)는 라벨이 붙은 데모
+heuristic(`demo-heuristic-v1`)입니다.
+
+- **라이더 홈 리디자인** — 공유자전거 앱 스타일의 검색바 + 필터 칩 + 대여소 리스트 + 상세 시트.
+- **대여소 검색** — `GET /v2/rider/stations/search?q=…` (한글/영문/별칭/오타 허용 부분일치;
+  재고는 항상 운영 fixture에서 hydrate, 검색어에서 추론하지 않음). 빈 검색어는 전체를 가용성순 정렬.
+- **운영 통계** — `GET /v2/operator/statistics` (시스템 가동률, 가용성 분포, 부족 부하, 이벤트 구성,
+  수요 Δ 분포, 지역별 상세)를 새 `/statistics` 화면에서 시각화.
+
+```bash
+make api    # v1 + v2 엔드포인트 (오프라인, :8000)
+curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
+curl "127.0.0.1:8000/v2/operator/statistics"
+make web    # /  (라이더 홈)  및  /statistics  (운영 통계)
+```
+
+자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md) 참고.
+
 ## 상태
 
 현재 진행 중인 단계와 검증된 명령, 남은 걸림돌은 [docs/STATUS.md](docs/STATUS.md)에서 확인하세요.

@@ -258,6 +258,82 @@ export interface AnomaliesResponse {
   alerts: AnomalyAlertOut[];
 }
 
+// ---- V2: rider station search + operator statistics -------------------------
+export type AvailabilityLevel = "plenty" | "ok" | "tight" | "low";
+
+export interface StationHit {
+  station_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  zone_id: string;
+  bikes: number;
+  capacity: number;
+  docks_free: number;
+  target: number;
+  base_target: number;
+  shortage: number;
+  surplus: number;
+  level: AvailabilityLevel;
+  level_label: string;
+  lat: number;
+  lng: number;
+  demand_delta: number;
+  baseline_forecast: number;
+  event_aware_forecast: number;
+}
+
+export interface StationSearchResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  query: string;
+  count: number;
+  stations: StationHit[];
+}
+
+export interface ZoneStat {
+  zone_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  station_count: number;
+  bikes: number;
+  capacity: number;
+  utilization: number;
+  baseline_forecast: number;
+  event_aware_forecast: number;
+  forecast_delta: number;
+  event_exposure: number;
+  worst_level: AvailabilityLevel;
+  shortage: number;
+}
+
+export interface OperatorStatistics {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  feature_version: string;
+  note: string;
+  station_count: number;
+  total_bikes: number;
+  total_capacity: number;
+  total_docks_free: number;
+  system_utilization: number;
+  availability_counts: Record<AvailabilityLevel, number>;
+  stations_in_shortage: number;
+  total_shortage_units: number;
+  total_surplus_units: number;
+  available_event_count: number;
+  events_by_effect: Record<EffectDirection, number>;
+  events_by_type: Record<string, number>;
+  affected_zone_count: number;
+  demand_delta_total: number;
+  demand_delta_max: number;
+  demand_delta_mean_affected: number;
+  zones: ZoneStat[];
+  top_surge_zones: ZoneStat[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -306,4 +382,9 @@ export const api = {
   newsClusters: (threshold = 0.3) =>
     req<NewsClustersResponse>(`/v1/news/clusters?threshold=${threshold}`),
   anomalies: () => req<AnomaliesResponse>("/v1/anomalies"),
+  stationSearch: (q = "", k = 20) =>
+    req<StationSearchResponse>(
+      `/v2/rider/stations/search?q=${encodeURIComponent(q)}&k=${k}`,
+    ),
+  operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
 };
