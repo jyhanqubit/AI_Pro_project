@@ -4,6 +4,24 @@
 (no extra install), or use **WSL** (`wsl --install`) where `make` / `.sh` work as-is. This guide is
 100% native PowerShell.
 
+## One command (setup → demo → data → lift → databases)
+
+From the repo root (the folder with `pyproject.toml`):
+
+```powershell
+# blocked by execution policy? run this once in the session first:
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+
+.\scripts\run_all.ps1                                 # setup + offline demo + data + lift(mock)
+.\scripts\run_all.ps1 -AnthropicKey "sk-ant-..."      # + real Claude extraction
+.\scripts\run_all.ps1 -From 202601 -To 202606 -WithDatabases -WithDocker
+.\scripts\run_all.ps1 -SkipData -SkipLift             # just setup + offline demo
+```
+
+`run_all.ps1` drives the venv Python directly (no `Activate.ps1`), and every stage degrades on its
+own: no internet skips the live fetch, no `-AnthropicKey` uses the offline mock extractor, no
+`-WithDocker` skips Neo4j/Postgres. The step-by-step commands below are the same stages by hand.
+
 ## PowerShell gotchas
 
 - **Activate the venv:** `.\.venv\Scripts\Activate.ps1`
