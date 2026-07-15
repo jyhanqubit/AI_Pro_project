@@ -61,14 +61,30 @@ Real aggregations of the as-of replay state (all reconcile with the v1 endpoints
 The new operator screen is reachable from the nav as **운영 통계**. Changing the replay cutoff at the
 top recomputes every metric as-of the new boundary.
 
+### 4. Event-window timeline — `GET /v2/operator/timeline`
+
+A time-series strengthening of the operator analytics: for every hourly cutoff across the demo
+window (12:00 → 18:00) the **same offline pipeline is recomputed as-of that boundary**, yielding an
+honest series of `event_count`, `affected_zone_count`, `total_shortage_units`, `stations_in_shortage`,
+and `demand_delta_total` — plus `event_markers` at each event's `available_at`.
+
+- Rendered on `/statistics` as two self-contained **SVG area+line charts** (부족 재고 units and
+  수요 Δ 합계 /시간) sharing the hour axis, with dashed vertical **event-onset markers** and an event
+  legend. No chart library — plain inline SVG.
+- The series demonstrates the leakage boundary visually: it is flat (0 shortage, 0 Δ) until the
+  first event's onset, then rises and eases with the event window. Station inventory is a static
+  fixture, so utilization is flat by design; the shortage / Δ / event series are what move.
+- `event_count` is monotonically non-decreasing (as-of availability only accumulates), asserted in
+  tests.
+
 ## Files
 
 | Area | File | Change |
 | --- | --- | --- |
 | Fixture | `data/fixtures/station_gazetteer.json` | **new** — rider-facing place metadata + aliases |
 | Config | `config/collectors.py` | `STATION_GAZETTEER_FIXTURE` path |
-| API | `services/api/v2.py` | **new** — `station_search`, `operator_statistics`, shared views |
-| API | `services/api/app.py` | wire `GET /v2/rider/stations/search`, `GET /v2/operator/statistics` |
+| API | `services/api/v2.py` | **new** — `station_search`, `operator_statistics`, `operator_timeline`, shared views |
+| API | `services/api/app.py` | wire `/v2/rider/stations/search`, `/v2/operator/statistics`, `/v2/operator/timeline` |
 | Web | `apps/web/lib/api.ts` | typed client: `StationHit`, `OperatorStatistics`, methods |
 | Web | `apps/web/app/page.tsx` | rider home redesign (search + chips + list + detail sheet) |
 | Web | `apps/web/app/statistics/page.tsx` | **new** — operator analytics screen |
@@ -84,6 +100,7 @@ make api                       # serves the v1 + v2 endpoints on :8000
 
 curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
 curl "127.0.0.1:8000/v2/operator/statistics"
+curl "127.0.0.1:8000/v2/operator/timeline"
 
 # Frontend
 make web                       # Next.js dev server on :3000  ->  /  and  /statistics

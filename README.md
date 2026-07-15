@@ -237,11 +237,15 @@ heuristic(`demo-heuristic-v1`)입니다.
   재고는 항상 운영 fixture에서 hydrate, 검색어에서 추론하지 않음). 빈 검색어는 전체를 가용성순 정렬.
 - **운영 통계** — `GET /v2/operator/statistics` (시스템 가동률, 가용성 분포, 부족 부하, 이벤트 구성,
   수요 Δ 분포, 지역별 상세)를 새 `/statistics` 화면에서 시각화.
+- **이벤트 윈도우 타임라인** — `GET /v2/operator/timeline` (재생 윈도우 12–18시를 매 시각 as-of로
+  재계산한 부족·Δ·이벤트 시계열)을 인라인 SVG 차트로 시각화. 이벤트 공개 이전 flat 구간이 leakage
+  경계를 그대로 보여줍니다.
 
 ```bash
 make api    # v1 + v2 엔드포인트 (오프라인, :8000)
 curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
 curl "127.0.0.1:8000/v2/operator/statistics"
+curl "127.0.0.1:8000/v2/operator/timeline"
 make web    # /  (라이더 홈)  및  /statistics  (운영 통계)
 ```
 

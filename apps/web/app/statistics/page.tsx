@@ -2,8 +2,19 @@
 
 import { useReplay } from "../providers";
 import { useApi } from "@/lib/useApi";
-import { api, type AvailabilityLevel, type OperatorStatistics } from "@/lib/api";
+import {
+  api,
+  type AvailabilityLevel,
+  type OperatorStatistics,
+  type OperatorTimeline,
+  type TimelinePoint,
+} from "@/lib/api";
 import { signed } from "@/lib/format";
+
+// Event-local hour label (12..18) from an ISO cutoff, matching the replay preset buttons.
+function hourLabel(iso: string): string {
+  return iso.slice(11, 13);
+}
 
 // Operator statistics / analytics (V2 usability update).
 // Real aggregations of the as-of replay state from /v2/operator/statistics: system inventory,
@@ -91,9 +102,99 @@ function BarList({
   );
 }
 
+// Self-contained SVG time-series (no chart library). Plots one metric as an area+line across the
+// replay window with event-onset markers. Width scales via viewBox; the y-scale is labelled.
+function TimeSeries({
+  points,
+  markers,
+  field,
+  color,
+  unit,
+}: {
+  points: TimelinePoint[];
+  markers: { at: string; label: string }[];
+  field: keyof TimelinePoint;
+  color: string;
+  unit: string;
+}) {
+  const W = 720;
+  const H = 180;
+  const padL = 34;
+  const padR = 12;
+  const padT = 12;
+  const padB = 26;
+  const n = points.length;
+  const vals = points.map((p) => Number(p[field]));
+  const maxV = Math.max(1, ...vals);
+  const x = (i: number) => padL + (n <= 1 ? 0 : (i / (n - 1)) * (W - padL - padR));
+  const y = (v: number) => padT + (1 - v / maxV) * (H - padT - padB);
+
+  const line = points.map((p, i) => `${x(i)},${y(Number(p[field]))}`).join(" ");
+  const area = `${padL},${y(0)} ${line} ${x(n - 1)},${y(0)}`;
+
+  // Map an event's ISO time to the nearest x by matching the hour bucket.
+  const markerX = (at: string): number => {
+    const h = Number(at.slice(11, 13));
+    let best = 0;
+    let bestD = Infinity;
+    points.forEach((p, i) => {
+      const d = Math.abs(Number(p.cutoff.slice(11, 13)) - h);
+      if (d < bestD) {
+        bestD = d;
+        best = i;
+      }
+    });
+    return x(best);
+  };
+
+  return (
+    <svg className="ts" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="이벤트 윈도우 시계열">
+      {/* y grid: 0 and max */}
+      {[0, maxV].map((gv) => (
+        <g key={gv}>
+          <line className="ts-grid" x1={padL} x2={W - padR} y1={y(gv)} y2={y(gv)} />
+          <text className="ts-axis" x={padL - 6} y={y(gv) + 3} textAnchor="end">
+            {gv}
+          </text>
+        </g>
+      ))}
+      {/* event onset markers */}
+      {markers.map((m) => (
+        <g key={m.at}>
+          <line
+            className="ts-marker"
+            x1={markerX(m.at)}
+            x2={markerX(m.at)}
+            y1={padT}
+            y2={H - padB}
+          />
+          <text className="ts-marker-label" x={markerX(m.at) + 3} y={padT + 9}>
+            {m.label}
+          </text>
+        </g>
+      ))}
+      <polygon points={area} fill={color} fillOpacity={0.16} />
+      <polyline points={line} fill="none" stroke={color} strokeWidth={2} />
+      {points.map((p, i) => (
+        <circle key={i} cx={x(i)} cy={y(Number(p[field]))} r={2.5} fill={color} />
+      ))}
+      {/* x ticks: hour labels */}
+      {points.map((p, i) => (
+        <text key={i} className="ts-axis" x={x(i)} y={H - 8} textAnchor="middle">
+          {hourLabel(p.cutoff)}
+        </text>
+      ))}
+      <text className="ts-unit" x={padL} y={H - 8} textAnchor="start" dx={-padL + 2}>
+        {unit}
+      </text>
+    </svg>
+  );
+}
+
 export default function StatisticsPage() {
   const { refreshKey } = useReplay();
   const stats = useApi<OperatorStatistics>(() => api.operatorStatistics(), [refreshKey]);
+  const timeline = useApi<OperatorTimeline>(() => api.operatorTimeline(), [refreshKey]);
 
   if (stats.error) {
     return (
@@ -155,6 +256,58 @@ export default function StatisticsPage() {
           sub={`수요↑ ${d.events_by_effect.increase} · 수요↓ ${d.events_by_effect.decrease}`}
         />
       </div>
+
+      {/* Event-window timeline — as-of aggregates across the replay window */}
+      {timeline.data && timeline.data.points.length > 0 && (
+        <div className="card">
+          <h2>이벤트 윈도우 타임라인</h2>
+          <div className="sub">
+            재생 윈도우({hourLabel(timeline.data.window_start)}시–{hourLabel(timeline.data.window_end)}
+            시) 동안 매 시각 as-of로 다시 계산한 부족 재고와 수요 변화(Δ). 세로 점선은 이벤트 공개
+            시점입니다.
+          </div>
+          <div className="ts-grid-2">
+            <div>
+              <div className="ts-title">
+                부족 재고 <span className="muted small">(units)</span>
+              </div>
+              <TimeSeries
+                points={timeline.data.points}
+                markers={timeline.data.event_markers.map((m) => ({
+                  at: m.available_at,
+                  label: m.demand_effect === "increase" ? "수요↑" : "이벤트",
+                }))}
+                field="total_shortage_units"
+                color="var(--av-low)"
+                unit="시"
+              />
+            </div>
+            <div>
+              <div className="ts-title">
+                수요 변화 합계 Δ <span className="muted small">(/시간)</span>
+              </div>
+              <TimeSeries
+                points={timeline.data.points}
+                markers={timeline.data.event_markers.map((m) => ({
+                  at: m.available_at,
+                  label: m.demand_effect === "increase" ? "수요↑" : "이벤트",
+                }))}
+                field="demand_delta_total"
+                color="var(--up)"
+                unit="시"
+              />
+            </div>
+          </div>
+          <div className="ts-events">
+            {timeline.data.event_markers.map((m) => (
+              <span key={m.event_id} className="ts-event-chip">
+                <span className="dot up" /> {hourLabel(m.available_at)}:
+                {m.available_at.slice(14, 16)} · {m.event_title}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid cols-2">
         {/* Availability distribution */}

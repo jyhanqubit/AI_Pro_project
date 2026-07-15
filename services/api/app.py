@@ -384,6 +384,13 @@ def create_app() -> FastAPI:
 
         return operator_statistics(engine, engine.cutoff)
 
+    @app.get("/v2/operator/timeline")
+    def operator_timeline_endpoint(engine: EngineDep) -> dict:
+        """V2 operator analytics: as-of aggregates across the replay window (event-window view)."""
+        from .v2 import operator_timeline
+
+        return operator_timeline(engine)
+
     @app.get("/v1/model/lift")
     def model_lift() -> dict:
         """Measured M0/M1 ablation + event-lift verdict for the Model Lift Lab (§9, §10)."""

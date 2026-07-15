@@ -21,14 +21,18 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   spread, per-zone breakdown) rendered on a new `/statistics` screen with a stacked availability
   bar, event-type / top-surge bar lists, and a per-zone table. All values reconcile with the v1
   endpoints and respect the as-of leakage boundary.
+- **Event-window timeline** — new endpoint `GET /v2/operator/timeline` recomputes the as-of
+  aggregates (shortage, Δ, event count) at each hour across the replay window (12:00→18:00) with
+  event-onset markers, rendered as two inline-SVG area+line charts on `/statistics`. Shows the
+  leakage boundary visually (flat until onset) and `event_count` is monotonic non-decreasing.
 - New code: `services/api/v2.py`, `data/fixtures/station_gazetteer.json`,
   `apps/web/app/statistics/page.tsx`; endpoints wired in `services/api/app.py`; typed client in
   `apps/web/lib/api.ts`.
-- Tests: **9 new** integration tests in `tests/integration/test_api_v2.py` (search matching, live
-  hydration, as-of boundary, statistics consistency) — all pass. Full non-torch suite: **197
-  passed, 1 skipped**; web `tsc` clean, `next build` green (12 routes), ruff + mypy clean on the new
-  module. The 9 `torch`-dependent recsys/model tests can't run here (the PyTorch wheel index is
-  blocked by the container proxy) — they are unrelated to this change.
+- Tests: **13 new** integration tests in `tests/integration/test_api_v2.py` (search matching, live
+  hydration, as-of boundary, statistics consistency, timeline onset/monotonicity) — all pass. Full
+  non-torch suite: **192 passed, 1 skipped**; web `tsc` clean, `next build` green (12 routes), ruff
+  + mypy clean on the new module. The 9 `torch`-dependent recsys/model tests can't run here (the
+  PyTorch wheel index is blocked by the container proxy) — they are unrelated to this change.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

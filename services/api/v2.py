@@ -18,10 +18,11 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import lru_cache
 from typing import cast
 
+from config.api import DEMO_END, DEMO_START
 from config.collectors import STATION_GAZETTEER_FIXTURE
 from contracts.enums import EffectDirection
 
@@ -305,4 +306,78 @@ def operator_statistics(engine: ReplayEngine, cutoff: datetime) -> dict:
         "demand_delta_mean_affected": demand_delta_mean_affected,
         "zones": zones,
         "top_surge_zones": top_surge,
+    }
+
+
+def _hourly_cutoffs(step_hours: int = 1) -> list[datetime]:
+    """Hourly cutoffs spanning the demo replay window [DEMO_START, DEMO_END] inclusive."""
+    out: list[datetime] = []
+    c = DEMO_START
+    step = timedelta(hours=step_hours)
+    while c <= DEMO_END:
+        out.append(c)
+        c = c + step
+    return out
+
+
+def operator_timeline(engine: ReplayEngine, *, step_hours: int = 1) -> dict:
+    """As-of aggregates evaluated at each hour across the replay window (event-window analytics).
+
+    For every hourly cutoff the same offline pipeline is recomputed as-of that boundary, so the
+    series honestly shows the event onset: before an event's ``available_at`` it contributes no
+    demand delta and no raised-target shortage. Station inventory itself is a static fixture, so
+    utilization is flat by design; the shortage / delta / event series are what move.
+    """
+    points = []
+    for c in _hourly_cutoffs(step_hours):
+        views = station_views(engine, c)
+        forecasts = engine.forecasts(c)
+        events = engine.available_events(c)
+        affected = [zf for zf in forecasts if abs(zf.forecast_delta) > 1e-9]
+        points.append(
+            {
+                "cutoff": c,
+                "event_count": len(events),
+                "affected_zone_count": len(affected),
+                "total_shortage_units": sum(v.shortage for v in views),
+                "stations_in_shortage": sum(1 for v in views if v.shortage > 0),
+                "demand_delta_total": _round(sum(zf.forecast_delta for zf in forecasts)),
+                "demand_delta_max": _round(
+                    max((abs(zf.forecast_delta) for zf in forecasts), default=0.0)
+                ),
+            }
+        )
+    # Event onset markers (the first cutoff at which each demand-effect event became available).
+    markers = []
+    seen: set[str] = set()
+    for e in sorted(engine.all_events, key=lambda x: x.available_at or DEMO_END):
+        if e.available_at is None or e.available_at < DEMO_START or e.available_at > DEMO_END:
+            continue
+        if e.event_id in seen:
+            continue
+        seen.add(e.event_id)
+        markers.append(
+            {
+                "event_id": e.event_id,
+                "event_type": str(e.event_type),
+                "event_title": e.event_title,
+                "available_at": e.available_at,
+                "demand_effect": str(e.demand_effect),
+            }
+        )
+
+    return {
+        "mode": engine.mode,
+        "model_version": engine.model_version,
+        "feature_version": engine.feature_version,
+        "window_start": DEMO_START,
+        "window_end": DEMO_END,
+        "step_hours": step_hours,
+        "note": (
+            "각 시각(as-of)마다 오프라인 파이프라인을 다시 계산한 실제 시계열입니다. 이벤트 공개 "
+            "이전에는 수요 변화(Δ)와 목표 상향에 따른 부족이 발생하지 않습니다. 재고는 정적 "
+            "fixture이므로 가동률은 설계상 일정하며, 움직이는 것은 부족·Δ·이벤트 계열입니다."
+        ),
+        "points": points,
+        "event_markers": markers,
     }

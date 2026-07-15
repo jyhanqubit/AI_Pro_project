@@ -127,3 +127,45 @@ def test_statistics_after_event_reports_surge(client: TestClient) -> None:
     assert deltas == sorted(deltas, reverse=True)
     # Honest labelling: the demo heuristic, not a measured model.
     assert d["model_version"] == "demo-heuristic-v1"
+
+
+# ---- operator timeline (event-window analytics) ----------------------------------------------
+
+
+def test_timeline_spans_window_and_is_cutoff_independent(client: TestClient) -> None:
+    # The timeline evaluates the whole window regardless of the current replay cutoff.
+    _set(client, BEFORE)
+    t = client.get("/v2/operator/timeline").json()
+    assert t["points"], "timeline must have points"
+    assert t["window_start"][:10] == t["points"][0]["cutoff"][:10]
+    hours = [p["cutoff"][11:13] for p in t["points"]]
+    assert hours == sorted(hours)  # chronological
+    assert t["model_version"] == "demo-heuristic-v1"
+
+
+def test_timeline_event_count_is_monotonic_non_decreasing(client: TestClient) -> None:
+    # As-of availability only accumulates: later cutoffs never have fewer available events.
+    t = client.get("/v2/operator/timeline").json()
+    counts = [p["event_count"] for p in t["points"]]
+    assert counts == sorted(counts)
+    assert counts[0] == 0  # window starts before any event
+    assert counts[-1] >= 2  # both demo events available by the end
+
+
+def test_timeline_shows_onset_after_first_event(client: TestClient) -> None:
+    t = client.get("/v2/operator/timeline").json()
+    pre = [p for p in t["points"] if p["event_count"] == 0]
+    post = [p for p in t["points"] if p["event_count"] > 0]
+    # Before any event: no demand delta and no event-driven shortage.
+    assert all(p["demand_delta_total"] == 0.0 for p in pre)
+    assert all(p["total_shortage_units"] == 0 for p in pre)
+    # After the first event: at least one point carries a positive delta.
+    assert any(p["demand_delta_total"] > 0.0 for p in post)
+
+
+def test_timeline_markers_are_within_window(client: TestClient) -> None:
+    t = client.get("/v2/operator/timeline").json()
+    assert t["event_markers"], "the demo window crosses at least one event"
+    for m in t["event_markers"]:
+        assert t["window_start"] <= m["available_at"] <= t["window_end"]
+        assert m["event_title"]

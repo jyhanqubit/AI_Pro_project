@@ -334,6 +334,36 @@ export interface OperatorStatistics {
   top_surge_zones: ZoneStat[];
 }
 
+export interface TimelinePoint {
+  cutoff: string;
+  event_count: number;
+  affected_zone_count: number;
+  total_shortage_units: number;
+  stations_in_shortage: number;
+  demand_delta_total: number;
+  demand_delta_max: number;
+}
+
+export interface TimelineMarker {
+  event_id: string;
+  event_type: string;
+  event_title: string;
+  available_at: string;
+  demand_effect: EffectDirection;
+}
+
+export interface OperatorTimeline {
+  mode: OperatingMode;
+  model_version: string;
+  feature_version: string;
+  window_start: string;
+  window_end: string;
+  step_hours: number;
+  note: string;
+  points: TimelinePoint[];
+  event_markers: TimelineMarker[];
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -387,4 +417,5 @@ export const api = {
       `/v2/rider/stations/search?q=${encodeURIComponent(q)}&k=${k}`,
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
+  operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
 };
