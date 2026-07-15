@@ -517,6 +517,17 @@ export interface NewsSyncResponse {
   note: string;
 }
 
+export interface StationImportResponse {
+  status: "live" | "degraded";
+  mode: string;
+  source: string;
+  fetched_at: string;
+  count: number;
+  stations: { station_id: string; name: string; lat: number; lng: number; capacity: number }[];
+  degraded_reason?: string;
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -577,6 +588,10 @@ export const api = {
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
   operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
+  importStations: (limit = 60) =>
+    req<StationImportResponse>(`/v2/operator/stations/import?limit=${limit}`, {
+      method: "POST",
+    }),
   opsAsk: (query: string, cutoff?: string) =>
     req<OpsAskResponse>("/v2/operator/ask", {
       method: "POST",

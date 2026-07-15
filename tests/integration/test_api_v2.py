@@ -442,6 +442,32 @@ def test_news_sync_degrades_gracefully_without_network(client: TestClient) -> No
     assert d["degraded_reason"]
 
 
+def test_station_import_degrades_gracefully_without_network(client: TestClient) -> None:
+    d = client.post("/v2/operator/stations/import", params={"limit": 5}).json()
+    assert d["status"] == "degraded"
+    assert d["count"] == 0
+    assert d["stations"] == []
+    assert d["degraded_reason"]
+
+
+def test_gbfs_station_information_parse_offline() -> None:
+    # Parse a recorded GBFS sample: drop rows with no capacity / no coords; derive base_target.
+    from pathlib import Path
+
+    from config.collectors import FIXTURES_DIR
+    from pipelines.collectors.gbfs_stations import BBox, parse_station_information
+
+    raw = Path(FIXTURES_DIR / "gbfs_station_information_sample.json").read_bytes()
+    stations = parse_station_information(raw)
+    ids = {s["station_id"] for s in stations}
+    assert "no_capacity" not in ids and "no_coords" not in ids  # broken rows dropped
+    assert all(s["capacity"] > 0 and s["base_target"] >= 1 for s in stations)
+    # Deterministic order + bbox filter.
+    assert stations == parse_station_information(raw)
+    manhattan = parse_station_information(raw, bbox=BBox(40.70, 40.78, -74.02, -73.95))
+    assert 0 < len(manhattan) < len(stations)
+
+
 def test_news_sync_live_path_parses_and_dedups(monkeypatch) -> None:
     # Mock the GDELT provider to return canned payloads (no network) and check the live path.
     from pipelines.collectors import backfill

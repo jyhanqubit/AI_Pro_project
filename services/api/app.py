@@ -419,6 +419,13 @@ def create_app() -> FastAPI:
 
         return pricing_quotes(engine, engine.cutoff, stale=body.stale, safety=body.safety)
 
+    @app.post("/v2/operator/stations/import")
+    def stations_import_endpoint(limit: int = 60) -> dict:
+        """V2: preview a live import of the real Citi Bike station network (GBFS, free, no key)."""
+        from .v2 import import_live_stations
+
+        return import_live_stations(limit=limit)
+
     @app.post("/v2/operator/ask")
     def ops_ask_endpoint(engine: EngineDep, body: OpsAskRequest) -> dict:
         """V2-07 ops copilot: deterministic, artifact-grounded answers + dashboard deep-links."""

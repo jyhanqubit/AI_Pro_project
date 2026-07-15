@@ -10,6 +10,7 @@ import {
   type OperatorStatistics,
   type OperatorTimeline,
   type OpsAskResponse,
+  type StationImportResponse,
   type TimelinePoint,
 } from "@/lib/api";
 import { signed } from "@/lib/format";
@@ -267,6 +268,58 @@ function TimeSeries({
   );
 }
 
+// Operator action: preview a live import of the real Citi Bike station network from GBFS.
+function StationImport() {
+  const [res, setRes] = useState<StationImportResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function run() {
+    setLoading(true);
+    try {
+      setRes(await api.importStations(60));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="card">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div>
+          <h2>실제 정류장 네트워크 불러오기</h2>
+          <div className="sub">
+            무료·키 불필요 Citi Bike GBFS에서 실제 정류장(좌표·이름·용량)을 미리 불러옵니다.
+            반영은 <span className="mono">make v2-import-stations</span>.
+          </div>
+        </div>
+        <button className="btn primary" onClick={run} disabled={loading}>
+          {loading ? "불러오는 중…" : "🛰 실제 정류장 미리보기"}
+        </button>
+      </div>
+      {error && <div className="notice error" style={{ marginTop: 10 }}>{error}</div>}
+      {res?.status === "live" && (
+        <div style={{ marginTop: 10 }}>
+          <span className="badge live"><span className="dot" /> LIVE</span>{" "}
+          <span className="muted small">실제 정류장 {res.count}개 로드</span>
+          <div className="muted small" style={{ marginTop: 6 }}>
+            {res.stations.slice(0, 6).map((s) => `${s.name}(${s.capacity})`).join(" · ")}
+          </div>
+        </div>
+      )}
+      {res?.status === "degraded" && (
+        <div className="notice" style={{ marginTop: 10 }}>
+          지금은 실제 정류장 데이터를 불러올 수 없어요(네트워크 연결 없음). 네트워크가 연결된 환경에서
+          이용해 주세요.
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function StatisticsPage() {
   const { state, refreshKey } = useReplay();
   const cutoff = state?.cutoff ?? null;
@@ -309,6 +362,8 @@ export default function StatisticsPage() {
       </div>
 
       <OpsCopilot cutoff={cutoff} />
+
+      <StationImport />
 
       {/* KPI row */}
       <div className="grid cols-4">

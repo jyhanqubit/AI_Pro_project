@@ -897,3 +897,49 @@ def hybrid_search(
             "hydrate합니다. Elasticsearch가 없으면 오프라인 local provider로 degrade합니다."
         ),
     }
+
+
+def import_live_stations(*, limit: int = 60) -> dict:
+    """Preview a live import of the real Citi Bike station network from GBFS (free, no key).
+
+    Returns a labelled ``live`` result (count + sample) or a ``degraded`` result with the reason.
+    This is a preview; ``make v2-import-stations`` writes the fixtures.
+    """
+    from datetime import UTC, datetime
+
+    from pipelines.collectors.gbfs_stations import (
+        StationImportUnavailable,
+        fetch_station_information,
+    )
+
+    fetched_at = datetime.now(UTC).isoformat()
+    try:
+        stations = fetch_station_information(limit=limit)
+    except StationImportUnavailable as e:
+        return {
+            "status": "degraded",
+            "mode": "live",
+            "source": "gbfs:station_information",
+            "fetched_at": fetched_at,
+            "count": 0,
+            "stations": [],
+            "degraded_reason": str(e),
+            "note": (
+                "지금은 실제 정류장 데이터를 불러올 수 없습니다(네트워크/API 연결 없음). "
+                "아웃바운드 네트워크가 있는 환경에서는 무료·키 불필요 Citi Bike GBFS에서 그대로 "
+                "동작합니다."
+            ),
+        }
+    return {
+        "status": "live",
+        "mode": "live",
+        "source": "gbfs:station_information",
+        "fetched_at": fetched_at,
+        "count": len(stations),
+        "stations": stations[:25],
+        "note": (
+            "Citi Bike GBFS station_information(무료·키 불필요)에서 실제 정류장 네트워크를 "
+            "가져왔습니다(좌표·이름·용량). make v2-import-stations로 fixture에 반영하면 검색·지도·"
+            "통계 등에 그대로 사용됩니다."
+        ),
+    }

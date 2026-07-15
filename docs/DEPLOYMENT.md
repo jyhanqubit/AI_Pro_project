@@ -110,11 +110,23 @@ it never blocks search.
 
 ## 6. Data at operational scale
 
-- Station network: `data/fixtures/station_gazetteer.json` + `data/fixtures/rebalancing_demo.json`
-  (currently 16 stations across 4 regions). Add stations by appending to both files with matching
-  `station_id`s (coordinates + capacity + base_target in the rebalancing file; KO/EN names + aliases
-  in the gazetteer). Search, map, statistics, pricing, allocation, and the copilots pick them up
-  automatically.
+- **Real station network from GBFS (free, no key):** the bundled 16-station network is curated demo
+  data. To run on the **real Citi Bike network**, import it from GBFS `station_information` (needs
+  egress to `gbfs.citibikenyc.com`):
+
+  ```bash
+  make v2-import-stations                 # imports ~40 real stations into the fixtures
+  # or a region + size:
+  python -m pipelines.collectors.import_gbfs_stations --limit 60 --bbox 40.70,40.78,-74.05,-73.95
+  ```
+
+  This rewrites `station_gazetteer.json` + `rebalancing_demo.json` from live data (coordinates,
+  names, capacity; current bike counts merged from `station_status` when available). Preview it first
+  from the operator statistics screen ("🛰 실제 정류장 미리보기", `POST /v2/operator/stations/import`).
+  Without egress the import/preview degrades and leaves the fixtures untouched.
+- You can also add stations by hand: append matching `station_id`s to both files (coordinates +
+  capacity + base_target in the rebalancing file; KO/EN names + aliases in the gazetteer). Search,
+  map, statistics, pricing, allocation, and the copilots pick them up automatically.
 - Real Citi Bike history for the forecasting evaluation goes under `data/raw/citibike/` (git-ignored);
   run `make evaluate CITIBIKE_ZIP=path/to.zip`. Enabling a **measured** predictive-lift claim also
   needs a real overlapping-news backfill (`make v1-collect-news-live` with egress) so the coverage

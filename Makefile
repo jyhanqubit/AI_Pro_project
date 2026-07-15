@@ -88,6 +88,9 @@ v2-evaluate-search:  ## V2-03: hybrid geo-semantic search relevance on the gold 
 v2-evaluate-predictive-lift:  ## V2-02: predictive-lift coverage gate + honest verdict (offline)
 	python -m ml.forecasting.predictive_lift_demo
 
+v2-import-stations:  ## V2: import the REAL Citi Bike network from GBFS into the fixtures (needs egress)
+	python -m pipelines.collectors.import_gbfs_stations --limit 40
+
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main
 

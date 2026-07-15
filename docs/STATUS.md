@@ -74,9 +74,12 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   `make v2-evaluate-predictive-lift`) measures real coverage and honestly reports **`blocked_data`**
   (demo fixture far below the gate); a measured claim needs a real news backfill + training. Surfaced
   in the Model Lift Lab.
-- **Multi-region network** — expanded to 16 stations across 저지시티 / 호보켄 / 맨해튼 / 브루클린
-  (real coords, KO/EN names + aliases). Golden-path event zones kept intact; everything (search, map,
-  stats, pricing, allocation, copilots) picks up the regions automatically.
+- **Multi-region network** — a curated demo network of 16 stations across 저지시티 / 호보켄 / 맨해튼 /
+  브루클린 (real coords, KO/EN names + aliases). Golden-path event zones kept intact; everything
+  (search, map, stats, pricing, allocation, copilots) picks up the regions automatically.
+- **Real station import (GBFS)** — `make v2-import-stations` / `POST /v2/operator/stations/import`
+  pulls the **real Citi Bike network** from GBFS `station_information` (free, no key) into the
+  fixtures; degrades gracefully without egress. Preview button on the operator statistics screen.
 - **On-demand live news sync** — a "뉴스 동기화" button (`POST /v2/news/sync`) pulls real news from
   **GDELT DOC 2.0** (free, no key) and accumulates it into the vector store. Labelled `live` only
   when it truly fetched; a network failure returns `degraded` with the reason and **no fabricated
