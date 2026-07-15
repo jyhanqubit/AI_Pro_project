@@ -180,12 +180,19 @@ def main(argv: list[str] | None = None) -> None:
         help="a JSONL news backfill whose availability overlaps the trip window; unlocks the real "
         "B2-B4 event ablation (leakage-safe). Omit for the honest zero-overlap baseline.",
     )
+    ap.add_argument(
+        "--provider",
+        choices=("mock", "anthropic"),
+        default="mock",
+        help="event-extraction provider for --news (mock = deterministic offline; anthropic = real "
+        "Claude extraction, needs the SDK + ANTHROPIC_API_KEY). Only used when --news is given.",
+    )
     ns = ap.parse_args(argv)
     source = Path(ns.citibike) if ns.citibike else None
     news_source = Path(ns.news) if ns.news else None
 
     print("ShockFlow AI - Phase 06 forecasting, tuning & evaluation\n")
-    panel = load_real_panel(source, news_source=news_source)
+    panel = load_real_panel(source, news_source=news_source, provider=ns.provider)
     df = usable_frame(panel)
     distinct_hours = int(df["hour_start"].nunique()) if not df.empty else 0
     if df.empty or distinct_hours < MIN_USABLE_HOURS:

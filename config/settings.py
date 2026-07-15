@@ -25,8 +25,10 @@ class Settings(BaseSettings):
     shockflow_mode: OperatingMode = Field(default=OperatingMode.DEMO_FIXTURE)
     enable_gbfs_live: bool = Field(default=False)
     enable_gdelt_live: bool = Field(default=False)
-    llm_provider: str = Field(default="mock")
+    llm_provider: str = Field(default="mock")  # "mock" (default, offline) | "anthropic"
     llm_api_key: str | None = Field(default=None)
+    # Extraction model for the real (opt-in) Anthropic provider. Demo Mode never uses it.
+    llm_model: str = Field(default="claude-opus-4-8")
     neo4j_uri: str = Field(default="bolt://localhost:7687")
     neo4j_user: str = Field(default="neo4j")
     neo4j_password: str | None = Field(default=None)

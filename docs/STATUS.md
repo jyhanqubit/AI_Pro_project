@@ -342,6 +342,14 @@ web/CI sandbox), `.venv`:
   the tiny sample fixture lacks that history, so `ml/forecasting/run.py` now writes an honest
   **`blocked_data`** marker (no fabricated metrics, exact real-run command printed) to a separate
   file instead of crashing or clobbering a measured `reports/phase06_results.json`.
+- **Real LLM event extraction (opt-in)** — a Claude-backed `AnthropicLlmProvider`
+  (`pipelines/events/anthropic_provider.py`, `LLM_PROVIDER=anthropic`, `make evaluate … --provider
+  anthropic`) alongside the deterministic mock. Structured output via strict tool use; **evidence
+  kept only when it is an exact substring of the article** (ungrounded events dropped); geocoding
+  stays deterministic via the gazetteer (never model coordinates); severity/confidence clamped;
+  model id + prompt version on every extraction. Demo Mode and all tests keep the mock default; the
+  real provider is lazy and **degrades to a per-article error (never a fabricated event)** without
+  the SDK/key. Needs `pip install anthropic` + `ANTHROPIC_API_KEY` (or `ant auth login`).
 - **Real event-lift path is now fully wired** (previously the B2–B4 columns were hard-coded to 0):
   `load_real_panel(source, news_source=…)` / `python -m ml.forecasting.run <trip> --news <news.jsonl>`
   joins the real as-of graph features into the ablation columns, leakage-safe (an event first
