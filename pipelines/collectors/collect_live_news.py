@@ -55,6 +55,19 @@ def main() -> int:
     ap.add_argument("--start", default=None, help="YYYYMMDDHHMMSS UTC window start")
     ap.add_argument("--end", default=None, help="YYYYMMDDHHMMSS UTC window end")
     ap.add_argument("--stamp", default="latest", help="snapshot filename stamp (no clock in code)")
+    ap.add_argument(
+        "--query",
+        default=None,
+        help="override the GDELT DOC query (target your trip data's region/topics, e.g. a NYC "
+        "backfill: '(\"New York\" OR Manhattan OR Brooklyn) (\"Citi Bike\" OR subway OR concert)')",
+    )
+    ap.add_argument(
+        "--max-records",
+        type=int,
+        default=None,
+        help="max GDELT records to request (raise for a real backfill to clear the coverage gate; "
+        "GDELT caps a single request at 250)",
+    )
     args = ap.parse_args()
 
     enabled = args.live or os.environ.get("ENABLE_GDELT_LIVE", "").lower() == "true"
@@ -63,7 +76,13 @@ def main() -> int:
         print("Offline paths use data/fixtures/news_demo.jsonl (make v1-backfill-news).")
         return 0
 
-    gcfg = GdeltConfig(enabled=True, start=args.start, end=args.end)
+    gcfg = GdeltConfig(
+        enabled=True,
+        start=args.start,
+        end=args.end,
+        query=args.query or GdeltConfig.query,
+        max_records=args.max_records or GdeltConfig.max_records,
+    )
     provider = GdeltNewsProvider(
         gcfg.query, enabled=True, start=gcfg.start, end=gcfg.end,
         max_records=gcfg.max_records, source_lang=gcfg.source_lang,
