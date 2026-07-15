@@ -12,6 +12,7 @@ import {
   type StationSearchResponse,
 } from "@/lib/api";
 import { signed } from "@/lib/format";
+import { StationMap } from "@/components/StationMap";
 
 // Rider home, redesigned V2 (usability update).
 // Inspired by consumer bike-share apps (따릉이 / Citi Bike): a prominent search bar,
@@ -166,6 +167,7 @@ export default function RiderHome() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<FilterKey>("all");
   const [openId, setOpenId] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "map">("list");
 
   const allStations = useMemo(() => search.data?.stations ?? [], [search.data]);
 
@@ -251,6 +253,26 @@ export default function RiderHome() {
         >
           곧 부족 {counts.low + counts.tight}
         </button>
+
+        {/* List / map view toggle */}
+        <div className="view-toggle" role="tablist" aria-label="보기 방식">
+          <button
+            role="tab"
+            aria-selected={view === "list"}
+            className={view === "list" ? "active" : ""}
+            onClick={() => setView("list")}
+          >
+            ☰ 목록
+          </button>
+          <button
+            role="tab"
+            aria-selected={view === "map"}
+            className={view === "map" ? "active" : ""}
+            onClick={() => setView("map")}
+          >
+            🗺 지도
+          </button>
+        </div>
       </div>
 
       {search.loading && !search.data ? (
@@ -265,6 +287,8 @@ export default function RiderHome() {
             "조건에 맞는 대여소가 없어요."
           )}
         </div>
+      ) : view === "map" ? (
+        <StationMap stations={filtered} onOpen={(id) => setOpenId(id)} />
       ) : (
         <div className="station-list">
           {filtered.map((s) => (

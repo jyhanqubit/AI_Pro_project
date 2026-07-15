@@ -46,6 +46,9 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   Rider mode is a clean consumer view (operator tools hidden, read-only replay clock); operator mode
   shows the full tool tab bar + replay control. Deep-links to operator routes auto-select operator
   mode. Plus a **Noto Sans KR** gothic font (self-hosted via `next/font`) for Korean readability.
+- **Rider map view** — a ☰ 목록 / 🗺 지도 toggle on the rider home; the map is a self-contained SVG
+  that projects stations by real lat/lng (offline, no tile provider / API key), colours markers by
+  availability with 🔥 surge rings, and opens the station detail sheet on click.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

@@ -115,6 +115,16 @@ The app now separates the two audiences (V2 goal "Rider / Operator 최상위 경
 - Files: `apps/web/app/role.tsx` (context), `components/RoleSwitch.tsx`, `components/ReplayArea.tsx`,
   `components/RiderClock.tsx`, role-aware `components/Nav.tsx`.
 
+### 7. Rider map view — offline SVG station map
+
+The rider home has a **☰ 목록 / 🗺 지도** toggle. The map (`components/StationMap.tsx`) is a
+self-contained SVG that projects each station's **real lat/lng** onto a schematic — no external
+tile provider or map API key, so Demo Mode stays offline. Markers are coloured by availability, show
+the live bike count, carry a 🔥 ring when the zone is event-surging, and open the same station
+detail sheet on click/Enter. It is clearly captioned a schematic (개략도) — relative positions, not
+streets. The equirectangular projection compresses longitude by `cos(lat)` and fits the station
+bounding box into a padded viewport.
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at
