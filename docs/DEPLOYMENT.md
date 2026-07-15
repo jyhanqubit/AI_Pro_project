@@ -134,8 +134,18 @@ it never blocks search.
 - You can also add stations by hand: append matching `station_id`s to both files (coordinates +
   capacity + base_target in the rebalancing file; KO/EN names + aliases in the gazetteer). Search,
   map, statistics, pricing, allocation, and the copilots pick them up automatically.
-- Real Citi Bike history for the forecasting evaluation goes under `data/raw/citibike/` (git-ignored);
-  run `make evaluate CITIBIKE_ZIP=path/to.zip`. Enabling a **measured** predictive-lift claim also
+- Real Citi Bike history for the forecasting evaluation goes under `data/raw/citibike/` (git-ignored).
+  Bulk-download whole months by code (public S3 bucket, no key) instead of downloading each zip by
+  hand:
+
+  ```bash
+  make download-citibike MONTHS="202406 202407"          # NYC months
+  python -m pipelines.collectors.download_citibike --from 202401 --to 202406 --extract
+  python -m pipelines.collectors.download_citibike 202406 --jersey-city   # JC variant
+  ```
+
+  Then run `make evaluate CITIBIKE_ZIP=path/to.zip` (or `python -m ml.forecasting.run <zip> --news
+  <news.jsonl> --provider anthropic`). Enabling a **measured** predictive-lift claim also
   needs a real overlapping-news backfill (`make v1-collect-news-live` with egress) so the coverage
   gate can pass; until then `GET /v2/model/predictive-lift` reports `blocked_data`.
 
