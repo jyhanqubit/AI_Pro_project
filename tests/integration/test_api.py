@@ -126,6 +126,77 @@ def test_rebalancing_cutoff_out_of_window_is_400(client: TestClient) -> None:
     assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"
 
 
+def test_allocate_new_bikes_fills_deficit_for_benefit(client: TestClient) -> None:
+    # After the event the raised targets create a real shortage. Injecting a few new bikes should
+    # go entirely to deficits and produce a positive, honest benefit.
+    _set(client, CONCERT)
+    r = client.post(
+        "/v1/rebalancing/allocate", json={"cutoff": CONCERT, "extra_bikes": 2}
+    )
+    assert r.status_code == 200
+    j = r.json()
+    assert j["mode"] == "historical_replay"
+    assert j["model_version"] == "demo-heuristic-v1"
+    assert j["solver"] == "greedy-allocation"
+    assert j["current_total_bikes"] > 0  # n: bikes already deployed
+    assert j["shortage_units_before"] > 0
+    assert j["to_deficit"] == 2  # both new bikes relieve shortage
+    assert j["surplus_placed"] == 0
+    assert j["held"] == 0
+    assert j["shortage_reduction"] == 2
+    assert j["benefit"] > 0
+    # Bikes go only to stations that had a deficit, and never above capacity.
+    for s in j["allocations"]:
+        if s["added"] > 0:
+            assert s["deficit_before"] > 0
+            assert s["bikes_after"] <= s["capacity"]
+            assert s["deficit_after"] == s["deficit_before"] - s["added"]
+
+
+def test_allocate_zero_extra_is_do_nothing(client: TestClient) -> None:
+    _set(client, CONCERT)
+    j = client.post("/v1/rebalancing/allocate", json={"extra_bikes": 0}).json()
+    assert j["to_deficit"] == 0
+    assert j["held"] == 0
+    assert j["benefit"] == 0.0
+    assert all(s["added"] == 0 for s in j["allocations"])
+
+
+def test_allocate_surplus_is_held_by_default_and_placeable_on_request(client: TestClient) -> None:
+    _set(client, CONCERT)
+    big = 1000  # far more than total deficit
+    held = client.post(
+        "/v1/rebalancing/allocate", json={"cutoff": CONCERT, "extra_bikes": big}
+    ).json()
+    assert held["shortage_units_after"] == 0  # all deficits filled
+    assert held["surplus_placed"] == 0
+    assert held["held"] == big - held["to_deficit"]  # rest kept in reserve
+    assert held["benefit"] > 0
+
+    placed = client.post(
+        "/v1/rebalancing/allocate",
+        json={"cutoff": CONCERT, "extra_bikes": big, "place_surplus": True},
+    ).json()
+    assert placed["to_deficit"] == held["to_deficit"]
+    assert placed["surplus_placed"] > 0  # spilled into free docks
+    # Surplus bikes carry overflow cost, so deploying all of them lowers the benefit honestly.
+    assert placed["benefit"] < held["benefit"]
+
+
+def test_allocate_negative_extra_is_422(client: TestClient) -> None:
+    r = client.post("/v1/rebalancing/allocate", json={"extra_bikes": -1})
+    assert r.status_code == 422  # Pydantic ge=0 validation
+
+
+def test_allocate_cutoff_out_of_window_is_400(client: TestClient) -> None:
+    r = client.post(
+        "/v1/rebalancing/allocate",
+        json={"cutoff": "2026-07-13T00:00:00-04:00", "extra_bikes": 5},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"
+
+
 def test_recommendations_stations_returns_topk_with_reason_codes(client: TestClient) -> None:
     body = {"mode": "rent", "lat": 40.7196, "lng": -74.0431}
     r = client.post("/v1/recommendations/stations", json=body)

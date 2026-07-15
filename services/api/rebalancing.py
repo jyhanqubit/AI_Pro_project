@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from config.collectors import REBALANCING_DEMO_FIXTURE
+from optimization.classical.allocation import SupplyAllocationPlan, allocate_supply
 from optimization.classical.feasibility import check_feasibility
 from optimization.classical.greedy import greedy_plan
 from optimization.classical.milp import milp_plan
@@ -143,4 +144,71 @@ def solve(
         overflow_reduction=baseline.overflow_units - cost.overflow_units,
         stations=states,
         vehicle_capacity=problem.vehicle_capacity,
+    )
+
+
+@dataclass(frozen=True)
+class AllocationStationState:
+    station_id: str
+    name: str
+    zone_id: str
+    bikes_before: int
+    bikes_after: int
+    added: int
+    target: int
+    base_target: int
+    capacity: int
+    deficit_before: int
+    deficit_after: int
+
+
+@dataclass(frozen=True)
+class SupplyAllocationSolution:
+    """Result of allocating ``extra_bikes`` new units across the demo stations."""
+
+    plan: SupplyAllocationPlan
+    current_total_bikes: int
+    stations: tuple[AllocationStationState, ...]
+
+
+def allocate(
+    engine: ReplayEngine,
+    cutoff: datetime,
+    extra_bikes: int,
+    *,
+    place_surplus: bool = False,
+) -> SupplyAllocationSolution:
+    """Allocate ``extra_bikes`` new bikes into the as-of demo problem for the largest benefit.
+
+    Unlike :func:`solve` (which relocates existing bikes between stations), this injects new supply:
+    the operator has ``current_total_bikes`` deployed now and wants to add ``extra_bikes`` more. The
+    plan fills event-aware deficits first (see :mod:`optimization.classical.allocation`).
+    """
+    problem, base_targets = build_problem(engine, cutoff)
+    plan = allocate_supply(problem, extra_bikes, place_surplus=place_surplus)
+
+    added_by_id = {a.station_id: a.added for a in plan.allocations}
+    current_total = sum(s.bikes for s in problem.stations)
+
+    states = tuple(
+        AllocationStationState(
+            station_id=s.station_id,
+            name=s.name,
+            zone_id=s.zone_id or "",
+            bikes_before=s.bikes,
+            bikes_after=s.bikes + added_by_id.get(s.station_id, 0),
+            added=added_by_id.get(s.station_id, 0),
+            target=s.target,
+            base_target=base_targets[s.station_id],
+            capacity=s.capacity,
+            deficit_before=s.deficit,
+            deficit_after=max(0, s.target - (s.bikes + added_by_id.get(s.station_id, 0))),
+        )
+        for s in problem.stations
+    )
+
+    return SupplyAllocationSolution(
+        plan=plan,
+        current_total_bikes=current_total,
+        stations=states,
     )

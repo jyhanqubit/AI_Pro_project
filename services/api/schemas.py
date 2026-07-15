@@ -188,6 +188,50 @@ class RebalancingResponse(BaseModel):
     note: str
 
 
+class AllocationRequest(BaseModel):
+    """Operator asks: given the bikes deployed now, add ``extra_bikes`` more — where?"""
+
+    cutoff: AwareDatetime | None = None
+    extra_bikes: int = Field(ge=0, description="New bikes (m) the operator wants to inject")
+    # False (default): only place beneficial (deficit-filling) bikes, hold the rest in reserve —
+    # the true benefit-maximising plan. True: also spill the remainder into free docks now.
+    place_surplus: bool = False
+
+
+class AllocationStationOut(BaseModel):
+    station_id: str
+    name: str
+    zone_id: str
+    bikes_before: int
+    bikes_after: int
+    added: int
+    target: int
+    base_target: int
+    capacity: int
+    deficit_before: int
+    deficit_after: int
+
+
+class SupplyAllocationResponse(BaseModel):
+    mode: OperatingMode
+    cutoff: AwareDatetime
+    model_version: str
+    solver: str
+    current_total_bikes: int  # n: bikes already deployed
+    extra_bikes: int  # m: new bikes requested
+    to_deficit: int  # beneficial bikes (each removes one shortage unit)
+    surplus_placed: int  # bikes placed above target (each adds one overflow unit)
+    held: int  # bikes kept in reserve / undeployable (no dock room)
+    shortage_units_before: int
+    shortage_units_after: int
+    shortage_reduction: int
+    overflow_units_before: int
+    overflow_units_after: int
+    benefit: float  # operational-cost reduction vs. adding nothing
+    allocations: list[AllocationStationOut]
+    note: str
+
+
 class ErrorResponse(BaseModel):
     error_code: str
     message: str

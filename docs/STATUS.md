@@ -2,6 +2,23 @@
 
 _Last updated: 2026-07-15_
 
+## Addendum (2026-07-15) — new-supply allocation ("add m bikes")
+
+Added an operator tool distinct from relocation: **"there are `n` bikes now — add `m` more, where
+for the largest benefit?"** (`m` is operator input). New pure solver
+`optimization/classical/allocation.py` (`allocate_supply`) fills event-aware deficits first and is
+**provably optimal** (separable objective; checked against brute-force enumeration). New endpoint
+`POST /v1/rebalancing/allocate` (`services/api/{rebalancing,schemas,app}.py`) and a new-supply card
+on `apps/web/app/rebalancing/page.tsx` (number input for `m` + hold/deploy-surplus toggle). See
+`docs/OPTIMIZATION.md` → *New-supply allocation*.
+
+- Tests run and passing in this environment: `tests/unit/test_allocation.py` (6),
+  `tests/unit/test_rebalancing.py` (7), `tests/integration/test_api.py` (allocate + non-recsys).
+  ruff clean; mypy clean on the new modules; web `tsc --noEmit` clean.
+- Not re-run here: the full suite (`make test`) — the `ml`/`recsys` modules need optional deps
+  (`pandas`/`torch`/`sklearn`) that are not installed in this session; those collection errors are
+  pre-existing and unrelated to this change.
+
 ## Current status — V1 complete (with honest data blocks)
 
 **v0 (Phases 00–09) complete**, and **V1 (V1-00 … V1-09) implemented** on top as backward-compatible

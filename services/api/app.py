@@ -18,9 +18,12 @@ from config.api import DEMO_FORECAST_HORIZON_H
 from contracts.enums import TargetName
 from contracts.event import EventExtraction
 
+from .rebalancing import allocate as allocate_supply_demo
 from .rebalancing import solve as solve_rebalancing
 from .replay import DEMO_WINDOW, Driver, ReplayEngine, ZoneForecast, get_engine
 from .schemas import (
+    AllocationRequest,
+    AllocationStationOut,
     ErrorResponse,
     EventOut,
     EventsResponse,
@@ -40,6 +43,7 @@ from .schemas import (
     ScenarioZone,
     SetCutoffRequest,
     StationStateOut,
+    SupplyAllocationResponse,
     TraceStep,
 )
 
@@ -307,6 +311,76 @@ def create_app() -> FastAPI:
                     capacity=s.capacity,
                     shortage_before=s.shortage_before,
                     shortage_after=s.shortage_after,
+                )
+                for s in sol.stations
+            ],
+            note=note,
+        )
+
+    @app.post(
+        "/v1/rebalancing/allocate",
+        response_model=SupplyAllocationResponse,
+        responses={400: {"model": ErrorResponse}},
+    )
+    def rebalancing_allocate(
+        engine: EngineDep, body: AllocationRequest
+    ) -> SupplyAllocationResponse:
+        """Allocate ``extra_bikes`` NEW bikes for maximum operational benefit (section 14).
+
+        Distinct from ``/solve`` (which relocates existing bikes): the operator has bikes deployed
+        now and asks where to inject ``extra_bikes`` more. Deficits are filled first; leftover is
+        held in reserve unless ``place_surplus`` is set.
+        """
+        cutoff = body.cutoff or engine.cutoff
+        start, end = DEMO_WINDOW
+        if not (start <= cutoff <= end):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error_code": "cutoff_out_of_window",
+                    "message": f"cutoff must be within [{start.isoformat()}, {end.isoformat()}]",
+                },
+            )
+        sol = allocate_supply_demo(
+            engine, cutoff, body.extra_bikes, place_surplus=body.place_surplus
+        )
+        plan = sol.plan
+        note = (
+            "신규 자전거 투입 배분입니다. 현재 배치된 자전거는 그대로 두고, 운영자가 입력한 추가 "
+            "수량을 부족(이벤트 반영 목표 대비) 지역부터 채워 운영 비용 절감이 가장 큰 방식으로 "
+            "나눕니다. 부족을 모두 채운 뒤 남는 자전거는 기본적으로 예비로 보류하며(잉여는 "
+            "순이익이 음수), 큐레이션된 station fixture 위 데모 heuristic 예보 델타를 씁니다. "
+            "Quantum Research Mode는 사용하지 않습니다."
+        )
+        return SupplyAllocationResponse(
+            mode=engine.mode,
+            cutoff=cutoff,
+            model_version=engine.model_version,
+            solver=plan.solver,
+            current_total_bikes=sol.current_total_bikes,
+            extra_bikes=plan.extra_bikes,
+            to_deficit=plan.to_deficit,
+            surplus_placed=plan.surplus_placed,
+            held=plan.held,
+            shortage_units_before=plan.shortage_before,
+            shortage_units_after=plan.shortage_after,
+            shortage_reduction=plan.shortage_reduction,
+            overflow_units_before=plan.overflow_before,
+            overflow_units_after=plan.overflow_after,
+            benefit=plan.benefit,
+            allocations=[
+                AllocationStationOut(
+                    station_id=s.station_id,
+                    name=s.name,
+                    zone_id=s.zone_id,
+                    bikes_before=s.bikes_before,
+                    bikes_after=s.bikes_after,
+                    added=s.added,
+                    target=s.target,
+                    base_target=s.base_target,
+                    capacity=s.capacity,
+                    deficit_before=s.deficit_before,
+                    deficit_after=s.deficit_after,
                 )
                 for s in sol.stations
             ],

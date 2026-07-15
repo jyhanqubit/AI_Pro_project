@@ -155,6 +155,40 @@ export interface RebalancingResponse {
   note: string;
 }
 
+export interface AllocationStationOut {
+  station_id: string;
+  name: string;
+  zone_id: string;
+  bikes_before: number;
+  bikes_after: number;
+  added: number;
+  target: number;
+  base_target: number;
+  capacity: number;
+  deficit_before: number;
+  deficit_after: number;
+}
+
+export interface SupplyAllocationResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  solver: string;
+  current_total_bikes: number; // n: bikes already deployed
+  extra_bikes: number; // m: new bikes requested
+  to_deficit: number;
+  surplus_placed: number;
+  held: number;
+  shortage_units_before: number;
+  shortage_units_after: number;
+  shortage_reduction: number;
+  overflow_units_before: number;
+  overflow_units_after: number;
+  benefit: number;
+  allocations: AllocationStationOut[];
+  note: string;
+}
+
 export interface ExperimentArm {
   policy: string;
   label: string;
@@ -298,6 +332,15 @@ export const api = {
     req<RebalancingResponse>("/v1/rebalancing/solve", {
       method: "POST",
       body: JSON.stringify({ cutoff, method }),
+    }),
+  allocate: (cutoff: string, extraBikes: number, placeSurplus = false) =>
+    req<SupplyAllocationResponse>("/v1/rebalancing/allocate", {
+      method: "POST",
+      body: JSON.stringify({
+        cutoff,
+        extra_bikes: extraBikes,
+        place_surplus: placeSurplus,
+      }),
     }),
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
   modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),

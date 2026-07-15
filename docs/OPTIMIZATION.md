@@ -74,6 +74,35 @@ Validated relationships (`tests/unit/test_rebalancing.py`): greedy is always fea
 do-nothing; **MILP cost == enumeration cost** (optimal) and ≤ greedy; a binding vehicle capacity
 is respected.
 
+## New-supply allocation (add *m* bikes)
+
+A second, distinct operator question: *"there are `n` bikes deployed now — I want to add `m`
+more; where do they go for the largest benefit?"* This **injects new supply** rather than
+relocating existing bikes, so there is no move distance and no vehicle tour; the only physical
+limit is per-station dock room (`bikes + added ≤ capacity`). The operator supplies `m`.
+
+`optimization/classical/allocation.py`:
+
+- `allocate_supply(problem, extra_bikes, *, place_surplus=False) → SupplyAllocationPlan`.
+- Marginal value of the k-th bike at station `i`: `+shortage_cost` while `bikes_i < target_i`
+  (removes one unit of unmet demand), `−overflow_cost` while `target_i ≤ bikes_i < capacity_i`
+  (adds idle surplus), infeasible once full. Because every deficit-filling bike is worth exactly
+  `shortage_cost > 0` and every surplus bike exactly `−overflow_cost < 0`, independent of station,
+  the objective is **separable with non-increasing marginal value** — so filling deficits first
+  (any order) and then spilling the rest is **provably optimal**.
+- Default `place_surplus=False` places only the beneficial (deficit-filling) bikes and reports the
+  remainder as `held` (kept in reserve) — the true benefit-maximising plan. `place_surplus=True`
+  also spills the leftover into free docks when the operator insists on deploying all `m` now;
+  those bikes carry a clearly-reported **negative** marginal benefit. Any bike that no dock can
+  hold stays `held`.
+- `benefit = baseline_cost − post_cost` under the same asymmetric objective (shortage/overflow
+  only; no distance) — positive means the allocation lowers operational cost.
+
+Validated (`tests/unit/test_allocation.py`): fills deficits first; **greedy benefit ==
+brute-force enumeration optimum** for both "up to m" and "exactly m" placement; surplus is held by
+default and only placed on request (lowering benefit honestly); dock capacity is never exceeded;
+`m = 0` is a zero-benefit no-op; negative `m` is rejected.
+
 ## Quantum Research Mode (§14.2) — research only
 
 `optimization/quantum/qubo.py` maps a **small** instance to a QUBO for QAOA.
@@ -111,8 +140,15 @@ never presented as hardware, and **no quantum-advantage claim is made** (§14.2)
   `{cutoff?, method: "greedy"|"milp", vehicle_capacity?}`. Returns the mode, cutoff, method,
   feasibility (+ reason if infeasible), the moves, per-station before→after inventory, and
   shortage/overflow reduction vs the do-nothing baseline. Out-of-window cutoffs return `400`.
+- `POST /v1/rebalancing/allocate` — body `{cutoff?, extra_bikes (m, ≥ 0), place_surplus?}`.
+  Returns the mode, cutoff, solver, `current_total_bikes` (n), `extra_bikes` (m), the split into
+  `to_deficit` / `surplus_placed` / `held`, shortage before→after, the `benefit`, and per-station
+  `added` with before→after inventory and deficit. Out-of-window cutoffs return `400`; a negative
+  `extra_bikes` is rejected by schema validation (`422`).
 - `apps/web/app/rebalancing/page.tsx` renders the plan: feasibility badge, moves table,
-  station inventory before→after, and the cost/shortage summary.
+  station inventory before→after, and the cost/shortage summary — plus a **new-supply allocation**
+  card where the operator enters `m` (and an optional "deploy all / hold surplus" toggle) and sees
+  the benefit, the deficit→held split, and the per-station allocation table.
 
 ## Run it
 
