@@ -381,3 +381,71 @@ def operator_timeline(engine: ReplayEngine, *, step_hours: int = 1) -> dict:
         "points": points,
         "event_markers": markers,
     }
+
+
+def allocate_extra_bikes(engine: ReplayEngine, cutoff: datetime, extra: int) -> dict:
+    """Distribute ``extra`` operator-supplied bikes over the as-of network to maximise benefit.
+
+    Reuses the as-of rebalancing problem (event-adjusted targets) and the classical allocation
+    optimiser. The result is exact (the objective is separable/convex, so greedy is optimal) and
+    honest: bikes with no beneficial placement are reported as held back, not force-placed.
+    """
+    from optimization.classical.allocation import allocate_extra_bikes as _allocate
+
+    problem, base_targets = build_problem(engine, cutoff)
+    result = _allocate(problem, extra)
+    gaz = _gazetteer()
+
+    # Show the biggest allocations first, then the untouched stations (sort the typed rows).
+    ordered = sorted(
+        result.stations,
+        key=lambda sa: (-sa.added, -sa.shortage_before, sa.station_id),
+    )
+    stations = []
+    for sa in ordered:
+        p = gaz.get(sa.station_id, _place(sa.station_id))
+        stations.append(
+            {
+                "station_id": sa.station_id,
+                "ko": p.ko,
+                "en": p.en,
+                "area": p.area,
+                "zone_id": sa.zone_id,
+                "bikes_before": sa.bikes_before,
+                "added": sa.added,
+                "bikes_after": sa.bikes_after,
+                "target": sa.target,
+                "base_target": base_targets.get(sa.station_id, sa.target),
+                "capacity": sa.capacity,
+                "shortage_before": sa.shortage_before,
+                "shortage_after": sa.shortage_after,
+            }
+        )
+
+    return {
+        "mode": engine.mode,
+        "cutoff": engine.cutoff,
+        "model_version": engine.model_version,
+        "feature_version": engine.feature_version,
+        "method": "greedy-marginal-exact",
+        "extra_requested": result.extra_requested,
+        "placed": result.placed,
+        "leftover": result.leftover,
+        "shortage_units_before": result.shortage_units_before,
+        "shortage_units_after": result.shortage_units_after,
+        "overflow_units_before": result.overflow_units_before,
+        "overflow_units_after": result.overflow_units_after,
+        "cost_before": result.cost_before,
+        "cost_after": result.cost_after,
+        "benefit": result.benefit,
+        "shortage_reduction": result.shortage_units_before - result.shortage_units_after,
+        "stations": stations,
+        "note": (
+            "운영자가 입력한 추가 자전거를 as-of 목표 재고에 맞춰 최적 분배한 결과입니다. 비용은 "
+            "비대칭 운영 목적(부족 3 : 과잉 1, config/rebalancing.py)이며, 목적이 분리·볼록이라 "
+            "greedy 한계이익 배분이 전역 최적입니다(테스트에서 완전탐색과 일치 검증). 목표를 이미 "
+            "충족한 뒤의 자전거는 과잉만 늘리므로 배치하지 않고 창고 보유로 정직하게 보고합니다. "
+            "목표는 라벨이 붙은 데모 heuristic(demo-heuristic-v1) 예보 델타로 상향되며, 측정된 "
+            "Phase 06 모델이 아닙니다."
+        ),
+    }

@@ -364,6 +364,43 @@ export interface OperatorTimeline {
   event_markers: TimelineMarker[];
 }
 
+export interface AllocationStation {
+  station_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  zone_id: string;
+  bikes_before: number;
+  added: number;
+  bikes_after: number;
+  target: number;
+  base_target: number;
+  capacity: number;
+  shortage_before: number;
+  shortage_after: number;
+}
+
+export interface AllocationResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  feature_version: string;
+  method: string;
+  extra_requested: number;
+  placed: number;
+  leftover: number;
+  shortage_units_before: number;
+  shortage_units_after: number;
+  overflow_units_before: number;
+  overflow_units_after: number;
+  cost_before: number;
+  cost_after: number;
+  benefit: number;
+  shortage_reduction: number;
+  stations: AllocationStation[];
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -418,4 +455,9 @@ export const api = {
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
   operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
+  allocateExtraBikes: (extraBikes: number, cutoff?: string) =>
+    req<AllocationResponse>("/v2/operator/rebalancing/allocate", {
+      method: "POST",
+      body: JSON.stringify({ extra_bikes: extraBikes, cutoff: cutoff ?? null }),
+    }),
 };

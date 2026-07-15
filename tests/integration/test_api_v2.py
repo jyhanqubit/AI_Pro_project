@@ -169,3 +169,63 @@ def test_timeline_markers_are_within_window(client: TestClient) -> None:
     for m in t["event_markers"]:
         assert t["window_start"] <= m["available_at"] <= t["window_end"]
         assert m["event_title"]
+
+
+# ---- extra-bike allocation -------------------------------------------------------------------
+
+
+def test_allocate_reduces_shortage_and_reports_benefit(client: TestClient) -> None:
+    _set(client, CONCERT)
+    r = client.post("/v2/operator/rebalancing/allocate", json={"extra_bikes": 6})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["extra_requested"] == 6
+    assert d["placed"] <= 6
+    assert d["placed"] == sum(s["added"] for s in d["stations"])
+    # Every added bike removes one shortage unit (asymmetric objective, shortage_cost=3).
+    assert d["shortage_units_after"] == d["shortage_units_before"] - d["placed"]
+    assert d["shortage_reduction"] == d["placed"]
+    assert d["benefit"] == round(d["cost_before"] - d["cost_after"], 4)
+    assert d["benefit"] >= 0.0
+    assert d["model_version"] == "demo-heuristic-v1"
+
+
+def test_allocate_zero_is_a_no_op(client: TestClient) -> None:
+    _set(client, CONCERT)
+    d = client.post("/v2/operator/rebalancing/allocate", json={"extra_bikes": 0}).json()
+    assert d["placed"] == 0
+    assert d["shortage_units_after"] == d["shortage_units_before"]
+    assert all(s["added"] == 0 for s in d["stations"])
+
+
+def test_allocate_holds_back_surplus_bikes_honestly(client: TestClient) -> None:
+    # Supplying far more than the network can use: only the total deficit is placed, the rest is
+    # reported as leftover (held in depot) rather than force-placed into overflow.
+    _set(client, CONCERT)
+    d = client.post("/v2/operator/rebalancing/allocate", json={"extra_bikes": 500}).json()
+    assert d["leftover"] > 0
+    assert d["placed"] + d["leftover"] == 500
+    assert d["shortage_units_after"] == 0
+    assert d["overflow_units_after"] == d["overflow_units_before"]
+    # Never exceed a station's dock capacity.
+    for s in d["stations"]:
+        assert s["bikes_after"] <= s["capacity"]
+
+
+def test_allocate_respects_as_of_boundary(client: TestClient) -> None:
+    # Before any event, targets are the normal-hour base, so there is little/no event shortage.
+    _set(client, BEFORE)
+    before = client.post("/v2/operator/rebalancing/allocate", json={"extra_bikes": 6}).json()
+    # After the concert, event-raised targets create more shortage to relieve.
+    _set(client, CONCERT)
+    after = client.post("/v2/operator/rebalancing/allocate", json={"extra_bikes": 6}).json()
+    assert after["shortage_units_before"] >= before["shortage_units_before"]
+
+
+def test_allocate_cutoff_out_of_window_is_400(client: TestClient) -> None:
+    r = client.post(
+        "/v2/operator/rebalancing/allocate",
+        json={"extra_bikes": 5, "cutoff": "2026-07-13T00:00:00-04:00"},
+    )
+    assert r.status_code == 400
+    assert r.json()["detail"]["error_code"] == "cutoff_out_of_window"

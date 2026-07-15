@@ -77,14 +77,39 @@ and `demand_delta_total` — plus `event_markers` at each event's `available_at`
 - `event_count` is monotonically non-decreasing (as-of availability only accumulates), asserted in
   tests.
 
+### 5. Optimal extra-bike allocation — `POST /v2/operator/rebalancing/allocate`
+
+Answers the operator question *"the system has N bikes now; I want to inject M more — how should I
+distribute them for the biggest benefit?"* (M is an operator input). This complements the existing
+relocation solver (which conserves the total): here we **add** bikes.
+
+- **Optimizer** (`optimization/classical/allocation.py`): distributes M bikes to minimise the same
+  asymmetric operational cost (shortage 3 : overflow 1, `config/rebalancing.py`) subject to hard
+  constraints — `added_i ≥ 0` integer, `bikes_i + added_i ≤ capacity_i`, `Σ added_i ≤ M`. Because
+  the objective is **separable and convex**, a greedy that places each bike where its marginal
+  benefit is largest is **globally optimal**; `allocate_brute_force` validates greedy == exhaustive
+  optimum in tests (mirrors the QUBO validation pattern, §14.2).
+- **Honest by construction**: a bike is placed only while it strictly reduces cost (fills a
+  shortage). Once every station is at target, further bikes would only add overflow, so they are
+  reported as **held back in the depot** (`leftover`) rather than force-placed to inflate a number.
+- **UI**: a "추가 자전거 최적 분배" card at the top of `/rebalancing` with a numeric input for M and a
+  result view — current total, optimally placed vs. held-back, shortage before→after, operating
+  benefit (cost reduction), and a per-station table highlighting where bikes go. Recomputes as-of
+  when the replay cutoff changes (targets rise with events). Response fields include `extra_requested`,
+  `placed`, `leftover`, `shortage_units_before/after`, `overflow_units_before/after`,
+  `cost_before/after`, `benefit`, and the per-station `added`.
+
 ## Files
 
 | Area | File | Change |
 | --- | --- | --- |
 | Fixture | `data/fixtures/station_gazetteer.json` | **new** — rider-facing place metadata + aliases |
 | Config | `config/collectors.py` | `STATION_GAZETTEER_FIXTURE` path |
-| API | `services/api/v2.py` | **new** — `station_search`, `operator_statistics`, `operator_timeline`, shared views |
-| API | `services/api/app.py` | wire `/v2/rider/stations/search`, `/v2/operator/statistics`, `/v2/operator/timeline` |
+| API | `services/api/v2.py` | **new** — `station_search`, `operator_statistics`, `operator_timeline`, `allocate_extra_bikes`, shared views |
+| API | `services/api/app.py` | wire `/v2/rider/stations/search`, `/v2/operator/statistics`, `/v2/operator/timeline`, `/v2/operator/rebalancing/allocate` |
+| API | `services/api/schemas.py` | `ExtraBikeAllocationRequest` |
+| Opt | `optimization/classical/allocation.py` | **new** — optimal extra-bike allocator + brute-force oracle |
+| Web | `apps/web/app/rebalancing/page.tsx` | `추가 자전거 최적 분배` planner (operator M input) |
 | Web | `apps/web/lib/api.ts` | typed client: `StationHit`, `OperatorStatistics`, methods |
 | Web | `apps/web/app/page.tsx` | rider home redesign (search + chips + list + detail sheet) |
 | Web | `apps/web/app/statistics/page.tsx` | **new** — operator analytics screen |
@@ -101,6 +126,8 @@ make api                       # serves the v1 + v2 endpoints on :8000
 curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
 curl "127.0.0.1:8000/v2/operator/statistics"
 curl "127.0.0.1:8000/v2/operator/timeline"
+curl -X POST "127.0.0.1:8000/v2/operator/rebalancing/allocate" \
+  -H 'Content-Type: application/json' -d '{"extra_bikes": 8}'
 
 # Frontend
 make web                       # Next.js dev server on :3000  ->  /  and  /statistics

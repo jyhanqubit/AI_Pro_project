@@ -25,14 +25,23 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   aggregates (shortage, Δ, event count) at each hour across the replay window (12:00→18:00) with
   event-onset markers, rendered as two inline-SVG area+line charts on `/statistics`. Shows the
   leakage boundary visually (flat until onset) and `event_count` is monotonic non-decreasing.
+- **Optimal extra-bike allocation** — new endpoint `POST /v2/operator/rebalancing/allocate` and
+  `optimization/classical/allocation.py`: the operator inputs **M** extra bikes and the allocator
+  distributes them to maximise benefit under the asymmetric objective (shortage 3 : overflow 1),
+  respecting dock capacity and `Σ added ≤ M`. Objective is separable/convex so greedy is globally
+  optimal (validated against brute-force enumeration). Surplus bikes with no beneficial placement
+  are honestly held back, not force-placed. Rendered as a "추가 자전거 최적 분배" planner on
+  `/rebalancing` with an M input.
 - New code: `services/api/v2.py`, `data/fixtures/station_gazetteer.json`,
   `apps/web/app/statistics/page.tsx`; endpoints wired in `services/api/app.py`; typed client in
   `apps/web/lib/api.ts`.
-- Tests: **13 new** integration tests in `tests/integration/test_api_v2.py` (search matching, live
-  hydration, as-of boundary, statistics consistency, timeline onset/monotonicity) — all pass. Full
-  non-torch suite: **192 passed, 1 skipped**; web `tsc` clean, `next build` green (12 routes), ruff
-  + mypy clean on the new module. The 9 `torch`-dependent recsys/model tests can't run here (the
-  PyTorch wheel index is blocked by the container proxy) — they are unrelated to this change.
+- Tests: **18 new** integration tests in `tests/integration/test_api_v2.py` + **7** unit tests in
+  `tests/unit/test_allocation.py` (search matching, live hydration, as-of boundary, statistics
+  consistency, timeline onset/monotonicity, allocation optimality vs. brute force, honest hold-back)
+  — all pass. Full non-torch suite: **204 passed, 1 skipped**; web `tsc` clean, `next build` green
+  (12 routes), ruff + mypy clean on the new modules. The 9 `torch`-dependent recsys/model tests
+  can't run here (the PyTorch wheel index is blocked by the container proxy) — they are unrelated
+  to this change.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

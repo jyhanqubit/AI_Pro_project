@@ -26,6 +26,7 @@ from .schemas import (
     EventsResponse,
     EvidenceOut,
     ExplanationResponse,
+    ExtraBikeAllocationRequest,
     ForecastOut,
     ForecastsResponse,
     HealthResponse,
@@ -390,6 +391,26 @@ def create_app() -> FastAPI:
         from .v2 import operator_timeline
 
         return operator_timeline(engine)
+
+    @app.post(
+        "/v2/operator/rebalancing/allocate",
+        responses={400: {"model": ErrorResponse}},
+    )
+    def allocate_extra_bikes_endpoint(engine: EngineDep, body: ExtraBikeAllocationRequest) -> dict:
+        """V2: optimally distribute operator-supplied extra bikes over the as-of network."""
+        from .v2 import allocate_extra_bikes
+
+        cutoff = body.cutoff or engine.cutoff
+        start, end = DEMO_WINDOW
+        if not (start <= cutoff <= end):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error_code": "cutoff_out_of_window",
+                    "message": f"cutoff must be within [{start.isoformat()}, {end.isoformat()}]",
+                },
+            )
+        return allocate_extra_bikes(engine, cutoff, body.extra_bikes)
 
     @app.get("/v1/model/lift")
     def model_lift() -> dict:

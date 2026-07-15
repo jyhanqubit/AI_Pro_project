@@ -201,3 +201,10 @@ class RecommendationApiRequest(BaseModel):
     lng: float = Field(ge=-180.0, le=180.0)
     is_member: bool = True
     cutoff: AwareDatetime | None = None
+
+
+class ExtraBikeAllocationRequest(BaseModel):
+    """Operator injects ``extra_bikes`` more bikes; allocate them optimally (V2)."""
+
+    extra_bikes: int = Field(ge=0, le=1000, description="Extra bikes to inject into the network")
+    cutoff: AwareDatetime | None = None
