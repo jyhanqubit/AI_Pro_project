@@ -10,10 +10,6 @@
     {"query": "waterfront", "relevant": ["station:JC_NEWPORT"]},
     {"query": "exchange place", "relevant": ["station:JC_EXCHANGE"]},
     {"query": "호보켄터미널", "relevant": ["station:JC_HOBOKEN"]},
-    {"query": "타임스 스퀘어", "relevant": ["station:NY_TIMES"]},
-    {"query": "union square 자전거", "relevant": ["station:NY_UNION"]},
-    {"query": "덤보", "relevant": ["station:BK_DUMBO"]},
-    {"query": "journal square", "relevant": ["station:JC_JOURNAL"]},
     {"query": "요금 할증 얼마", "relevant": ["help_pricing"]},
     {"query": "자전거 반납 어떻게", "relevant": ["help_return"]}
   ]

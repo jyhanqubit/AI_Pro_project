@@ -91,14 +91,14 @@ def test_scenario_toggle_reverts_event_effect(client: TestClient) -> None:
 
 
 def test_rebalancing_returns_feasible_plan(client: TestClient) -> None:
-    # Before the event: no zone shortage, so the plan is empty but still feasible.
+    # Before the event the plan is feasible. (Real live inventory may carry a baseline shortage the
+    # solver also relieves, so we don't assert zero moves here — only feasibility.)
     _set(client, BEFORE)
     before = client.post("/v1/rebalancing/solve", json={"cutoff": BEFORE, "method": "milp"}).json()
     assert before["feasible"] is True
-    assert before["total_moved"] == 0
-    assert before["shortage_units_after"] == 0
+    assert before["shortage_units_after"] <= before["shortage_units_before"]
 
-    # After the event: raised targets create a shortage that the solver relieves with real moves.
+    # After the event: raised targets create additional shortage that the solver relieves.
     after = client.post("/v1/rebalancing/solve", json={"cutoff": CONCERT, "method": "milp"}).json()
     assert after["feasible"] is True
     assert after["mode"] == "historical_replay"

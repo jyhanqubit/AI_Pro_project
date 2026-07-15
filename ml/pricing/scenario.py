@@ -20,6 +20,14 @@ _FIXTURE = _ROOT / "data" / "fixtures" / "rebalancing_demo.json"
 # golden path. Keyed by station id. Quiet zones get 0.
 DEMO_EVENT_UPLIFT: dict[str, int] = {"JC_HOBOKEN": 2, "JC_CITYHALL": 4, "JC_NEWPORT": 2}
 
+# The controlled Jersey City / Hoboken demo scenario: two quiet donor zones (Grove, Exchange) plus
+# the three event-exposed deficit zones. The switchback experiment + pricing policy *simulation*
+# runs on this stable set (always present in the fixture), decoupled from the real operational
+# network so the labelled simulation stays deterministic regardless of an imported live network.
+DEMO_SCENARIO_STATIONS: frozenset[str] = frozenset(
+    {"JC_GROVE", "JC_EXCHANGE", "JC_HOBOKEN", "JC_CITYHALL", "JC_NEWPORT"}
+)
+
 
 @dataclass(frozen=True)
 class ScenarioStation:
@@ -44,6 +52,8 @@ def build_demo_scenario(event_uplift: dict[str, int] | None = None) -> list[Scen
     payload = json.loads(_FIXTURE.read_text(encoding="utf-8"))
     stations: list[ScenarioStation] = []
     for s in payload["stations"]:
+        if s["station_id"] not in DEMO_SCENARIO_STATIONS:
+            continue  # controlled demo scenario only (decoupled from any imported live network)
         base = int(s["base_target"])
         extra = int(uplift.get(s["station_id"], 0))
         # Rent demand tracks the (event-adjusted) target; return demand is the baseline arrivals.

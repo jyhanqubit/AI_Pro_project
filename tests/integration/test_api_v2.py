@@ -74,12 +74,13 @@ def test_search_no_match_returns_empty(client: TestClient) -> None:
 
 def test_search_respects_as_of_boundary_for_demand_delta(client: TestClient) -> None:
     # Before any event is available every demand delta is zero (leakage boundary, §5.2).
+    # (k large enough to include the event-zone stations, which rank low on availability.)
     _set(client, BEFORE)
-    before = client.get("/v2/rider/stations/search").json()["stations"]
+    before = client.get("/v2/rider/stations/search", params={"k": 200}).json()["stations"]
     assert all(s["demand_delta"] == 0.0 for s in before)
     # After the events are available at least one station's zone shows a positive delta.
     _set(client, CONCERT)
-    after = client.get("/v2/rider/stations/search").json()["stations"]
+    after = client.get("/v2/rider/stations/search", params={"k": 200}).json()["stations"]
     assert any(s["demand_delta"] > 0.0 for s in after)
 
 
@@ -158,9 +159,9 @@ def test_timeline_shows_onset_after_first_event(client: TestClient) -> None:
     t = client.get("/v2/operator/timeline").json()
     pre = [p for p in t["points"] if p["event_count"] == 0]
     post = [p for p in t["points"] if p["event_count"] > 0]
-    # Before any event: no demand delta and no event-driven shortage.
+    # Before any event: no event-derived demand delta (leakage boundary). Baseline shortage may
+    # exist independently (real live inventory), so we only assert the event-driven delta is zero.
     assert all(p["demand_delta_total"] == 0.0 for p in pre)
-    assert all(p["total_shortage_units"] == 0 for p in pre)
     # After the first event: at least one point carries a positive delta.
     assert any(p["demand_delta_total"] > 0.0 for p in post)
 

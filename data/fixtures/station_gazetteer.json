@@ -1,21 +1,338 @@
 {
-  "description": "Rider-facing place metadata for the multi-region demo station network (Jersey City, Hoboken, Manhattan, Brooklyn): Korean + English names, district, and search aliases. Static place metadata, NOT demand data. Names mirror data/fixtures/rebalancing_demo.json.",
+  "description": "Real Citi Bike stations from GBFS station_information + curated demo event-zone names (Jersey City / Hoboken).",
   "stations": [
-    {"station_id": "JC_GROVE", "ko": "그로브 스트리트", "en": "Grove St PATH", "area": "저지시티", "aliases": ["grove", "grove street", "그로브", "그로브스트리트", "path", "패스"]},
-    {"station_id": "JC_EXCHANGE", "ko": "익스체인지 플레이스", "en": "Exchange Place", "area": "저지시티", "aliases": ["exchange", "exchange place", "익스체인지", "익스체인지플레이스"]},
-    {"station_id": "JC_HOBOKEN", "ko": "호보켄 터미널", "en": "Hoboken Terminal", "area": "호보켄", "aliases": ["hoboken", "호보켄", "호보켄터미널", "terminal", "터미널"]},
-    {"station_id": "JC_CITYHALL", "ko": "저지시티 시청", "en": "City Hall", "area": "저지시티", "aliases": ["city hall", "cityhall", "시청", "저지시티시청"]},
-    {"station_id": "JC_NEWPORT", "ko": "뉴포트", "en": "Newport", "area": "저지시티", "aliases": ["newport", "뉴포트", "waterfront", "워터프론트"]},
-    {"station_id": "JC_JOURNAL", "ko": "저널 스퀘어", "en": "Journal Square", "area": "저지시티", "aliases": ["journal", "journal square", "저널", "저널스퀘어"]},
-    {"station_id": "JC_PAULUS", "ko": "폴러스 훅", "en": "Paulus Hook", "area": "저지시티", "aliases": ["paulus", "paulus hook", "폴러스", "폴러스훅"]},
-    {"station_id": "HB_WASHINGTON", "ko": "워싱턴 스트리트", "en": "Washington St", "area": "호보켄", "aliases": ["washington", "washington st", "워싱턴", "워싱턴스트리트"]},
-    {"station_id": "HB_14ST", "ko": "14번가 페리", "en": "14th St Ferry", "area": "호보켄", "aliases": ["14th", "14st", "ferry", "14번가", "페리"]},
-    {"station_id": "NY_WALL", "ko": "월 스트리트", "en": "Wall St", "area": "맨해튼", "aliases": ["wall", "wall st", "월스트리트", "월가", "financial"]},
-    {"station_id": "NY_SOHO", "ko": "소호", "en": "SoHo Broome St", "area": "맨해튼", "aliases": ["soho", "소호", "broome", "브룸"]},
-    {"station_id": "NY_UNION", "ko": "유니언 스퀘어", "en": "Union Square", "area": "맨해튼", "aliases": ["union", "union square", "유니언", "유니언스퀘어"]},
-    {"station_id": "NY_TIMES", "ko": "타임스 스퀘어", "en": "Times Square", "area": "맨해튼", "aliases": ["times", "times square", "타임스", "타임스스퀘어"]},
-    {"station_id": "NY_CENTRAL", "ko": "센트럴파크 남측", "en": "Central Park South", "area": "맨해튼", "aliases": ["central park", "센트럴파크", "central", "센트럴"]},
-    {"station_id": "BK_DUMBO", "ko": "덤보", "en": "DUMBO", "area": "브루클린", "aliases": ["dumbo", "덤보", "brooklyn bridge"]},
-    {"station_id": "BK_WILLIAMSBURG", "ko": "윌리엄스버그", "en": "Williamsburg", "area": "브루클린", "aliases": ["williamsburg", "윌리엄스버그", "윌리엄스", "브루클린"]}
+    {
+      "station_id": "JC_GROVE",
+      "ko": "그로브 스트리트",
+      "en": "Grove St PATH",
+      "area": "저지시티",
+      "aliases": [
+        "grove",
+        "그로브",
+        "path"
+      ]
+    },
+    {
+      "station_id": "JC_EXCHANGE",
+      "ko": "익스체인지 플레이스",
+      "en": "Exchange Place",
+      "area": "저지시티",
+      "aliases": [
+        "exchange",
+        "익스체인지"
+      ]
+    },
+    {
+      "station_id": "JC_HOBOKEN",
+      "ko": "호보켄 터미널",
+      "en": "Hoboken Terminal",
+      "area": "호보켄",
+      "aliases": [
+        "hoboken",
+        "호보켄",
+        "터미널"
+      ]
+    },
+    {
+      "station_id": "JC_CITYHALL",
+      "ko": "저지시티 시청",
+      "en": "City Hall",
+      "area": "저지시티",
+      "aliases": [
+        "city hall",
+        "시청"
+      ]
+    },
+    {
+      "station_id": "JC_NEWPORT",
+      "ko": "뉴포트",
+      "en": "Newport",
+      "area": "저지시티",
+      "aliases": [
+        "newport",
+        "뉴포트",
+        "waterfront"
+      ]
+    },
+    {
+      "station_id": "00284700-9d22-42ce-8485-113fed9879c1",
+      "ko": "28 Ave & 44 St",
+      "en": "28 Ave & 44 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "002e6e9f-ced2-47b0-bc7e-ccf38c3b4b0f",
+      "ko": "Prospect Ave & E 151 St",
+      "en": "Prospect Ave & E 151 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "00967b8f-1a4d-4131-a65a-17fa8ca89e28",
+      "ko": "41 Ave & 67 St",
+      "en": "41 Ave & 67 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0096fecb-3a56-4585-9204-aa9554f7bc49",
+      "ko": "E 5 St & Ave A",
+      "en": "E 5 St & Ave A",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "00d3e65e-b614-4408-aaa9-939ed96ce645",
+      "ko": "Perry St & Greenwich Ave",
+      "en": "Perry St & Greenwich Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "00d94dfc-3695-47e1-aba6-7f319dd2eb08",
+      "ko": "Bergen St & Kingston Ave",
+      "en": "Bergen St & Kingston Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0109f17a-2378-4500-9648-88bdb31ec612",
+      "ko": "Degraw St & 3 Ave",
+      "en": "Degraw St & 3 Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0138452a-b9f4-4aee-80b0-7fae9a122ffe",
+      "ko": "E 54 St & 1 Ave",
+      "en": "E 54 St & 1 Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "014a931b-8e1c-438a-8a22-f267ddd1e0d2",
+      "ko": "Peck Slip & South St",
+      "en": "Peck Slip & South St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "016ee47a-4871-4209-91cb-bf3ceeddc991",
+      "ko": "St Felix Ave & 61 St",
+      "en": "St Felix Ave & 61 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "01839a78-f228-4706-8f7f-147b857492f2",
+      "ko": "Adam Clayton Powell Blvd & W 132 St",
+      "en": "Adam Clayton Powell Blvd & W 132 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0183d7d4-9e11-4429-94db-666a31239871",
+      "ko": "W 155 St & Frederick Douglass Blvd",
+      "en": "W 155 St & Frederick Douglass Blvd",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0197e9da-ae03-40a7-8270-fe500bfc9e18",
+      "ko": "Boston Rd & E 167 St",
+      "en": "Boston Rd & E 167 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "01a1343d-9c7b-4a83-8a5a-a600187f19c4",
+      "ko": "Riverside Dr & W 138 St",
+      "en": "Riverside Dr & W 138 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "01b7973e-c92e-4fbe-890e-2c24de33ce0e",
+      "ko": "Macon St & Patchen Ave",
+      "en": "Macon St & Patchen Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "01f01352-50d4-484e-a611-576b18ac373a",
+      "ko": "Bergen St & 4 Ave",
+      "en": "Bergen St & 4 Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "023127f2-a6e0-4fae-ba34-178acccb993e",
+      "ko": "5 Ave & E 135 St",
+      "en": "5 Ave & E 135 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "023cf549-bd85-4f9a-abd8-70ba29d7e86b",
+      "ko": "W Tremont Ave & Montgomery Ave",
+      "en": "W Tremont Ave & Montgomery Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0258da92-f770-4acc-b20b-91b78aff791e",
+      "ko": "Flatbush Ave & Lincoln Rd",
+      "en": "Flatbush Ave & Lincoln Rd",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "026fd07d-d810-45dc-9237-a3d84dce4fa9",
+      "ko": "Bergen St & Mother Gaston Blvd",
+      "en": "Bergen St & Mother Gaston Blvd",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "02fb0f6a-b1dc-4e1c-97f8-fe70462670a3",
+      "ko": "Park Circle & East Dr",
+      "en": "Park Circle & East Dr",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "034f7f3d-e632-475a-aa01-894480d153df",
+      "ko": "Skillman Ave & Honeywell St",
+      "en": "Skillman Ave & Honeywell St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "03872f6b-a522-4c41-a4f2-5d0c41779e7b",
+      "ko": "St Marks Ave & Ralph Ave",
+      "en": "St Marks Ave & Ralph Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "038b7369-9c6e-4eb2-8569-f7461443302f",
+      "ko": "Fulton St & Williams Ave",
+      "en": "Fulton St & Williams Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "039d4cc9-8560-4d22-88c3-20753c54a50f",
+      "ko": "3 Ave & E 163 St",
+      "en": "3 Ave & E 163 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "04d557d6-6bc3-4244-b0f1-81ed1449ccd6",
+      "ko": "Goulden Ave & W 205 St",
+      "en": "Goulden Ave & W 205 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "053312f2-e77e-4674-b28b-ad357fbcb4ee",
+      "ko": "8 Ave & W 49 St",
+      "en": "8 Ave & W 49 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0575e356-72f4-4251-8e15-574cf60bd190",
+      "ko": "Bushwick Ave & Forrest St",
+      "en": "Bushwick Ave & Forrest St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0579ff13-5d5b-4cbd-bc6e-3e9396591aef",
+      "ko": "Sumpter St & Fulton St",
+      "en": "Sumpter St & Fulton St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "058ee86d-ce2a-4597-99f7-f78f082b33e3",
+      "ko": "St Nicholas Ave & W 157 St",
+      "en": "St Nicholas Ave & W 157 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "05969d95-8a64-4007-abf1-afb847f2d426",
+      "ko": "E 163 St & Union Ave",
+      "en": "E 163 St & Union Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "05b9e7cd-f3a2-4d48-b7c4-f5fbe09d9de3",
+      "ko": "Broadway & 51 St",
+      "en": "Broadway & 51 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "05c5e17c-7aa9-49b7-9da3-9db4858ec1fc",
+      "ko": "W 35 St & 9 Ave",
+      "en": "W 35 St & 9 Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "05d03a63-b5f2-40d9-9a3d-d2fe666a307f",
+      "ko": "College Ave & E 170 St",
+      "en": "College Ave & E 170 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "06109e92-4363-445a-9743-0457f6799530",
+      "ko": "Madison Ave & E 26 St",
+      "en": "Madison Ave & E 26 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "062f0ac2-b3b6-4c15-b470-92ce9b592635",
+      "ko": "Bergen Ave & E 152 St",
+      "en": "Bergen Ave & E 152 St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "062ffe5a-aa91-412d-8210-23d562c7e7f8",
+      "ko": "72 St & Woodside Ave",
+      "en": "72 St & Woodside Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "0630217a-3913-47d9-9540-cf85688296a5",
+      "ko": "37 St & 24 Ave",
+      "en": "37 St & 24 Ave",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "063e7e78-b810-4a2f-8045-a82a0d69d752",
+      "ko": "Orchard St & Grand St",
+      "en": "Orchard St & Grand St",
+      "area": "NYC",
+      "aliases": []
+    },
+    {
+      "station_id": "06439006-11b6-44f0-8545-c9d39035f32a",
+      "ko": "Vesey St & Church St",
+      "en": "Vesey St & Church St",
+      "area": "NYC",
+      "aliases": []
+    }
   ]
 }
