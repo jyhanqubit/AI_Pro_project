@@ -340,10 +340,16 @@ web/CI sandbox), `.venv`:
   `docs/KNOWN_LIMITATIONS.md`. `make evaluate CITIBIKE_ZIP=…` runs the full B0–B4 ablation on a real
   trip backfill deep enough to survive the 7-day-lag warm-up and leave the rolling-origin holdout;
   the tiny sample fixture lacks that history, so `ml/forecasting/run.py` now writes an honest
-  **`blocked_data`** report (no fabricated metrics, exact real-run command printed) instead of
-  crashing. Demonstrating a *measured* LLM-feature lift additionally needs a news backfill whose
-  availability window overlaps the trip window and passes the V2-01 coverage gate — that path needs
-  outbound network and is unavailable in this offline sandbox.
+  **`blocked_data`** marker (no fabricated metrics, exact real-run command printed) to a separate
+  file instead of crashing or clobbering a measured `reports/phase06_results.json`.
+- **Real event-lift path is now fully wired** (previously the B2–B4 columns were hard-coded to 0):
+  `load_real_panel(source, news_source=…)` / `python -m ml.forecasting.run <trip> --news <news.jsonl>`
+  joins the real as-of graph features into the ablation columns, leakage-safe (an event first
+  available at H contributes 0 to every row before H — pinned in `tests/unit/test_dataset_event_join.py`).
+  With no `--news` the columns stay identically 0 (the honest zero-overlap baseline). To *measure* a
+  positive LLM-feature lift you still need a news backfill whose availability overlaps the trip
+  window and passes the V2-01 coverage gate; that data isn't in this offline sandbox, but the code
+  path now produces real B2–B4 features the moment it is supplied.
 
 ## Known blockers / notes (Phase 08)
 

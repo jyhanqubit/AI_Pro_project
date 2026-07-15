@@ -8,6 +8,7 @@ evaluation, then writes the results JSON, the interpretation, and two figures. B
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from datetime import datetime
@@ -30,21 +31,27 @@ REPORTS = Path("reports")
 DOCS_IMG = Path("docs/img")
 
 
-def verify_event_features_zero(panel_max_hour: datetime) -> dict[str, Any]:
-    """Confirm no curated event is available at the end of the evaluation window (§5.2).
+def verify_event_features_zero(
+    panel_max_hour: datetime, news_source: Path | None = None
+) -> dict[str, Any]:
+    """Check event availability at the end of the evaluation window (§5.2).
 
-    Returns a small proof record: the events exist but their availability postdates the data,
-    so build_graph_features yields zero snapshots at the window's last cutoff.
+    Returns a small proof record. With the default demo news the events postdate the data, so
+    build_graph_features yields zero snapshots at the last cutoff (``event_features_zero=True``).
+    With a real overlapping news backfill (``news_source``) the snapshots are non-zero and the
+    ablation carries real B2-B4 features — the record reports that honestly either way.
     """
     from pipelines.collectors import NewsFixtureCollector
     from pipelines.events import build_provider, extract_events
     from pipelines.features import build_graph_features
 
-    articles = NewsFixtureCollector(NEWS_DEMO_FIXTURE).collect().records
+    src = news_source or NEWS_DEMO_FIXTURE
+    articles = NewsFixtureCollector(src).collect().records
     events, _ = extract_events(articles, build_provider("mock"))
     snaps = build_graph_features(events, articles, forecast_cutoff=panel_max_hour)
     earliest = min((e.available_at for e in events if e.available_at), default=None)
     return {
+        "news_source": str(src),
         "curated_events": len(events),
         "earliest_event_available_at": earliest.isoformat() if earliest else None,
         "eval_window_last_cutoff": panel_max_hour.isoformat(),
@@ -165,10 +172,20 @@ def _blocked_report(source: Path | None, usable_rows: int, distinct_hours: int) 
 
 def main(argv: list[str] | None = None) -> None:
     argv = sys.argv[1:] if argv is None else argv
-    source = Path(argv[0]) if argv else None
+    ap = argparse.ArgumentParser(prog="ml.forecasting.run")
+    ap.add_argument("citibike", nargs="?", default=None, help="Citi Bike trip CSV or ZIP")
+    ap.add_argument(
+        "--news",
+        default=None,
+        help="a JSONL news backfill whose availability overlaps the trip window; unlocks the real "
+        "B2-B4 event ablation (leakage-safe). Omit for the honest zero-overlap baseline.",
+    )
+    ns = ap.parse_args(argv)
+    source = Path(ns.citibike) if ns.citibike else None
+    news_source = Path(ns.news) if ns.news else None
 
     print("ShockFlow AI - Phase 06 forecasting, tuning & evaluation\n")
-    panel = load_real_panel(source)
+    panel = load_real_panel(source, news_source=news_source)
     df = usable_frame(panel)
     distinct_hours = int(df["hour_start"].nunique()) if not df.empty else 0
     if df.empty or distinct_hours < MIN_USABLE_HOURS:
@@ -179,7 +196,7 @@ def main(argv: list[str] | None = None) -> None:
         f"usable rows={len(df)}  zones={df['zone_id'].nunique()}  last_hour={max_hour.isoformat()}"
     )
 
-    proof = verify_event_features_zero(max_hour)
+    proof = verify_event_features_zero(max_hour, news_source)
     print(
         f"event-feature check: {proof['curated_events']} curated events, earliest available "
         f"{proof['earliest_event_available_at']}; graph snapshots at last cutoff="
