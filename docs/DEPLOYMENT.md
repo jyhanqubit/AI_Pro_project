@@ -144,8 +144,16 @@ it never blocks search.
   python -m pipelines.collectors.download_citibike 202406 --jersey-city   # JC variant
   ```
 
-  Then run `make evaluate CITIBIKE_ZIP=path/to.zip` (or `python -m ml.forecasting.run <zip> --news
-  <news.jsonl> --provider anthropic`). Enabling a **measured** predictive-lift claim also
+  Then run `make evaluate CITIBIKE_ZIP=path/to.zip`, or combine **many months into one panel** by
+  passing several files or a directory:
+
+  ```bash
+  python -m ml.forecasting.run --data-dir data/raw/citibike --news <news.jsonl> --provider anthropic
+  python -m ml.forecasting.run a.zip b.zip c.zip --news <news.jsonl>   # explicit list
+  ```
+
+  (`--data-dir` de-duplicates a month present as both `.zip` and extracted `.csv`.) Enabling a
+  **measured** predictive-lift claim also
   needs a real overlapping-news backfill (`make v1-collect-news-live` with egress) so the coverage
   gate can pass; until then `GET /v2/model/predictive-lift` reports `blocked_data`.
 

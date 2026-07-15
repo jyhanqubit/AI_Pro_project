@@ -23,7 +23,7 @@ from config.forecasting import (
     FINAL_TEST_HOURS,
     REQUIRED_FEATURES,
 )
-from ml.forecasting.dataset import load_real_panel
+from ml.forecasting.dataset import load_real_panel, resolve_trip_sources
 from ml.forecasting.experiment import run_experiment, usable_frame
 from ml.forecasting.interpret import build_interpretation
 
@@ -126,7 +126,7 @@ def _figures(res: dict[str, Any]) -> list[str]:
 MIN_USABLE_HOURS = FINAL_TEST_HOURS + CV_SPLITS * CV_TEST_HOURS
 
 
-def _blocked_report(source: Path | None, usable_rows: int, distinct_hours: int) -> None:
+def _blocked_report(source: str | Path | None, usable_rows: int, distinct_hours: int) -> None:
     """Write an honest ``blocked_data`` marker instead of crashing on an insufficient panel.
 
     The ablation needs a trip backfill deep enough to survive the 7-day lag warm-up and still leave
@@ -173,7 +173,18 @@ def _blocked_report(source: Path | None, usable_rows: int, distinct_hours: int) 
 def main(argv: list[str] | None = None) -> None:
     argv = sys.argv[1:] if argv is None else argv
     ap = argparse.ArgumentParser(prog="ml.forecasting.run")
-    ap.add_argument("citibike", nargs="?", default=None, help="Citi Bike trip CSV or ZIP")
+    ap.add_argument(
+        "citibike",
+        nargs="*",
+        default=None,
+        help="one or more Citi Bike trip CSV/ZIP files (combined into one panel)",
+    )
+    ap.add_argument(
+        "--data-dir",
+        default=None,
+        help="a directory of monthly trip archives to combine into one panel (e.g. six months); "
+        "de-duplicates a month present as both .zip and extracted .csv",
+    )
     ap.add_argument(
         "--news",
         default=None,
@@ -188,15 +199,26 @@ def main(argv: list[str] | None = None) -> None:
         "Claude extraction, needs the SDK + ANTHROPIC_API_KEY). Only used when --news is given.",
     )
     ns = ap.parse_args(argv)
-    source = Path(ns.citibike) if ns.citibike else None
+    # Trip sources: a --data-dir, one-or-more positional files, or None (bundled sample).
+    source: str | Path | list[Path] | None
+    if ns.data_dir:
+        source = Path(ns.data_dir)
+    elif ns.citibike:
+        source = [Path(p) for p in ns.citibike]
+    else:
+        source = None
     news_source = Path(ns.news) if ns.news else None
 
     print("ShockFlow AI - Phase 06 forecasting, tuning & evaluation\n")
+    trip_files = resolve_trip_sources(source)
+    print(f"trip sources: {len(trip_files)} file(s)")
+    for tf in trip_files:
+        print(f"  {tf}")
     panel = load_real_panel(source, news_source=news_source, provider=ns.provider)
     df = usable_frame(panel)
     distinct_hours = int(df["hour_start"].nunique()) if not df.empty else 0
     if df.empty or distinct_hours < MIN_USABLE_HOURS:
-        _blocked_report(source, len(df), distinct_hours)
+        _blocked_report(str(source), len(df), distinct_hours)
         return
     max_hour = max(df["hour_start"])
     print(

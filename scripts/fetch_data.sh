@@ -74,7 +74,8 @@ python -m pipelines.collectors.import_gbfs_stations --limit 40 || \
 echo
 
 echo "== done =="
-echo "Next — measure the LLM-feature lift on one month (real Claude extraction needs ANTHROPIC_API_KEY):"
+echo "Next — measure the LLM-feature lift over ALL ${FROM}..${TO} as one panel (real Claude"
+echo "extraction needs ANTHROPIC_API_KEY):"
 echo "  export ANTHROPIC_API_KEY=sk-ant-..."
-echo "  python -m ml.forecasting.run data/raw/citibike/${FROM}-citibike-tripdata.zip \\"
+echo "  python -m ml.forecasting.run --data-dir data/raw/citibike \\"
 echo "    --news $COMBINED --provider anthropic"
