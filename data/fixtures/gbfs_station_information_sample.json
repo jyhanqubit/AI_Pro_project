@@ -1,0 +1,16 @@
+{
+  "last_updated": 1752600000,
+  "ttl": 60,
+  "data": {
+    "stations": [
+      {"station_id": "72", "name": "W 52 St & 11 Ave", "lat": 40.76727216, "lon": -73.99392888, "capacity": 55},
+      {"station_id": "79", "name": "Franklin St & W Broadway", "lat": 40.71911552, "lon": -74.00666661, "capacity": 33},
+      {"station_id": "82", "name": "St James Pl & Pearl St", "lat": 40.71117416, "lon": -74.00016545, "capacity": 27},
+      {"station_id": "83", "name": "Atlantic Ave & Fort Greene Pl", "lat": 40.68382604, "lon": -73.97632328, "capacity": 62},
+      {"station_id": "116", "name": "W 17 St & 8 Ave", "lat": 40.74177603, "lon": -74.00149746, "capacity": 39},
+      {"station_id": "3186", "name": "Grove St PATH", "lat": 40.7196, "lon": -74.0431, "capacity": 27},
+      {"station_id": "no_capacity", "name": "Broken (no capacity)", "lat": 40.7, "lon": -74.0, "capacity": 0},
+      {"station_id": "no_coords", "name": "Broken (no coords)", "capacity": 20}
+    ]
+  }
+}

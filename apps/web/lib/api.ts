@@ -258,6 +258,276 @@ export interface AnomaliesResponse {
   alerts: AnomalyAlertOut[];
 }
 
+// ---- V2: rider station search + operator statistics -------------------------
+export type AvailabilityLevel = "plenty" | "ok" | "tight" | "low";
+
+export interface StationHit {
+  station_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  zone_id: string;
+  bikes: number;
+  capacity: number;
+  docks_free: number;
+  target: number;
+  base_target: number;
+  shortage: number;
+  surplus: number;
+  level: AvailabilityLevel;
+  level_label: string;
+  lat: number;
+  lng: number;
+  demand_delta: number;
+  baseline_forecast: number;
+  event_aware_forecast: number;
+}
+
+export interface StationSearchResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  query: string;
+  count: number;
+  stations: StationHit[];
+}
+
+export interface ZoneStat {
+  zone_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  station_count: number;
+  bikes: number;
+  capacity: number;
+  utilization: number;
+  baseline_forecast: number;
+  event_aware_forecast: number;
+  forecast_delta: number;
+  event_exposure: number;
+  worst_level: AvailabilityLevel;
+  shortage: number;
+}
+
+export interface OperatorStatistics {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  feature_version: string;
+  note: string;
+  station_count: number;
+  total_bikes: number;
+  total_capacity: number;
+  total_docks_free: number;
+  system_utilization: number;
+  availability_counts: Record<AvailabilityLevel, number>;
+  stations_in_shortage: number;
+  total_shortage_units: number;
+  total_surplus_units: number;
+  available_event_count: number;
+  events_by_effect: Record<EffectDirection, number>;
+  events_by_type: Record<string, number>;
+  affected_zone_count: number;
+  demand_delta_total: number;
+  demand_delta_max: number;
+  demand_delta_mean_affected: number;
+  zones: ZoneStat[];
+  top_surge_zones: ZoneStat[];
+}
+
+export interface TimelinePoint {
+  cutoff: string;
+  event_count: number;
+  affected_zone_count: number;
+  total_shortage_units: number;
+  stations_in_shortage: number;
+  demand_delta_total: number;
+  demand_delta_max: number;
+}
+
+export interface TimelineMarker {
+  event_id: string;
+  event_type: string;
+  event_title: string;
+  available_at: string;
+  demand_effect: EffectDirection;
+}
+
+export interface OperatorTimeline {
+  mode: OperatingMode;
+  model_version: string;
+  feature_version: string;
+  window_start: string;
+  window_end: string;
+  step_hours: number;
+  note: string;
+  points: TimelinePoint[];
+  event_markers: TimelineMarker[];
+}
+
+export interface AllocationStation {
+  station_id: string;
+  ko: string;
+  en: string;
+  area: string;
+  zone_id: string;
+  bikes_before: number;
+  added: number;
+  bikes_after: number;
+  target: number;
+  base_target: number;
+  capacity: number;
+  shortage_before: number;
+  shortage_after: number;
+}
+
+export interface AllocationResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  feature_version: string;
+  method: string;
+  extra_requested: number;
+  placed: number;
+  leftover: number;
+  shortage_units_before: number;
+  shortage_units_after: number;
+  overflow_units_before: number;
+  overflow_units_after: number;
+  cost_before: number;
+  cost_after: number;
+  benefit: number;
+  shortage_reduction: number;
+  stations: AllocationStation[];
+  note: string;
+}
+
+export interface CopilotEvent {
+  event_id: string;
+  event_type: string;
+  event_title: string;
+  demand_effect: EffectDirection;
+}
+
+export interface RiderAskResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  query: string;
+  intent: string;
+  supported: boolean;
+  answer: string;
+  stations: StationHit[];
+  events: CopilotEvent[];
+  note: string;
+}
+
+export interface PriceQuote {
+  station_id: string;
+  ko: string;
+  en: string;
+  zone_id: string;
+  level: AvailabilityLevel;
+  level_label: string;
+  bikes: number;
+  target: number;
+  capacity: number;
+  demand_delta: number;
+  scarcity_score: number;
+  components: {
+    shortage_probability: number;
+    normalized_gap: number;
+    event_impact: number;
+    neighbor_buffer: number;
+  };
+  base_fare: number;
+  tier_multiplier: number;
+  scarcity_surcharge: number;
+  final_price: number;
+  balancing_credit: number;
+  tier_reason: string;
+  guardrails: { stale: boolean; safety_block: boolean; capped: boolean };
+  quote_id: string;
+}
+
+export interface PricingResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  pricing_config_version: string;
+  is_simulated: boolean;
+  shadow: boolean;
+  disclaimer: string;
+  scenario: { stale: boolean; safety: boolean };
+  base_fare: number;
+  tiers: number[];
+  quotes: PriceQuote[];
+  note: string;
+}
+
+export interface OpsAskResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  query: string;
+  intent: string;
+  supported: boolean;
+  answer: string;
+  facts: Record<string, unknown>;
+  link: { label: string; href: string } | null;
+  note: string;
+}
+
+export interface PredictiveLiftResponse {
+  protocol: string;
+  coverage: {
+    unique_events: number;
+    unique_sources: number;
+    event_types: number;
+    affected_zone_hours: number;
+  };
+  coverage_gate: Record<string, number>;
+  coverage_conditions: Record<string, boolean>;
+  coverage_ok: boolean;
+  verdict: string;
+  claim_enabled: boolean;
+  mean_gain: number;
+  ci_95: [number, number];
+  note: string;
+}
+
+export interface NewsSyncArticle {
+  article_id: string;
+  title: string;
+  source: string;
+  published_at: string;
+  url: string;
+}
+
+export interface NewsSyncResponse {
+  status: "live" | "degraded";
+  mode: string;
+  query: string;
+  fetched_at: string;
+  fetched: number;
+  added_to_index: number;
+  unique_sources: number;
+  sources?: string[];
+  articles: NewsSyncArticle[];
+  degraded_reason?: string;
+  note: string;
+}
+
+export interface StationImportResponse {
+  status: "live" | "degraded";
+  mode: string;
+  source: string;
+  fetched_at: string;
+  count: number;
+  stations: { station_id: string; name: string; lat: number; lng: number; capacity: number }[];
+  degraded_reason?: string;
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -301,9 +571,49 @@ export const api = {
     }),
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
   modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),
+  predictiveLift: () => req<PredictiveLiftResponse>("/v2/model/predictive-lift"),
+  newsSync: (query?: string) =>
+    req<NewsSyncResponse>("/v2/news/sync", {
+      method: "POST",
+      body: JSON.stringify(query ? { query } : {}),
+    }),
   newsSearch: (q: string, k = 5) =>
     req<NewsSearchResponse>(`/v1/news/search?q=${encodeURIComponent(q)}&k=${k}`),
   newsClusters: (threshold = 0.3) =>
     req<NewsClustersResponse>(`/v1/news/clusters?threshold=${threshold}`),
   anomalies: () => req<AnomaliesResponse>("/v1/anomalies"),
+  stationSearch: (q = "", k = 20) =>
+    req<StationSearchResponse>(
+      `/v2/rider/stations/search?q=${encodeURIComponent(q)}&k=${k}`,
+    ),
+  operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
+  operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
+  importStations: (limit = 60) =>
+    req<StationImportResponse>(`/v2/operator/stations/import?limit=${limit}`, {
+      method: "POST",
+    }),
+  opsAsk: (query: string, cutoff?: string) =>
+    req<OpsAskResponse>("/v2/operator/ask", {
+      method: "POST",
+      body: JSON.stringify({ query, cutoff: cutoff ?? null }),
+    }),
+  riderAsk: (query: string, cutoff?: string) =>
+    req<RiderAskResponse>("/v2/rider/ask", {
+      method: "POST",
+      body: JSON.stringify({ query, cutoff: cutoff ?? null }),
+    }),
+  pricingQuote: (opts?: { stale?: boolean; safety?: boolean; cutoff?: string }) =>
+    req<PricingResponse>("/v2/pricing/quote", {
+      method: "POST",
+      body: JSON.stringify({
+        stale: opts?.stale ?? false,
+        safety: opts?.safety ?? false,
+        cutoff: opts?.cutoff ?? null,
+      }),
+    }),
+  allocateExtraBikes: (extraBikes: number, cutoff?: string) =>
+    req<AllocationResponse>("/v2/operator/rebalancing/allocate", {
+      method: "POST",
+      body: JSON.stringify({ extra_bikes: extraBikes, cutoff: cutoff ?? null }),
+    }),
 };

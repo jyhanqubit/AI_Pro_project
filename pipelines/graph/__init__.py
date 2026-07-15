@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from .factory import build_graph_store
 from .model import GraphOps, Node, build_graph_ops
 from .store import AuditReport, GraphStats, GraphStore, InMemoryGraphStore
 from .upsert import GraphUpsertMetadata, upsert_events
 
 __all__ = [
     "build_graph_ops",
+    "build_graph_store",
     "GraphOps",
     "Node",
     "GraphStore",

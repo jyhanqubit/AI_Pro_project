@@ -24,6 +24,9 @@ dev = [
 graph = [
     "neo4j>=5.0",  # optional live graph backend (Demo Mode runs offline without it)
 ]
+rdb = [
+    "sqlalchemy>=2.0",  # optional relational store (SQLite default; Postgres via DATABASE_URL)
+]
 ml = [
     "scikit-learn>=1.4",  # forecasting model zoo, GridSearch, feature selection (Phase 06)
     "pandas>=2.1",  # tabular panel assembly for the supervised design matrix
@@ -62,6 +65,7 @@ packages = [
     "ml.experiment",
     "ml.vectorstore",
     "ml.anomaly",
+    "ml.search",
     "optimization",
     "optimization.classical",
     "optimization.quantum",
@@ -82,7 +86,7 @@ warn_unused_ignores = true
 disallow_untyped_defs = false  # tighten per-module as contracts land
 
 [[tool.mypy.overrides]]
-module = ["h3", "numpy.*", "scipy.*", "neo4j", "sklearn.*", "pandas.*", "matplotlib.*", "joblib.*", "qiskit.*", "qiskit_aer.*", "qiskit_optimization.*", "qiskit_algorithms.*"]
+module = ["h3", "numpy.*", "scipy.*", "neo4j", "anthropic", "sklearn.*", "pandas.*", "matplotlib.*", "joblib.*", "qiskit.*", "qiskit_aer.*", "qiskit_optimization.*", "qiskit_algorithms.*"]
 ignore_missing_imports = true  # third-party libs without usable stubs for our purposes
 follow_imports = "skip"
 

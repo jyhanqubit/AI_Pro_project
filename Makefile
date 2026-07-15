@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -82,8 +82,36 @@ v1-evaluate-anomalies:  ## V1-06: run the 4 anomaly detectors on the synthetic-f
 v1-live-fixture:  ## V1-05: live-shadow fixture stream (micro-batches, pending_label, offline)
 	python -m pipelines.live.demo
 
+v2-evaluate-search:  ## V2-03: hybrid geo-semantic search relevance on the gold set (offline)
+	python -m ml.search.evaluate
+
+v2-evaluate-predictive-lift:  ## V2-02: predictive-lift coverage gate + honest verdict (offline)
+	python -m ml.forecasting.predictive_lift_demo
+
+v2-evaluate-revenue:  ## V2-05: flat vs event-aware dynamic-fare revenue + elasticity/severity sweep (SIMULATED)
+	python -m ml.pricing.revenue_eval
+
+v2-import-stations:  ## V2: import the REAL Citi Bike network from GBFS into the fixtures (needs egress)
+	python -m pipelines.collectors.import_gbfs_stations --limit 40
+
+db-load:  ## Load the station fixtures into the relational store (SQLite default; needs [rdb] extra)
+	python -m services.db.demo
+
+graph-upsert-neo4j:  ## Upsert the event graph into a LIVE Neo4j (needs [graph] extra + docker compose up neo4j)
+	python -m pipelines.graph.demo --backend neo4j
+
 api:  ## Run the offline replay API on 127.0.0.1:8000 (Demo Mode, no API key)
 	python -m services.api.main
 
 web:  ## Run the Next.js operator UI dev server (apps/web; needs npm install first)
 	cd apps/web && npm run dev
+
+# --- Phone / LAN viewing (same Wi-Fi) --------------------------------------------------------
+# Open the demo on your phone: run `make api-lan` and `make web-lan LAN_IP=<your PC IP>` in two
+# terminals, then browse to http://<your PC IP>:3000 on the phone. Still fully offline (no API key);
+# only your local network can reach it. Find your IP: macOS `ipconfig getifaddr en0`, Linux `hostname -I`.
+api-lan:  ## Serve the API on all interfaces for phone/LAN viewing (offline, same Wi-Fi)
+	SHOCKFLOW_API_HOST=0.0.0.0 python -m services.api.main
+
+web-lan:  ## Serve the UI on the LAN. Usage: make web-lan LAN_IP=192.168.0.10
+	cd apps/web && NEXT_PUBLIC_API_BASE=http://$(LAN_IP):8000 npx next dev -H 0.0.0.0

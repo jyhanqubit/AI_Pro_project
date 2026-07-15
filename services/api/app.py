@@ -26,15 +26,20 @@ from .schemas import (
     EventsResponse,
     EvidenceOut,
     ExplanationResponse,
+    ExtraBikeAllocationRequest,
     ForecastOut,
     ForecastsResponse,
     HealthResponse,
     LocationOut,
     MoveOut,
+    NewsSyncRequest,
+    OpsAskRequest,
+    PricingQuoteRequest,
     RebalancingRequest,
     RebalancingResponse,
     RecommendationApiRequest,
     ReplayState,
+    RiderAskRequest,
     ScenarioRequest,
     ScenarioResponse,
     ScenarioZone,
@@ -344,6 +349,16 @@ def create_app() -> FastAPI:
 
         return anomalies()
 
+    @app.post("/v2/news/sync")
+    def news_sync_endpoint(body: NewsSyncRequest | None = None) -> dict:
+        """V2: on-demand LIVE news pull from GDELT (free, no key). Degrades gracefully offline."""
+        from .news_sync import sync_live_news
+
+        req = body or NewsSyncRequest()
+        return sync_live_news(
+            req.query, timespan_hours=req.timespan_hours, max_records=req.max_records
+        )
+
     @app.get("/v1/news/search")
     def news_search(q: str, k: int = 5) -> dict:
         """Semantic search over the accumulating news vector store (FAISS)."""
@@ -369,6 +384,95 @@ def create_app() -> FastAPI:
                 status_code=503,
                 detail={"error_code": "vectorstore_unavailable", "message": str(e)},
             ) from e
+
+    @app.get("/v2/rider/stations/search")
+    def rider_station_search(engine: EngineDep, q: str = "", k: int = 20) -> dict:
+        """V2 rider station search (offline). Empty ``q`` returns all stations by availability."""
+        from .v2 import station_search
+
+        return station_search(engine, q, engine.cutoff, limit=k)
+
+    @app.get("/v2/rider/search/hybrid")
+    def rider_hybrid_search(
+        engine: EngineDep,
+        q: str = "",
+        lat: float | None = None,
+        lng: float | None = None,
+        k: int = 10,
+    ) -> dict:
+        """V2-03 hybrid geo-semantic search (BM25 + vector + geo, RRF); degrades to local."""
+        from .v2 import hybrid_search
+
+        return hybrid_search(engine, q, engine.cutoff, lat=lat, lng=lng, k=k)
+
+    @app.post("/v2/rider/ask")
+    def rider_ask_endpoint(engine: EngineDep, body: RiderAskRequest) -> dict:
+        """V2 rider copilot: deterministic, tool-grounded answers to a natural-language query."""
+        from .v2 import rider_ask
+
+        return rider_ask(engine, body.query, engine.cutoff)
+
+    @app.post("/v2/pricing/quote")
+    def pricing_quote_endpoint(engine: EngineDep, body: PricingQuoteRequest) -> dict:
+        """V2-05 dynamic fare: SIMULATED SHADOW quotes + guardrails (never applied to a rider)."""
+        from .v2 import pricing_quotes
+
+        return pricing_quotes(engine, engine.cutoff, stale=body.stale, safety=body.safety)
+
+    @app.post("/v2/operator/stations/import")
+    def stations_import_endpoint(limit: int = 60) -> dict:
+        """V2: preview a live import of the real Citi Bike station network (GBFS, free, no key)."""
+        from .v2 import import_live_stations
+
+        return import_live_stations(limit=limit)
+
+    @app.post("/v2/operator/ask")
+    def ops_ask_endpoint(engine: EngineDep, body: OpsAskRequest) -> dict:
+        """V2-07 ops copilot: deterministic, artifact-grounded answers + dashboard deep-links."""
+        from .v2 import ops_ask
+
+        return ops_ask(engine, body.query, engine.cutoff)
+
+    @app.get("/v2/operator/statistics")
+    def operator_statistics_endpoint(engine: EngineDep) -> dict:
+        """V2 operator analytics: real aggregate statistics of the as-of replay state."""
+        from .v2 import operator_statistics
+
+        return operator_statistics(engine, engine.cutoff)
+
+    @app.get("/v2/operator/timeline")
+    def operator_timeline_endpoint(engine: EngineDep) -> dict:
+        """V2 operator analytics: as-of aggregates across the replay window (event-window view)."""
+        from .v2 import operator_timeline
+
+        return operator_timeline(engine)
+
+    @app.post(
+        "/v2/operator/rebalancing/allocate",
+        responses={400: {"model": ErrorResponse}},
+    )
+    def allocate_extra_bikes_endpoint(engine: EngineDep, body: ExtraBikeAllocationRequest) -> dict:
+        """V2: optimally distribute operator-supplied extra bikes over the as-of network."""
+        from .v2 import allocate_extra_bikes
+
+        cutoff = body.cutoff or engine.cutoff
+        start, end = DEMO_WINDOW
+        if not (start <= cutoff <= end):
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "error_code": "cutoff_out_of_window",
+                    "message": f"cutoff must be within [{start.isoformat()}, {end.isoformat()}]",
+                },
+            )
+        return allocate_extra_bikes(engine, cutoff, body.extra_bikes)
+
+    @app.get("/v2/model/predictive-lift")
+    def predictive_lift_endpoint() -> dict:
+        """V2-02 predictive-lift verdict on the demo fixture (honestly blocked_data, offline)."""
+        from ml.forecasting.predictive_lift_demo import run
+
+        return run()
 
     @app.get("/v1/model/lift")
     def model_lift() -> dict:

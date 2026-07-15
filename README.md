@@ -226,6 +226,45 @@ make v1-news-vectorstore      # FAISS 의미 검색 + 같은 사건 클러스터
 [docs/V1_DEMO_SCRIPT.md](docs/V1_DEMO_SCRIPT.md),
 [docs/V1_EXECUTION_LOG.md](docs/V1_EXECUTION_LOG.md), `reports/v1/V1_FINAL_AUDIT.md` 참고.
 
+## V2 사용성 업데이트 (UI·검색·운영 통계)
+
+V1 위에 backward-compatible 증분으로 사용성에 초점을 맞춘 업데이트를 더했습니다. 새 모델·가격·실험
+주장은 없으며, 모든 값은 오프라인에서 계산되고 수요 변화(Δ)는 라벨이 붙은 데모
+heuristic(`demo-heuristic-v1`)입니다.
+
+- **라이더 홈 리디자인** — 공유자전거 앱 스타일의 검색바 + 필터 칩 + 대여소 리스트 + 상세 시트.
+- **대여소 검색** — `GET /v2/rider/stations/search?q=…` (한글/영문/별칭/오타 허용 부분일치;
+  재고는 항상 운영 fixture에서 hydrate, 검색어에서 추론하지 않음). 빈 검색어는 전체를 가용성순 정렬.
+- **운영 통계** — `GET /v2/operator/statistics` (시스템 가동률, 가용성 분포, 부족 부하, 이벤트 구성,
+  수요 Δ 분포, 지역별 상세)를 새 `/statistics` 화면에서 시각화.
+- **이벤트 윈도우 타임라인** — `GET /v2/operator/timeline` (재생 윈도우 12–18시를 매 시각 as-of로
+  재계산한 부족·Δ·이벤트 시계열)을 인라인 SVG 차트로 시각화. 이벤트 공개 이전 flat 구간이 leakage
+  경계를 그대로 보여줍니다.
+- **추가 자전거 최적 분배** — `POST /v2/operator/rebalancing/allocate` (운영자가 추가 자전거 **m**대를
+  입력하면, 부족한 대여소에 어떻게 나눠야 이익이 최대일지 계산). 비대칭 목적(부족 3 : 과잉 1)이 분리·볼록
+  이라 greedy 한계이익 배분이 전역 최적이며 완전탐색과 일치 검증. 목표 충족 뒤 남는 자전거는 창고 보유로
+  정직 보고. `/rebalancing` 화면 상단의 "추가 자전거 최적 분배" 카드에서 m을 입력합니다.
+
+```bash
+make api    # v1 + v2 엔드포인트 (오프라인, :8000)
+curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
+curl "127.0.0.1:8000/v2/operator/statistics"
+curl "127.0.0.1:8000/v2/operator/timeline"
+make web    # /  (라이더 홈)  및  /statistics  (운영 통계)
+```
+
+**휴대폰에서 보기 (같은 Wi-Fi):** 라이더 UI는 모바일 반응형입니다. 두 개의 터미널에서 아래를 실행한 뒤,
+폰 브라우저에서 `http://<PC IP>:3000` 으로 접속하세요. 여전히 완전 오프라인(키 불필요)이며 로컬 네트워크만
+접근할 수 있습니다.
+
+```bash
+make api-lan                      # API를 0.0.0.0:8000 으로 (LAN 노출)
+make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig getifaddr en0, Linux: hostname -I)
+```
+
+자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화·
+Elasticsearch·LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
+
 ## 상태
 
 현재 진행 중인 단계와 검증된 명령, 남은 걸림돌은 [docs/STATUS.md](docs/STATUS.md)에서 확인하세요.

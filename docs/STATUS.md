@@ -2,7 +2,106 @@
 
 _Last updated: 2026-07-15_
 
-## Current status — V1 complete (with honest data blocks)
+## Current status — V2 usability update (UI, search, operator analytics)
+
+A backward-compatible, usability-focused increment on top of V1. Scope: a redesigned rider home in
+the style of consumer bike-share apps, station **search**, and a stronger **operator statistics /
+analytics** screen. No forecasting/pricing/experiment claims change — everything stays offline and
+honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phase 06 model).
+
+- **Rider home redesign** (`apps/web/app/page.tsx`) — prominent search bar, availability summary +
+  filter chips (전체 / 빌리기 좋아요 / 곧 부족), a clean station list, and a tap-to-open station
+  detail sheet with the event-aware demand shift and a "why busy" trace link.
+- **Station search** — new offline endpoint `GET /v2/rider/stations/search` (Korean / English /
+  alias / typo-tolerant substring match over `data/fixtures/station_gazetteer.json`), which
+  hydrates each hit with as-of live inventory from the operational fixture (never inferred from the
+  query text). Empty query returns all stations ranked by availability.
+- **Operator statistics** — new endpoint `GET /v2/operator/statistics` (real aggregations: system
+  utilization, availability distribution, shortage load, event mix by type/effect, demand-delta
+  spread, per-zone breakdown) rendered on a new `/statistics` screen with a stacked availability
+  bar, event-type / top-surge bar lists, and a per-zone table. All values reconcile with the v1
+  endpoints and respect the as-of leakage boundary.
+- **Event-window timeline** — new endpoint `GET /v2/operator/timeline` recomputes the as-of
+  aggregates (shortage, Δ, event count) at each hour across the replay window (12:00→18:00) with
+  event-onset markers, rendered as two inline-SVG area+line charts on `/statistics`. Shows the
+  leakage boundary visually (flat until onset) and `event_count` is monotonic non-decreasing.
+- **Optimal extra-bike allocation** — new endpoint `POST /v2/operator/rebalancing/allocate` and
+  `optimization/classical/allocation.py`: the operator inputs **M** extra bikes and the allocator
+  distributes them to maximise benefit under the asymmetric objective (shortage 3 : overflow 1),
+  respecting dock capacity and `Σ added ≤ M`. Objective is separable/convex so greedy is globally
+  optimal (validated against brute-force enumeration). Surplus bikes with no beneficial placement
+  are honestly held back, not force-placed. Rendered as a "추가 자전거 최적 분배" planner on
+  `/rebalancing` with an M input.
+- New code: `services/api/v2.py`, `data/fixtures/station_gazetteer.json`,
+  `apps/web/app/statistics/page.tsx`; endpoints wired in `services/api/app.py`; typed client in
+  `apps/web/lib/api.ts`.
+- Tests: **18 new** integration tests in `tests/integration/test_api_v2.py` + **7** unit tests in
+  `tests/unit/test_allocation.py` (search matching, live hydration, as-of boundary, statistics
+  consistency, timeline onset/monotonicity, allocation optimality vs. brute force, honest hold-back)
+  — all pass. Full non-torch suite: **204 passed, 1 skipped**; web `tsc` clean, `next build` green
+  (12 routes), ruff + mypy clean on the new modules. The 9 `torch`-dependent recsys/model tests
+  can't run here (the PyTorch wheel index is blocked by the container proxy) — they are unrelated
+  to this change.
+- **Rider / operator experience split** — a top-level role switch (🚲 라이더 / 🛠 운영자, persisted).
+  Rider mode is a clean consumer view (operator tools hidden, read-only replay clock); operator mode
+  shows the full tool tab bar + replay control. Deep-links to operator routes auto-select operator
+  mode. Plus a **Noto Sans KR** gothic font (self-hosted via `next/font`) for Korean readability.
+- **Rider map view** — a ☰ 목록 / 🗺 지도 toggle on the rider home; the map is a self-contained SVG
+  that projects stations by real lat/lng (offline, no tile provider / API key), colours markers by
+  availability with 🔥 surge rings, and opens the station detail sheet on click.
+- **Rider copilot** — a no-LLM natural-language ask on the rider home (`POST /v2/rider/ask`).
+  A deterministic parser (`services/api/rider_copilot.py`) classifies a Korean/English query into an
+  allowlisted intent and answers **only from live tool results** (numbers copied verbatim, nothing
+  fabricated); unsupported queries return a clarification, not a made-up answer.
+- **Dynamic fare simulator** (V2-05) — a bounded scarcity surcharge (1.00/1.10/1.25/1.50) +
+  balancing credit, as a **SIMULATED SHADOW** quote (never applied to a rider). Pure kernel
+  (`ml/pricing/dynamic.py`) with guardrails enforced in-kernel: safety/emergency event → base,
+  stale data → base, hard 1.50 cap, `base + surcharge == final` (auditable), and **no rider
+  identity / reduced-fare / protected attribute** ever used. Operator `/pricing` screen with what-if
+  scenario toggles. `POST /v2/pricing/quote`.
+- **Dynamic-fare revenue comparison** (V2-05) — `make v2-evaluate-revenue`
+  (`ml/pricing/revenue_eval.py`) prices flat vs event-aware dynamic over the **real shipped
+  `/v2/pricing/quote` path** (replay engine as-of a post-event cutoff) and adds a revenue layer with
+  an **explicit demand-elasticity** model. Measured (SIMULATED SHADOW): at elasticity 0.5, event-aware
+  dynamic yields **+0.4% network revenue with zero lost rentals** (the surcharge fires only at
+  supply-constrained event zones, capturing value on bikes that sell out anyway). An **elasticity
+  sweep** (0→1.5) shows the uplift is robust, and an **event-severity what-if** (×1/×2/×3) shows
+  revenue rising with event intensity (uplift +0.4%→+1.0%→+1.5%, surcharge tier 1.10×→1.25×) while
+  flat pricing leaves that value on the table. Report: `reports/v2/pricing/revenue_sim.json` (+`.md`).
+- **Ops copilot** (V2-07) — an operator NL assistant (`POST /v2/operator/ask`). A deterministic
+  parser maps a query to an allowlisted intent and answers **only from the dashboard artifacts**
+  (`operator_statistics` / `pricing_quotes`) — no arbitrary SQL, no fabricated numbers; facts are
+  asserted to match the statistics endpoint. Answers can return a **deep-link** to the matching
+  screen. Rendered as a card on `/statistics`.
+- **Hybrid geo-semantic search** (V2-03) — provider-based (`GET /v2/rider/search/hybrid`): BM25 +
+  char-n-gram vector + geo, fused with RRF; hits re-hydrated from the operational store. Offline
+  `LocalHybridProvider` is the tested path; optional `ElasticsearchProvider` degrades to local when
+  unavailable. `make v2-evaluate-search` reports Recall@10 / MRR / NDCG@5 / geo-valid (all 1.0 on the
+  gold set).
+- **Predictive lift protocol** (V2-02) — pure, tested machinery (chronological split + purge/embargo,
+  event-block bootstrap CI, honest verdict rule). The demo run (`GET /v2/model/predictive-lift`,
+  `make v2-evaluate-predictive-lift`) measures real coverage and honestly reports **`blocked_data`**
+  (demo fixture far below the gate); a measured claim needs a real news backfill + training. Surfaced
+  in the Model Lift Lab.
+- **Real Citi Bike network (45 stations)** — the operational fixtures now carry **40 real Citi Bike
+  stations** imported from GBFS `station_information`/`station_status` plus the **5 Jersey City /
+  Hoboken event-zone stations** (also real) kept so the golden-path event demo still drives a
+  shock. Everything (search, map, stats, pricing, allocation, copilots) runs on this network; the
+  labelled pricing/switchback *simulation* is decoupled to the 5 event-zone stations so it stays
+  deterministic regardless of the imported live network.
+- **Real station import (GBFS)** — `make v2-import-stations` / `POST /v2/operator/stations/import`
+  pulls the **real Citi Bike network** from GBFS `station_information` (free, no key) into the
+  fixtures. `--from-file` / `--status-file` import a locally-downloaded feed when the host has no
+  egress; degrades gracefully. Preview button on the operator statistics screen.
+- **On-demand live news sync** — a "뉴스 동기화" button (`POST /v2/news/sync`) pulls real news from
+  **GDELT DOC 2.0** (free, no key) and accumulates it into the vector store. Labelled `live` only
+  when it truly fetched; a network failure returns `degraded` with the reason and **no fabricated
+  articles** (offline sandbox → degraded; deploys with egress → live).
+- See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
+
+---
+
+## Previous status — V1 complete (with honest data blocks)
 
 **v0 (Phases 00–09) complete**, and **V1 (V1-00 … V1-09) implemented** on top as backward-compatible
 increments. See `docs/V1_EXECUTION_LOG.md` for per-phase detail and `reports/v1/V1_FINAL_AUDIT.md`
@@ -184,6 +283,14 @@ web/CI sandbox), `.venv`:
 - `make extract-events-demo` (`python -m pipelines.events.demo`) — offline; from 3 fixture
   articles: 2 accepted events (TRANSIT_DISRUPTION → demand increase; LARGE_VENUE_EVENT), 0
   errors, evidence grounded; the neutral article yields no event.
+- `make v2-evaluate-revenue` (`python -m ml.pricing.revenue_eval`) — offline; flat vs event-aware
+  dynamic revenue on the real quote path (SIMULATED SHADOW). Headline (elasticity 0.5): flat 362.00
+  vs dynamic 363.40 → **+0.4% revenue, 0 lost rentals, 7 surcharged**; elasticity sweep flat
+  (supply-constrained); event-severity what-if ×1/×2/×3 → uplift +0.4%/+1.0%/+1.5%, tier
+  1.10×/1.25×/1.25×. Report `reports/v2/pricing/revenue_sim.json`.
+- `python -m ml.forecasting.run` (no zip) — offline; writes an honest **`blocked_data`**
+  `reports/phase06_results.json` (0 usable rows after the 7-day warm-up on the sample) instead of
+  crashing, and prints the real-run command.
 
 ## Tests passing / failing
 
@@ -230,8 +337,39 @@ web/CI sandbox), `.venv`:
 - Console output is ASCII-only for Windows cp949 compatibility.
 - **Event lift not demonstrable on the June window**: curated events postdate the trip data, so
   the as-of event/graph features are zero and B2–B4 = B1 (verified, not assumed). See
-  `docs/KNOWN_LIMITATIONS.md`. `make evaluate` requires the real June zip in `data/raw/citibike/`
-  (git-ignored, §7.1); the tiny sample fixture lacks the one-week history the forecast needs.
+  `docs/KNOWN_LIMITATIONS.md`. `make evaluate CITIBIKE_ZIP=…` runs the full B0–B4 ablation on a real
+  trip backfill deep enough to survive the 7-day-lag warm-up and leave the rolling-origin holdout;
+  the tiny sample fixture lacks that history, so `ml/forecasting/run.py` now writes an honest
+  **`blocked_data`** marker (no fabricated metrics, exact real-run command printed) to a separate
+  file instead of crashing or clobbering a measured `reports/phase06_results.json`.
+- **Relational store (opt-in `[rdb]`)** — `services/db/` (SQLAlchemy Core) persists the station
+  network + inventory snapshots + a load-audit trail into **SQLite by default** (`make db-load`,
+  zero-config, offline) or **Postgres** via `DATABASE_URL` — same code, parameterized statements,
+  idempotent upsert, non-destructive `init`. Verified end-to-end: 45 stations loaded from the JSON
+  fixtures with resolved H3 zones, idempotent re-load. `tests/integration/test_db.py` (in-memory
+  SQLite, skips without the extra).
+- **Live Neo4j graph (opt-in `[graph]`)** — a `build_graph_store()` factory selects the backend:
+  offline `InMemoryGraphStore` by default, live `Neo4jGraphStore` when `NEO4J_PASSWORD` is set
+  (`make graph-upsert-neo4j`, `--backend neo4j`). `docker-compose.yml` provisions Neo4j (and
+  Postgres) for local dev. The forecasting graph features are pure functions and never depend on the
+  graph DB — Neo4j is the §9 upsert/audit surface only. Factory selection is unit-tested
+  (`tests/unit/test_graph_factory.py`); the live-server path needs Docker (not exercised in-sandbox).
+- **Real LLM event extraction (opt-in)** — a Claude-backed `AnthropicLlmProvider`
+  (`pipelines/events/anthropic_provider.py`, `LLM_PROVIDER=anthropic`, `make evaluate … --provider
+  anthropic`) alongside the deterministic mock. Structured output via strict tool use; **evidence
+  kept only when it is an exact substring of the article** (ungrounded events dropped); geocoding
+  stays deterministic via the gazetteer (never model coordinates); severity/confidence clamped;
+  model id + prompt version on every extraction. Demo Mode and all tests keep the mock default; the
+  real provider is lazy and **degrades to a per-article error (never a fabricated event)** without
+  the SDK/key. Needs `pip install anthropic` + `ANTHROPIC_API_KEY` (or `ant auth login`).
+- **Real event-lift path is now fully wired** (previously the B2–B4 columns were hard-coded to 0):
+  `load_real_panel(source, news_source=…)` / `python -m ml.forecasting.run <trip> --news <news.jsonl>`
+  joins the real as-of graph features into the ablation columns, leakage-safe (an event first
+  available at H contributes 0 to every row before H — pinned in `tests/unit/test_dataset_event_join.py`).
+  With no `--news` the columns stay identically 0 (the honest zero-overlap baseline). To *measure* a
+  positive LLM-feature lift you still need a news backfill whose availability overlaps the trip
+  window and passes the V2-01 coverage gate; that data isn't in this offline sandbox, but the code
+  path now produces real B2–B4 features the moment it is supplied.
 
 ## Known blockers / notes (Phase 08)
 

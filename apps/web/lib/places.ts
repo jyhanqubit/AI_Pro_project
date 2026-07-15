@@ -26,6 +26,18 @@ const STATION_TO_PLACE: Record<string, Place> = {
   JC_HOBOKEN: ZONE_TO_PLACE["892a107216bffff"],
   JC_CITYHALL: ZONE_TO_PLACE["892a10723b7ffff"],
   JC_NEWPORT: ZONE_TO_PLACE["892a1072ec7ffff"],
+  // Multi-region network (names mirror data/fixtures/station_gazetteer.json).
+  JC_JOURNAL: { ko: "저널 스퀘어", en: "Journal Square", area: "저지시티" },
+  JC_PAULUS: { ko: "폴러스 훅", en: "Paulus Hook", area: "저지시티" },
+  HB_WASHINGTON: { ko: "워싱턴 스트리트", en: "Washington St", area: "호보켄" },
+  HB_14ST: { ko: "14번가 페리", en: "14th St Ferry", area: "호보켄" },
+  NY_WALL: { ko: "월 스트리트", en: "Wall St", area: "맨해튼" },
+  NY_SOHO: { ko: "소호", en: "SoHo Broome St", area: "맨해튼" },
+  NY_UNION: { ko: "유니언 스퀘어", en: "Union Square", area: "맨해튼" },
+  NY_TIMES: { ko: "타임스 스퀘어", en: "Times Square", area: "맨해튼" },
+  NY_CENTRAL: { ko: "센트럴파크 남측", en: "Central Park South", area: "맨해튼" },
+  BK_DUMBO: { ko: "덤보", en: "DUMBO", area: "브루클린" },
+  BK_WILLIAMSBURG: { ko: "윌리엄스버그", en: "Williamsburg", area: "브루클린" },
 };
 
 function shortCode(code: string): string {

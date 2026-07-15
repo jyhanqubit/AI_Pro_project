@@ -201,3 +201,40 @@ class RecommendationApiRequest(BaseModel):
     lng: float = Field(ge=-180.0, le=180.0)
     is_member: bool = True
     cutoff: AwareDatetime | None = None
+
+
+class ExtraBikeAllocationRequest(BaseModel):
+    """Operator injects ``extra_bikes`` more bikes; allocate them optimally (V2)."""
+
+    extra_bikes: int = Field(ge=0, le=1000, description="Extra bikes to inject into the network")
+    cutoff: AwareDatetime | None = None
+
+
+class RiderAskRequest(BaseModel):
+    """A rider's natural-language query for the deterministic copilot (V2)."""
+
+    query: str = Field(min_length=1, max_length=200)
+    cutoff: AwareDatetime | None = None
+
+
+class PricingQuoteRequest(BaseModel):
+    """Dynamic-fare shadow-quote request (V2-05). ``stale`` / ``safety`` are what-if toggles."""
+
+    cutoff: AwareDatetime | None = None
+    stale: bool = False
+    safety: bool = False
+
+
+class OpsAskRequest(BaseModel):
+    """An operator's natural-language query for the deterministic ops copilot (V2-07)."""
+
+    query: str = Field(min_length=1, max_length=200)
+    cutoff: AwareDatetime | None = None
+
+
+class NewsSyncRequest(BaseModel):
+    """On-demand live news sync (V2). Empty body uses the default mobility query."""
+
+    query: str | None = Field(default=None, max_length=300)
+    timespan_hours: int = Field(default=72, ge=1, le=720)
+    max_records: int = Field(default=50, ge=1, le=250)

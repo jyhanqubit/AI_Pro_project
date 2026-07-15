@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, type NewsClustersResponse, type NewsSearchResponse } from "@/lib/api";
+import { NewsSync } from "@/components/NewsSync";
 
 // 뉴스 벡터 검색 화면: FAISS 벡터 스토어에 누적된 뉴스에서 의미 기반 검색 +
 // 같은 사건(same-event) 클러스터를 보여준다. 실시간 수집이 쌓일수록 커진다.
@@ -46,6 +47,8 @@ export default function NewsSearch() {
           .
         </p>
       </div>
+
+      <NewsSync onSynced={() => runSearch(query)} />
 
       <div className="card">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

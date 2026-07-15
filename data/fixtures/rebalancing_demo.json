@@ -1,12 +1,412 @@
 {
-  "mode": "demo_fixture",
-  "description": "Curated Jersey City / Hoboken rebalancing instance for the golden-path demo. Coordinates match the place gazetteer (config/places.py) so each station falls in the same H3 zone the event graph uses. base_target is the desired inventory in a normal hour; the API raises it in event-exposed zones as-of the replay cutoff (a labelled demo heuristic, not the measured Phase 06 model). Two quiet-zone stations (Grove St, Exchange Place) hold the surplus; the three event zones start balanced and go into deficit once the transit / venue events become available.",
-  "vehicle_capacity": 18,
+  "mode": "live",
+  "description": "Real Citi Bike stations imported from GBFS station_information, plus the Jersey City / Hoboken demo event-zone stations (kept so the event-aware golden path still works). Bike counts from live station_status when provided.",
+  "vehicle_capacity": 68,
   "stations": [
-    {"station_id": "JC_GROVE", "name": "Grove St PATH", "lat": 40.7196, "lng": -74.0431, "bikes_available": 16, "capacity": 20, "base_target": 6},
-    {"station_id": "JC_EXCHANGE", "name": "Exchange Place", "lat": 40.7166, "lng": -74.0329, "bikes_available": 13, "capacity": 18, "base_target": 5},
-    {"station_id": "JC_HOBOKEN", "name": "Hoboken Terminal", "lat": 40.7360, "lng": -74.0301, "bikes_available": 6, "capacity": 20, "base_target": 6},
-    {"station_id": "JC_CITYHALL", "name": "City Hall", "lat": 40.7377, "lng": -74.0324, "bikes_available": 6, "capacity": 18, "base_target": 6},
-    {"station_id": "JC_NEWPORT", "name": "Newport", "lat": 40.7272, "lng": -74.0337, "bikes_available": 6, "capacity": 16, "base_target": 6}
+    {
+      "station_id": "JC_GROVE",
+      "name": "Grove St PATH",
+      "lat": 40.7196,
+      "lng": -74.0431,
+      "bikes_available": 16,
+      "capacity": 20,
+      "base_target": 6
+    },
+    {
+      "station_id": "JC_EXCHANGE",
+      "name": "Exchange Place",
+      "lat": 40.7166,
+      "lng": -74.0329,
+      "bikes_available": 13,
+      "capacity": 18,
+      "base_target": 5
+    },
+    {
+      "station_id": "JC_HOBOKEN",
+      "name": "Hoboken Terminal",
+      "lat": 40.736,
+      "lng": -74.0301,
+      "bikes_available": 6,
+      "capacity": 20,
+      "base_target": 6
+    },
+    {
+      "station_id": "JC_CITYHALL",
+      "name": "City Hall",
+      "lat": 40.7377,
+      "lng": -74.0324,
+      "bikes_available": 6,
+      "capacity": 18,
+      "base_target": 6
+    },
+    {
+      "station_id": "JC_NEWPORT",
+      "name": "Newport",
+      "lat": 40.7272,
+      "lng": -74.0337,
+      "bikes_available": 6,
+      "capacity": 16,
+      "base_target": 6
+    },
+    {
+      "station_id": "00284700-9d22-42ce-8485-113fed9879c1",
+      "name": "28 Ave & 44 St",
+      "lat": 40.764089,
+      "lng": -73.910651,
+      "bikes_available": 15,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "002e6e9f-ced2-47b0-bc7e-ccf38c3b4b0f",
+      "name": "Prospect Ave & E 151 St",
+      "lat": 40.814232,
+      "lng": -73.903927,
+      "bikes_available": 18,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "00967b8f-1a4d-4131-a65a-17fa8ca89e28",
+      "name": "41 Ave & 67 St",
+      "lat": 40.74446,
+      "lng": -73.89764,
+      "bikes_available": 1,
+      "capacity": 20,
+      "base_target": 8
+    },
+    {
+      "station_id": "0096fecb-3a56-4585-9204-aa9554f7bc49",
+      "name": "E 5 St & Ave A",
+      "lat": 40.72479,
+      "lng": -73.984301,
+      "bikes_available": 41,
+      "capacity": 48,
+      "base_target": 19
+    },
+    {
+      "station_id": "00d3e65e-b614-4408-aaa9-939ed96ce645",
+      "name": "Perry St & Greenwich Ave",
+      "lat": 40.735918,
+      "lng": -74.000939,
+      "bikes_available": 21,
+      "capacity": 53,
+      "base_target": 21
+    },
+    {
+      "station_id": "00d94dfc-3695-47e1-aba6-7f319dd2eb08",
+      "name": "Bergen St & Kingston Ave",
+      "lat": 40.6756,
+      "lng": -73.9415,
+      "bikes_available": 19,
+      "capacity": 22,
+      "base_target": 9
+    },
+    {
+      "station_id": "0109f17a-2378-4500-9648-88bdb31ec612",
+      "name": "Degraw St & 3 Ave",
+      "lat": 40.67977,
+      "lng": -73.9847,
+      "bikes_available": 31,
+      "capacity": 35,
+      "base_target": 14
+    },
+    {
+      "station_id": "0138452a-b9f4-4aee-80b0-7fae9a122ffe",
+      "name": "E 54 St & 1 Ave",
+      "lat": 40.756265,
+      "lng": -73.964179,
+      "bikes_available": 25,
+      "capacity": 41,
+      "base_target": 16
+    },
+    {
+      "station_id": "014a931b-8e1c-438a-8a22-f267ddd1e0d2",
+      "name": "Peck Slip & South St",
+      "lat": 40.707519,
+      "lng": -74.001081,
+      "bikes_available": 37,
+      "capacity": 45,
+      "base_target": 18
+    },
+    {
+      "station_id": "016ee47a-4871-4209-91cb-bf3ceeddc991",
+      "name": "St Felix Ave & 61 St",
+      "lat": 40.69715,
+      "lng": -73.8936,
+      "bikes_available": 12,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "01839a78-f228-4706-8f7f-147b857492f2",
+      "name": "Adam Clayton Powell Blvd & W 132 St",
+      "lat": 40.813539,
+      "lng": -73.94521,
+      "bikes_available": 17,
+      "capacity": 23,
+      "base_target": 9
+    },
+    {
+      "station_id": "0183d7d4-9e11-4429-94db-666a31239871",
+      "name": "W 155 St & Frederick Douglass Blvd",
+      "lat": 40.82923,
+      "lng": -73.936996,
+      "bikes_available": 26,
+      "capacity": 31,
+      "base_target": 12
+    },
+    {
+      "station_id": "0197e9da-ae03-40a7-8270-fe500bfc9e18",
+      "name": "Boston Rd & E 167 St",
+      "lat": 40.828199,
+      "lng": -73.903719,
+      "bikes_available": 6,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "01a1343d-9c7b-4a83-8a5a-a600187f19c4",
+      "name": "Riverside Dr & W 138 St",
+      "lat": 40.823168,
+      "lng": -73.955857,
+      "bikes_available": 20,
+      "capacity": 30,
+      "base_target": 12
+    },
+    {
+      "station_id": "01b7973e-c92e-4fbe-890e-2c24de33ce0e",
+      "name": "Macon St & Patchen Ave",
+      "lat": 40.68374,
+      "lng": -73.9261,
+      "bikes_available": 19,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "01f01352-50d4-484e-a611-576b18ac373a",
+      "name": "Bergen St & 4 Ave",
+      "lat": 40.682564,
+      "lng": -73.979898,
+      "bikes_available": 2,
+      "capacity": 34,
+      "base_target": 14
+    },
+    {
+      "station_id": "023127f2-a6e0-4fae-ba34-178acccb993e",
+      "name": "5 Ave & E 135 St",
+      "lat": 40.812191,
+      "lng": -73.937838,
+      "bikes_available": 19,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "023cf549-bd85-4f9a-abd8-70ba29d7e86b",
+      "name": "W Tremont Ave & Montgomery Ave",
+      "lat": 40.851788,
+      "lng": -73.916418,
+      "bikes_available": 4,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "0258da92-f770-4acc-b20b-91b78aff791e",
+      "name": "Flatbush Ave & Lincoln Rd",
+      "lat": 40.66131,
+      "lng": -73.96091,
+      "bikes_available": 12,
+      "capacity": 23,
+      "base_target": 9
+    },
+    {
+      "station_id": "026fd07d-d810-45dc-9237-a3d84dce4fa9",
+      "name": "Bergen St & Mother Gaston Blvd",
+      "lat": 40.67374,
+      "lng": -73.90852,
+      "bikes_available": 22,
+      "capacity": 24,
+      "base_target": 10
+    },
+    {
+      "station_id": "02fb0f6a-b1dc-4e1c-97f8-fe70462670a3",
+      "name": "Park Circle & East Dr",
+      "lat": 40.651566,
+      "lng": -73.972212,
+      "bikes_available": 11,
+      "capacity": 29,
+      "base_target": 12
+    },
+    {
+      "station_id": "034f7f3d-e632-475a-aa01-894480d153df",
+      "name": "Skillman Ave & Honeywell St",
+      "lat": 40.747148,
+      "lng": -73.929024,
+      "bikes_available": 5,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "03872f6b-a522-4c41-a4f2-5d0c41779e7b",
+      "name": "St Marks Ave & Ralph Ave",
+      "lat": 40.67372,
+      "lng": -73.92199,
+      "bikes_available": 4,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "038b7369-9c6e-4eb2-8569-f7461443302f",
+      "name": "Fulton St & Williams Ave",
+      "lat": 40.67709,
+      "lng": -73.9008,
+      "bikes_available": 18,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "039d4cc9-8560-4d22-88c3-20753c54a50f",
+      "name": "3 Ave & E 163 St",
+      "lat": 40.823872,
+      "lng": -73.908699,
+      "bikes_available": 5,
+      "capacity": 27,
+      "base_target": 11
+    },
+    {
+      "station_id": "04d557d6-6bc3-4244-b0f1-81ed1449ccd6",
+      "name": "Goulden Ave & W 205 St",
+      "lat": 40.87812,
+      "lng": -73.89192,
+      "bikes_available": 15,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "053312f2-e77e-4674-b28b-ad357fbcb4ee",
+      "name": "8 Ave & W 49 St",
+      "lat": 40.761712,
+      "lng": -73.986551,
+      "bikes_available": 4,
+      "capacity": 65,
+      "base_target": 26
+    },
+    {
+      "station_id": "0575e356-72f4-4251-8e15-574cf60bd190",
+      "name": "Bushwick Ave & Forrest St",
+      "lat": 40.70076,
+      "lng": -73.93641,
+      "bikes_available": 17,
+      "capacity": 20,
+      "base_target": 8
+    },
+    {
+      "station_id": "0579ff13-5d5b-4cbd-bc6e-3e9396591aef",
+      "name": "Sumpter St & Fulton St",
+      "lat": 40.67923,
+      "lng": -73.92588,
+      "bikes_available": 9,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "058ee86d-ce2a-4597-99f7-f78f082b33e3",
+      "name": "St Nicholas Ave & W 157 St",
+      "lat": 40.832314,
+      "lng": -73.94102,
+      "bikes_available": 5,
+      "capacity": 20,
+      "base_target": 8
+    },
+    {
+      "station_id": "05969d95-8a64-4007-abf1-afb847f2d426",
+      "name": "E 163 St & Union Ave",
+      "lat": 40.822545,
+      "lng": -73.901824,
+      "bikes_available": 5,
+      "capacity": 24,
+      "base_target": 10
+    },
+    {
+      "station_id": "05b9e7cd-f3a2-4d48-b7c4-f5fbe09d9de3",
+      "name": "Broadway & 51 St",
+      "lat": 40.754164,
+      "lng": -73.908906,
+      "bikes_available": 20,
+      "capacity": 27,
+      "base_target": 11
+    },
+    {
+      "station_id": "05c5e17c-7aa9-49b7-9da3-9db4858ec1fc",
+      "name": "W 35 St & 9 Ave",
+      "lat": 40.754145,
+      "lng": -73.996089,
+      "bikes_available": 1,
+      "capacity": 32,
+      "base_target": 13
+    },
+    {
+      "station_id": "05d03a63-b5f2-40d9-9a3d-d2fe666a307f",
+      "name": "College Ave & E 170 St",
+      "lat": 40.837576,
+      "lng": -73.910489,
+      "bikes_available": 6,
+      "capacity": 24,
+      "base_target": 10
+    },
+    {
+      "station_id": "06109e92-4363-445a-9743-0457f6799530",
+      "name": "Madison Ave & E 26 St",
+      "lat": 40.742685,
+      "lng": -73.986713,
+      "bikes_available": 0,
+      "capacity": 75,
+      "base_target": 30
+    },
+    {
+      "station_id": "062f0ac2-b3b6-4c15-b470-92ce9b592635",
+      "name": "Bergen Ave & E 152 St",
+      "lat": 40.817166,
+      "lng": -73.914737,
+      "bikes_available": 12,
+      "capacity": 21,
+      "base_target": 8
+    },
+    {
+      "station_id": "062ffe5a-aa91-412d-8210-23d562c7e7f8",
+      "name": "72 St & Woodside Ave",
+      "lat": 40.74288,
+      "lng": -73.89283,
+      "bikes_available": 8,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "0630217a-3913-47d9-9540-cf85688296a5",
+      "name": "37 St & 24 Ave",
+      "lat": 40.770148,
+      "lng": -73.912094,
+      "bikes_available": 18,
+      "capacity": 19,
+      "base_target": 8
+    },
+    {
+      "station_id": "063e7e78-b810-4a2f-8045-a82a0d69d752",
+      "name": "Orchard St & Grand St",
+      "lat": 40.717318,
+      "lng": -73.990678,
+      "bikes_available": 34,
+      "capacity": 45,
+      "base_target": 18
+    },
+    {
+      "station_id": "06439006-11b6-44f0-8545-c9d39035f32a",
+      "name": "Vesey St & Church St",
+      "lat": 40.71222,
+      "lng": -74.010472,
+      "bikes_available": 0,
+      "capacity": 78,
+      "base_target": 31
+    }
   ]
 }

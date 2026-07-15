@@ -1,0 +1,297 @@
+# V2 — Usability Update (UI, Search, Operator Analytics)
+
+_Last updated: 2026-07-15_
+
+This is a **usability-focused, backward-compatible** increment on top of V1. It does not introduce
+any new modelling, pricing, or experiment claims: every number is computed offline from the same
+pipeline the v1 API already uses, and the demand delta stays labelled as the `demo-heuristic-v1`
+demo heuristic (Historical Replay), never a measured Phase 06 model output (CLAUDE.md §§3, 13, 22).
+
+## Goals
+
+1. **Rider UI that reads like a consumer bike-share app** — search-first, at-a-glance availability,
+   tap-to-detail — instead of a raw card grid.
+2. **Search** — find a station by Korean / English name, district, or alias (typo-tolerant).
+3. **Stronger operator statistics / analytics** — real aggregate KPIs and distributions of the
+   as-of replay state.
+
+## What shipped
+
+### 1. Rider home redesign — `apps/web/app/page.tsx`
+
+- A prominent, pill-shaped **search bar** (`지역 검색 — 예: 시청, 호보켄, Grove, 뉴포트`).
+- An availability summary as **filter chips**: `전체` / `빌리기 좋아요` / `곧 부족`.
+- A clean **station list** (rows, not a grid): Korean + English name, district, a capacity gauge,
+  the live bike count, an availability pill (넉넉 / 여유 / 빠듯 / 곧 부족), free docks, and a 🔥 surge
+  badge when an event is raising demand in that zone.
+- A tap-to-open **station detail sheet** (bottom sheet on mobile, centered dialog on desktop):
+  bikes / free docks / capacity, an availability advice line, and — when the zone is event-exposed —
+  the demand shift (`baseline → event-aware /시간`, e.g. `9.3 → 13.2 +3.9`) with a
+  "이 지역이 붐비는 이유 보기 →" link into the existing Why-Changed trace.
+
+Search filtering is instant/client-side over the fetched list; the list itself comes from the V2
+search endpoint below.
+
+### 2. Station search — `GET /v2/rider/stations/search`
+
+- Params: `q` (query, empty returns all), `k` (max hits, default 20).
+- Matching is a case-insensitive **substring** over the station's names / district / aliases from
+  `data/fixtures/station_gazetteer.json` (static place metadata — Korean, English, and aliases like
+  `waterfront`, `path`, `터미널`). Empty query returns all stations **ranked by availability**.
+- Each hit is **hydrated with the as-of live inventory** from the operational fixture (bikes,
+  capacity, free docks, target, shortage/surplus, availability level, and the zone's demand delta).
+  The inventory is never inferred from the query text (CLAUDE.md V2 invariant: Elasticsearch/search
+  is not the source of truth for inventory — here the "search index" is the gazetteer and the store
+  is the rebalancing fixture).
+- Respects the leakage boundary: before an event's `available_at`, its zone's `demand_delta` is `0`.
+
+### 3. Operator statistics — `GET /v2/operator/statistics` + `apps/web/app/statistics/page.tsx`
+
+Real aggregations of the as-of replay state (all reconcile with the v1 endpoints):
+
+- **System inventory**: total bikes / capacity, system utilization, total free docks.
+- **Availability distribution**: station counts by level (rendered as a stacked bar + legend).
+- **Shortage load**: stations in shortage, total shortage units, total surplus units.
+- **Event mix**: available event count, counts by demand effect (increase / decrease / unknown) and
+  by event type (rendered as a bar list).
+- **Demand-delta spread**: total Δ, max |Δ|, mean Δ over affected zones; top-surge zones.
+- **Per-zone breakdown**: bikes / capacity, utilization, baseline vs. event-aware forecast, Δ, event
+  exposure, worst availability level (rendered as a sortable-by-Δ table).
+
+The new operator screen is reachable from the nav as **운영 통계**. Changing the replay cutoff at the
+top recomputes every metric as-of the new boundary.
+
+### 4. Event-window timeline — `GET /v2/operator/timeline`
+
+A time-series strengthening of the operator analytics: for every hourly cutoff across the demo
+window (12:00 → 18:00) the **same offline pipeline is recomputed as-of that boundary**, yielding an
+honest series of `event_count`, `affected_zone_count`, `total_shortage_units`, `stations_in_shortage`,
+and `demand_delta_total` — plus `event_markers` at each event's `available_at`.
+
+- Rendered on `/statistics` as two self-contained **SVG area+line charts** (부족 재고 units and
+  수요 Δ 합계 /시간) sharing the hour axis, with dashed vertical **event-onset markers** and an event
+  legend. No chart library — plain inline SVG.
+- The series demonstrates the leakage boundary visually: it is flat (0 shortage, 0 Δ) until the
+  first event's onset, then rises and eases with the event window. Station inventory is a static
+  fixture, so utilization is flat by design; the shortage / Δ / event series are what move.
+- `event_count` is monotonically non-decreasing (as-of availability only accumulates), asserted in
+  tests.
+
+### 5. Optimal extra-bike allocation — `POST /v2/operator/rebalancing/allocate`
+
+Answers the operator question *"the system has N bikes now; I want to inject M more — how should I
+distribute them for the biggest benefit?"* (M is an operator input). This complements the existing
+relocation solver (which conserves the total): here we **add** bikes.
+
+- **Optimizer** (`optimization/classical/allocation.py`): distributes M bikes to minimise the same
+  asymmetric operational cost (shortage 3 : overflow 1, `config/rebalancing.py`) subject to hard
+  constraints — `added_i ≥ 0` integer, `bikes_i + added_i ≤ capacity_i`, `Σ added_i ≤ M`. Because
+  the objective is **separable and convex**, a greedy that places each bike where its marginal
+  benefit is largest is **globally optimal**; `allocate_brute_force` validates greedy == exhaustive
+  optimum in tests (mirrors the QUBO validation pattern, §14.2).
+- **Honest by construction**: a bike is placed only while it strictly reduces cost (fills a
+  shortage). Once every station is at target, further bikes would only add overflow, so they are
+  reported as **held back in the depot** (`leftover`) rather than force-placed to inflate a number.
+- **UI**: a "추가 자전거 최적 분배" card at the top of `/rebalancing` with a numeric input for M and a
+  result view — current total, optimally placed vs. held-back, shortage before→after, operating
+  benefit (cost reduction), and a per-station table highlighting where bikes go. Recomputes as-of
+  when the replay cutoff changes (targets rise with events). Response fields include `extra_requested`,
+  `placed`, `leftover`, `shortage_units_before/after`, `overflow_units_before/after`,
+  `cost_before/after`, `benefit`, and the per-station `added`.
+
+### 6. Rider / operator experience split — top-level role switch
+
+The app now separates the two audiences (V2 goal "Rider / Operator 최상위 경험 분리"):
+
+- A segmented **role switch** in the top bar (🚲 라이더 / 🛠 운영자), persisted to `localStorage`.
+- **Rider mode** is a clean consumer view: the operator tab bar is hidden, and the replay strip is
+  a compact **read-only** clock (`RiderClock`) — the mode + as-of time are shown honestly (never
+  fixture-as-live), but the scrubber/presets are an operator control. A drill-in to "why is this
+  busy?" (`/why`) shows a "← 자전거 찾기" back link.
+- **Operator mode** shows the full tool tab bar (통계·원인·뉴스·시나리오·재배치·모델 Lift·이상 탐지·실험)
+  and the full replay control (event presets + scrubber).
+- Deep-linking to an operator-only route (e.g. `/statistics`) auto-selects operator mode, so shared
+  links land in the right experience. Not a security boundary — Demo Mode has no auth.
+- Files: `apps/web/app/role.tsx` (context), `components/RoleSwitch.tsx`, `components/ReplayArea.tsx`,
+  `components/RiderClock.tsx`, role-aware `components/Nav.tsx`.
+
+### 7. Rider map view — offline SVG station map
+
+The rider home has a **☰ 목록 / 🗺 지도** toggle. The map (`components/StationMap.tsx`) is a
+self-contained SVG that projects each station's **real lat/lng** onto a schematic — no external
+tile provider or map API key, so Demo Mode stays offline. Markers are coloured by availability, show
+the live bike count, carry a 🔥 ring when the zone is event-surging, and open the same station
+detail sheet on click/Enter. It is clearly captioned a schematic (개략도) — relative positions, not
+streets. The equirectangular projection compresses longitude by `cos(lat)` and fits the station
+bounding box into a padded viewport.
+
+### 8. Rider copilot — deterministic, tool-grounded natural-language ask
+
+A no-LLM natural-language helper on the rider home (V2-04's rider copilot, deterministic-provider
+variant). `POST /v2/rider/ask` classifies a Korean/English query into one allowlisted intent and
+answers **only from live tool results** — every number is copied from `station_views` / available
+events, nothing is fabricated. Unsupported queries return `supported: false` with a clarification
+instead of a made-up answer.
+
+- Parser (`services/api/rider_copilot.py`) is a **pure function** of (query, aliases): intents are
+  `status_at_location`, `return_at_location`, `best_availability`, `shortage_warning`, `best_return`,
+  `events`, `help`, `unknown`. Slot resolution reuses the station gazetteer aliases. Deterministic
+  and unit-tested in isolation.
+- Grounding (`v2.rider_ask`) assembles the answer text + the station cards it describes from the
+  as-of state; the bike counts quoted in the text match the search endpoint exactly (asserted).
+- UI: a "🚲 자전거 도우미에게 물어보세요" card at the top of the rider home with a chat input and quick
+  chips (빌리기 좋은 곳 / 곧 부족한 곳 / 반납 여유 / 지금 무슨 일 있어?). Answers render as a grounded
+  bubble with the relevant station rows (which open the detail sheet). Files:
+  `services/api/rider_copilot.py`, `v2.rider_ask`, `RiderAskRequest`, and the `RiderCopilot`
+  component in `apps/web/app/page.tsx`.
+
+### 9. Dynamic fare simulator (V2-05, simulated shadow)
+
+Extends the V1 credit-only incentive with a **bounded scarcity surcharge**. `POST /v2/pricing/quote`
+returns a SIMULATED SHADOW quote per station — never applied to a rider, always labelled simulated
+(there is no real elasticity/conversion log).
+
+- **Pure kernel** (`ml/pricing/dynamic.py`, config in `config/pricing_v2.py`): a
+  `scarcity_pressure_score` (weighted sum of shortage probability, normalized gap, event impact, and
+  a nearby-surplus *relief* term, all in [0,1]) maps to a bounded tier (1.00/1.10/1.25/1.50). Surplus
+  stations get a balancing pickup credit instead. Deterministic; unit-tested.
+- **Guardrails enforced in the kernel** (cannot be bypassed): hard multiplier cap (1.50);
+  **safety/emergency event → base fare** (no surcharge); **stale data → base fare**; a station is
+  never both surcharged and credited; `base_fare + scarcity_surcharge == final_price` (auditable
+  component sum). Pricing depends only on station scarcity — **no rider identity, reduced-fare
+  status, or protected attribute is ever an input**; fairness is measured across zone/time only.
+- **UI**: an operator `/pricing` screen ("요금 시뮬레이터") with a prominent SIMULATED · SHADOW banner,
+  what-if scenario toggles (정상 / stale 데이터 / 안전사고 이벤트) that demonstrate the base-fare
+  fallbacks, and per-station cards showing the tier, surcharge/credit, the scarcity component bars,
+  the guardrail reason, and a deterministic quote id. Files: `config/pricing_v2.py`,
+  `ml/pricing/dynamic.py`, `v2.pricing_quotes`, `PricingQuoteRequest`, `apps/web/app/pricing/page.tsx`.
+
+### 10. Ops copilot — deterministic, artifact-grounded operator assistant (V2-07)
+
+The operator counterpart to the rider copilot. `POST /v2/operator/ask` maps a query to an
+allowlisted intent (overview / shortage / surge / events / pricing / rebalance / navigate / help)
+and answers **only from the same artifacts the dashboards render** (`operator_statistics` /
+`pricing_quotes`) — no arbitrary SQL, no fabricated numbers. Where useful it returns a **deep-link**
+so the UI can jump to the matching screen (V2-07: "copilot answer가 dashboard deep-link를 변경").
+
+- Parser (`services/api/ops_copilot.py`) is a pure function; navigation only fires when a nav verb
+  accompanies a known screen name ("요금 화면 열어" navigates; "요금 어때?" answers inline).
+- Grounding (`v2.ops_ask`) returns `answer`, structured `facts` (asserted to match
+  `operator_statistics`), and an optional `link {label, href}`. Pricing answers carry the SIMULATED
+  label. Unsupported queries return `supported: false`.
+- UI: a "🛠 운영 도우미에게 물어보세요" card at the top of `/statistics` with chips (지금 현황 / 부족
+  대여소 / 수요 급증 / 요금 상태) and a grounded answer bubble that renders the deep-link as a button.
+  Files: `services/api/ops_copilot.py`, `v2.ops_ask`, `OpsAskRequest`, `OpsCopilot` in
+  `apps/web/app/statistics/page.tsx`.
+
+### 11. Hybrid geo-semantic search (V2-03, offline)
+
+Provider-based search. `GET /v2/rider/search/hybrid?q=&lat=&lng=&k=` fuses three rankers with
+Reciprocal Rank Fusion: **BM25** lexical, a **char-n-gram vector** (typo / Korean-alias tolerance,
+reusing the deterministic `LexicalEmbedder`), and **geo_distance** when a query point is supplied.
+Hits are re-hydrated with live inventory from the operational store (the search index is never the
+source of truth for numbers).
+
+- Providers (`ml/search/`): `LocalHybridProvider` (default, offline, the only tested path) and an
+  optional `ElasticsearchProvider` (flag `ENABLE_ELASTIC`, lazy import; if the cluster is missing
+  the factory **degrades to local** and reports `degraded: true` — never a fabricated result).
+- Corpus indexes the five demo stations (with geo) plus a small help set; gold relevance set in
+  `data/fixtures/search_gold.json` (Korean names, English, aliases, a typo, a geo-near query, help).
+- `make v2-evaluate-search` reports **Recall@10 / MRR@10 / NDCG@5 / geo-valid@5 / p50-p95 latency**
+  measured on the offline provider (all 1.0 on the gold set; p50 ≈ 0.1 ms). Files:
+  `config/search_v2.py`, `ml/search/*`, `v2.hybrid_search`.
+
+### 12. Predictive lift protocol (V2-02, honestly blocked offline)
+
+Formalises the "do event features reduce holdout error?" measurement with the honest V2 claim rule.
+`ml/forecasting/predictive_lift.py` is a pure, tested protocol: `chronological_split` (train/val/test
+with an embargo/purge gap), `block_bootstrap_ci` (paired improvement CI resampled over **event
+blocks**), and `lift_verdict` — a *measured improvement* is asserted only when the coverage gate
+passes **and** the 95% CI lies strictly above 0; otherwise the verdict is
+`no_lift` / `negative_lift` / `inconclusive` / `blocked_data` and the claim stays disabled.
+
+- The protocol is validated on synthetic data with known outcomes (`tests/unit/test_predictive_lift.py`).
+- The demo run (`make v2-evaluate-predictive-lift`, `GET /v2/model/predictive-lift`) measures the
+  **real** coverage of the demo fixture (2 events, 15 affected zone-hours — far below the gate) and
+  therefore reports **`blocked_data`** honestly, matching V1's `insufficient_event_overlap`. No
+  paired gain is fabricated. Surfaced in the Model Lift Lab with the coverage-gate table. A measured
+  claim requires a real overlapping-news backfill + training run (blocked in this offline env).
+
+### 13. On-demand live news sync (free GDELT, graceful degrade)
+
+A "🔄 뉴스 동기화" button on the news screen pulls **real, timely mobility news from GDELT DOC 2.0**
+(free, no API key) on demand — `POST /v2/news/sync`. Fetched articles are deduplicated on `url_hash`
+and accumulated into the persistent news vector store, so they immediately become searchable.
+
+- Honest by construction (`services/api/news_sync.py`): results are labelled `live` only when they
+  actually came from GDELT this call; a network/API failure returns `status: "degraded"` with the
+  reason and **zero fabricated articles** — Demo Mode is never broken, fixture is never shown as
+  live. GDELT gives title + metadata only, so the body stays empty (title-only snippet).
+- Fast-fail (8s timeout, single retry) so the button degrades quickly with no egress. In the offline
+  sandbox it returns `degraded` (proxy blocks external hosts); deployed with outbound network it
+  pulls live news as-is.
+- Tests: the degrade path (no network → degraded, no fake data) and a monkeypatched live path
+  (parse + dedup on `url_hash`, title-only). Files: `services/api/news_sync.py`, `NewsSyncRequest`,
+  the `NewsSync` component in `apps/web/app/news/page.tsx`.
+
+### Multi-region station network
+
+The demo network was expanded from a 5-station Jersey City slice to **16 stations across 4 regions**
+(저지시티 / 호보켄 / 맨해튼 / 브루클린) with real approximate coordinates and Korean/English names +
+aliases (`data/fixtures/station_gazetteer.json`, `rebalancing_demo.json`). The JC/Hoboken event-zone
+stations are kept intact so the golden-path leakage/E2E behaviour is unchanged; the new regions add
+availability variety. Search, map, statistics, pricing, allocation, and both copilots pick up the
+regions automatically; search relevance stays 1.0 across the expanded gold set.
+
+### Typography
+
+Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at
+runtime; weights 400/500/700/800), with a platform-gothic fallback stack (Apple SD Gothic Neo /
+Malgun Gothic), line-height 1.6, and `word-break: keep-all`.
+
+## Files
+
+| Area | File | Change |
+| --- | --- | --- |
+| Fixture | `data/fixtures/station_gazetteer.json` | **new** — rider-facing place metadata + aliases |
+| Config | `config/collectors.py` | `STATION_GAZETTEER_FIXTURE` path |
+| API | `services/api/v2.py` | **new** — `station_search`, `operator_statistics`, `operator_timeline`, `allocate_extra_bikes`, shared views |
+| API | `services/api/app.py` | wire `/v2/rider/stations/search`, `/v2/operator/statistics`, `/v2/operator/timeline`, `/v2/operator/rebalancing/allocate` |
+| API | `services/api/schemas.py` | `ExtraBikeAllocationRequest` |
+| Opt | `optimization/classical/allocation.py` | **new** — optimal extra-bike allocator + brute-force oracle |
+| Web | `apps/web/app/rebalancing/page.tsx` | `추가 자전거 최적 분배` planner (operator M input) |
+| Web | `apps/web/lib/api.ts` | typed client: `StationHit`, `OperatorStatistics`, methods |
+| Web | `apps/web/app/page.tsx` | rider home redesign (search + chips + list + detail sheet) |
+| Web | `apps/web/app/statistics/page.tsx` | **new** — operator analytics screen |
+| Web | `apps/web/components/Nav.tsx` | add `운영 통계` tab |
+| Web | `apps/web/app/globals.css` | search bar, chips, station rows, sheet, stat widgets |
+| Tests | `tests/integration/test_api_v2.py` | **new** — 9 integration tests |
+
+## Reproduce
+
+```bash
+# Backend (offline, no API key)
+make api                       # serves the v1 + v2 endpoints on :8000
+
+curl "127.0.0.1:8000/v2/rider/stations/search?q=시청"
+curl "127.0.0.1:8000/v2/operator/statistics"
+curl "127.0.0.1:8000/v2/operator/timeline"
+curl -X POST "127.0.0.1:8000/v2/operator/rebalancing/allocate" \
+  -H 'Content-Type: application/json' -d '{"extra_bikes": 8}'
+
+# Frontend
+make web                       # Next.js dev server on :3000  ->  /  and  /statistics
+
+# Tests
+python -m pytest tests/integration/test_api_v2.py -q
+cd apps/web && npm run typecheck && npm run build
+```
+
+## Honesty / invariants
+
+- No fabricated metrics: statistics are pure aggregations of the offline state; the demand delta is
+  the labelled demo heuristic, not a measured model.
+- As-of correctness preserved: search and statistics both derive demand deltas from
+  `engine.forecasts(cutoff)`, so an event contributes nothing before its `available_at`.
+- Search index ≠ source of truth: hits are re-hydrated from the operational fixture.
+- Fully offline and deterministic; no network in tests.

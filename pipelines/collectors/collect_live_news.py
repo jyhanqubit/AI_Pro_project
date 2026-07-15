@@ -20,7 +20,7 @@ import os
 import sys
 from pathlib import Path
 
-from config.backfill import BackfillConfig, GdeltConfig
+from config.backfill import GDELT_QUERY_PRESETS, BackfillConfig, GdeltConfig
 from pipelines.collectors.backfill import GdeltNewsProvider, backfill_news
 from pipelines.collectors.coverage import coverage_gate, coverage_report
 
@@ -36,7 +36,9 @@ def _snapshot(articles, stamp: str) -> Path:
             f.write(
                 json.dumps(
                     {
-                        "article_id": a.article_id, "title": a.title, "text": a.text,
+                        "article_id": a.article_id,
+                        "title": a.title,
+                        "text": a.text,
                         "source": a.source,
                         "published_at": a.published_at.isoformat(),
                         "first_seen_at": a.first_seen_at.isoformat(),
@@ -55,6 +57,26 @@ def main() -> int:
     ap.add_argument("--start", default=None, help="YYYYMMDDHHMMSS UTC window start")
     ap.add_argument("--end", default=None, help="YYYYMMDDHHMMSS UTC window end")
     ap.add_argument("--stamp", default="latest", help="snapshot filename stamp (no clock in code)")
+    ap.add_argument(
+        "--region",
+        choices=sorted(GDELT_QUERY_PRESETS),
+        default="jc",
+        help="query preset for the served area (jc = Jersey City/Hoboken demo, nyc = NYC core). "
+        "Pair 'nyc' with an NYC trip window + the NYC gazetteer. A --query override wins.",
+    )
+    ap.add_argument(
+        "--query",
+        default=None,
+        help="override the GDELT DOC query entirely (wins over --region); target your trip data's "
+        "region/topics.",
+    )
+    ap.add_argument(
+        "--max-records",
+        type=int,
+        default=None,
+        help="max GDELT records to request (raise for a real backfill to clear the coverage gate; "
+        "GDELT caps a single request at 250)",
+    )
     args = ap.parse_args()
 
     enabled = args.live or os.environ.get("ENABLE_GDELT_LIVE", "").lower() == "true"
@@ -63,10 +85,21 @@ def main() -> int:
         print("Offline paths use data/fixtures/news_demo.jsonl (make v1-backfill-news).")
         return 0
 
-    gcfg = GdeltConfig(enabled=True, start=args.start, end=args.end)
+    query = args.query or GDELT_QUERY_PRESETS[args.region]
+    gcfg = GdeltConfig(
+        enabled=True,
+        start=args.start,
+        end=args.end,
+        query=query,
+        max_records=args.max_records or GdeltConfig.max_records,
+    )
     provider = GdeltNewsProvider(
-        gcfg.query, enabled=True, start=gcfg.start, end=gcfg.end,
-        max_records=gcfg.max_records, source_lang=gcfg.source_lang,
+        gcfg.query,
+        enabled=True,
+        start=gcfg.start,
+        end=gcfg.end,
+        max_records=gcfg.max_records,
+        source_lang=gcfg.source_lang,
     )
     # GDELT DOC returns title only and already location/topic-matched the FULL text server-side, so
     # a local title-only re-filter would wrongly drop relevant items. Trust the GDELT query here.
@@ -84,8 +117,10 @@ def main() -> int:
         return 1
 
     snap = _snapshot(res.articles, args.stamp)
-    print(f"GDELT live: raw={rep.raw_article_count} candidate={rep.candidate_article_count} "
-          f"accepted={rep.accepted_count} sources={rep.unique_source_count}")
+    print(
+        f"GDELT live: raw={rep.raw_article_count} candidate={rep.candidate_article_count} "
+        f"accepted={rep.accepted_count} sources={rep.unique_source_count}"
+    )
     print(f"coverage gate passed: {gate.passed}  {gate.reasons or ''}")
     print(f"snapshot -> {snap.relative_to(_ROOT)} ({rep.accepted_count} articles)")
 
@@ -110,8 +145,11 @@ def _accumulate_vectorstore(articles) -> None:
         added = store.add(
             [
                 NewsRecord(
-                    article_id=a.article_id, title=a.title, source=a.source,
-                    published_at=a.published_at.isoformat(), url_hash=a.url_hash,
+                    article_id=a.article_id,
+                    title=a.title,
+                    source=a.source,
+                    published_at=a.published_at.isoformat(),
+                    url_hash=a.url_hash,
                 )
                 for a in articles
             ]
