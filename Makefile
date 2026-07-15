@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -87,6 +87,9 @@ v2-evaluate-search:  ## V2-03: hybrid geo-semantic search relevance on the gold 
 
 v2-evaluate-predictive-lift:  ## V2-02: predictive-lift coverage gate + honest verdict (offline)
 	python -m ml.forecasting.predictive_lift_demo
+
+v2-evaluate-revenue:  ## V2-05: flat vs event-aware dynamic-fare revenue + elasticity/severity sweep (SIMULATED)
+	python -m ml.pricing.revenue_eval
 
 v2-import-stations:  ## V2: import the REAL Citi Bike network from GBFS into the fixtures (needs egress)
 	python -m pipelines.collectors.import_gbfs_stations --limit 40

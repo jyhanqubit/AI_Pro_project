@@ -59,6 +59,15 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   stale data → base, hard 1.50 cap, `base + surcharge == final` (auditable), and **no rider
   identity / reduced-fare / protected attribute** ever used. Operator `/pricing` screen with what-if
   scenario toggles. `POST /v2/pricing/quote`.
+- **Dynamic-fare revenue comparison** (V2-05) — `make v2-evaluate-revenue`
+  (`ml/pricing/revenue_eval.py`) prices flat vs event-aware dynamic over the **real shipped
+  `/v2/pricing/quote` path** (replay engine as-of a post-event cutoff) and adds a revenue layer with
+  an **explicit demand-elasticity** model. Measured (SIMULATED SHADOW): at elasticity 0.5, event-aware
+  dynamic yields **+0.4% network revenue with zero lost rentals** (the surcharge fires only at
+  supply-constrained event zones, capturing value on bikes that sell out anyway). An **elasticity
+  sweep** (0→1.5) shows the uplift is robust, and an **event-severity what-if** (×1/×2/×3) shows
+  revenue rising with event intensity (uplift +0.4%→+1.0%→+1.5%, surcharge tier 1.10×→1.25×) while
+  flat pricing leaves that value on the table. Report: `reports/v2/pricing/revenue_sim.json` (+`.md`).
 - **Ops copilot** (V2-07) — an operator NL assistant (`POST /v2/operator/ask`). A deterministic
   parser maps a query to an allowlisted intent and answers **only from the dashboard artifacts**
   (`operator_statistics` / `pricing_quotes`) — no arbitrary SQL, no fabricated numbers; facts are
@@ -74,12 +83,16 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   `make v2-evaluate-predictive-lift`) measures real coverage and honestly reports **`blocked_data`**
   (demo fixture far below the gate); a measured claim needs a real news backfill + training. Surfaced
   in the Model Lift Lab.
-- **Multi-region network** — a curated demo network of 16 stations across 저지시티 / 호보켄 / 맨해튼 /
-  브루클린 (real coords, KO/EN names + aliases). Golden-path event zones kept intact; everything
-  (search, map, stats, pricing, allocation, copilots) picks up the regions automatically.
+- **Real Citi Bike network (45 stations)** — the operational fixtures now carry **40 real Citi Bike
+  stations** imported from GBFS `station_information`/`station_status` plus the **5 Jersey City /
+  Hoboken event-zone stations** (also real) kept so the golden-path event demo still drives a
+  shock. Everything (search, map, stats, pricing, allocation, copilots) runs on this network; the
+  labelled pricing/switchback *simulation* is decoupled to the 5 event-zone stations so it stays
+  deterministic regardless of the imported live network.
 - **Real station import (GBFS)** — `make v2-import-stations` / `POST /v2/operator/stations/import`
   pulls the **real Citi Bike network** from GBFS `station_information` (free, no key) into the
-  fixtures; degrades gracefully without egress. Preview button on the operator statistics screen.
+  fixtures. `--from-file` / `--status-file` import a locally-downloaded feed when the host has no
+  egress; degrades gracefully. Preview button on the operator statistics screen.
 - **On-demand live news sync** — a "뉴스 동기화" button (`POST /v2/news/sync`) pulls real news from
   **GDELT DOC 2.0** (free, no key) and accumulates it into the vector store. Labelled `live` only
   when it truly fetched; a network failure returns `degraded` with the reason and **no fabricated
@@ -270,6 +283,14 @@ web/CI sandbox), `.venv`:
 - `make extract-events-demo` (`python -m pipelines.events.demo`) — offline; from 3 fixture
   articles: 2 accepted events (TRANSIT_DISRUPTION → demand increase; LARGE_VENUE_EVENT), 0
   errors, evidence grounded; the neutral article yields no event.
+- `make v2-evaluate-revenue` (`python -m ml.pricing.revenue_eval`) — offline; flat vs event-aware
+  dynamic revenue on the real quote path (SIMULATED SHADOW). Headline (elasticity 0.5): flat 362.00
+  vs dynamic 363.40 → **+0.4% revenue, 0 lost rentals, 7 surcharged**; elasticity sweep flat
+  (supply-constrained); event-severity what-if ×1/×2/×3 → uplift +0.4%/+1.0%/+1.5%, tier
+  1.10×/1.25×/1.25×. Report `reports/v2/pricing/revenue_sim.json`.
+- `python -m ml.forecasting.run` (no zip) — offline; writes an honest **`blocked_data`**
+  `reports/phase06_results.json` (0 usable rows after the 7-day warm-up on the sample) instead of
+  crashing, and prints the real-run command.
 
 ## Tests passing / failing
 
@@ -316,8 +337,13 @@ web/CI sandbox), `.venv`:
 - Console output is ASCII-only for Windows cp949 compatibility.
 - **Event lift not demonstrable on the June window**: curated events postdate the trip data, so
   the as-of event/graph features are zero and B2–B4 = B1 (verified, not assumed). See
-  `docs/KNOWN_LIMITATIONS.md`. `make evaluate` requires the real June zip in `data/raw/citibike/`
-  (git-ignored, §7.1); the tiny sample fixture lacks the one-week history the forecast needs.
+  `docs/KNOWN_LIMITATIONS.md`. `make evaluate CITIBIKE_ZIP=…` runs the full B0–B4 ablation on a real
+  trip backfill deep enough to survive the 7-day-lag warm-up and leave the rolling-origin holdout;
+  the tiny sample fixture lacks that history, so `ml/forecasting/run.py` now writes an honest
+  **`blocked_data`** report (no fabricated metrics, exact real-run command printed) instead of
+  crashing. Demonstrating a *measured* LLM-feature lift additionally needs a news backfill whose
+  availability window overlaps the trip window and passes the V2-01 coverage gate — that path needs
+  outbound network and is unavailable in this offline sandbox.
 
 ## Known blockers / notes (Phase 08)
 
