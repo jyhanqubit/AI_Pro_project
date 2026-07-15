@@ -166,6 +166,24 @@ returns a SIMULATED SHADOW quote per station — never applied to a rider, alway
   the guardrail reason, and a deterministic quote id. Files: `config/pricing_v2.py`,
   `ml/pricing/dynamic.py`, `v2.pricing_quotes`, `PricingQuoteRequest`, `apps/web/app/pricing/page.tsx`.
 
+### 10. Ops copilot — deterministic, artifact-grounded operator assistant (V2-07)
+
+The operator counterpart to the rider copilot. `POST /v2/operator/ask` maps a query to an
+allowlisted intent (overview / shortage / surge / events / pricing / rebalance / navigate / help)
+and answers **only from the same artifacts the dashboards render** (`operator_statistics` /
+`pricing_quotes`) — no arbitrary SQL, no fabricated numbers. Where useful it returns a **deep-link**
+so the UI can jump to the matching screen (V2-07: "copilot answer가 dashboard deep-link를 변경").
+
+- Parser (`services/api/ops_copilot.py`) is a pure function; navigation only fires when a nav verb
+  accompanies a known screen name ("요금 화면 열어" navigates; "요금 어때?" answers inline).
+- Grounding (`v2.ops_ask`) returns `answer`, structured `facts` (asserted to match
+  `operator_statistics`), and an optional `link {label, href}`. Pricing answers carry the SIMULATED
+  label. Unsupported queries return `supported: false`.
+- UI: a "🛠 운영 도우미에게 물어보세요" card at the top of `/statistics` with chips (지금 현황 / 부족
+  대여소 / 수요 급증 / 요금 상태) and a grounded answer bubble that renders the deep-link as a button.
+  Files: `services/api/ops_copilot.py`, `v2.ops_ask`, `OpsAskRequest`, `OpsCopilot` in
+  `apps/web/app/statistics/page.tsx`.
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at

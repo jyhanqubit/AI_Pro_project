@@ -285,6 +285,8 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 }
 .copilot-answer.unsupported { border-left-color: var(--muted); }
 .copilot-answer .answer-text { margin: 0; font-size: 15px; line-height: 1.6; }
+.ops-link { display: inline-block; margin-top: 10px; text-decoration: none; }
+.ops-link:hover { text-decoration: none; }
 
 .chips-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 

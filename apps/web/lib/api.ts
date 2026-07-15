@@ -464,6 +464,19 @@ export interface PricingResponse {
   note: string;
 }
 
+export interface OpsAskResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  model_version: string;
+  query: string;
+  intent: string;
+  supported: boolean;
+  answer: string;
+  facts: Record<string, unknown>;
+  link: { label: string; href: string } | null;
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -518,6 +531,11 @@ export const api = {
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
   operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),
+  opsAsk: (query: string, cutoff?: string) =>
+    req<OpsAskResponse>("/v2/operator/ask", {
+      method: "POST",
+      body: JSON.stringify({ query, cutoff: cutoff ?? null }),
+    }),
   riderAsk: (query: string, cutoff?: string) =>
     req<RiderAskResponse>("/v2/rider/ask", {
       method: "POST",

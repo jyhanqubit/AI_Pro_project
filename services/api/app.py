@@ -32,6 +32,7 @@ from .schemas import (
     HealthResponse,
     LocationOut,
     MoveOut,
+    OpsAskRequest,
     PricingQuoteRequest,
     RebalancingRequest,
     RebalancingResponse,
@@ -389,10 +390,17 @@ def create_app() -> FastAPI:
 
     @app.post("/v2/pricing/quote")
     def pricing_quote_endpoint(engine: EngineDep, body: PricingQuoteRequest) -> dict:
-        """V2-05 dynamic fare: SIMULATED SHADOW quotes with components + guardrails (never applied)."""
+        """V2-05 dynamic fare: SIMULATED SHADOW quotes + guardrails (never applied to a rider)."""
         from .v2 import pricing_quotes
 
         return pricing_quotes(engine, engine.cutoff, stale=body.stale, safety=body.safety)
+
+    @app.post("/v2/operator/ask")
+    def ops_ask_endpoint(engine: EngineDep, body: OpsAskRequest) -> dict:
+        """V2-07 ops copilot: deterministic, artifact-grounded answers + dashboard deep-links."""
+        from .v2 import ops_ask
+
+        return ops_ask(engine, body.query, engine.cutoff)
 
     @app.get("/v2/operator/statistics")
     def operator_statistics_endpoint(engine: EngineDep) -> dict:

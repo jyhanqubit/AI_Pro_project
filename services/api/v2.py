@@ -687,3 +687,159 @@ def pricing_quotes(
             "추정치가 없으므로 모든 결과는 simulated로 표기합니다."
         ),
     }
+
+
+def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
+    """Answer an operator's NL query, grounded in the same artifacts the dashboards use (V2-07).
+
+    Every fact is copied from ``operator_statistics`` / ``pricing_quotes`` — the copilot never
+    fabricates a number and never runs arbitrary SQL (allowlisted intents only). Where useful it
+    returns a deep-link so the UI can jump to the matching screen.
+    """
+    from .ops_copilot import parse
+
+    parsed = parse(query)
+    stats = operator_statistics(engine, cutoff)
+    supported = True
+    facts: dict[str, object] = {}
+    link: dict[str, str] | None = None
+    answer = ""
+
+    if parsed.intent == "overview":
+        util = round(stats["system_utilization"] * 100)
+        answer = (
+            f"현재 가동률 {util}% ({stats['total_bikes']}/{stats['total_capacity']}대), "
+            f"부족 대여소 {stats['stations_in_shortage']}곳, 반영 이벤트 "
+            f"{stats['available_event_count']}건입니다."
+        )
+        facts = {
+            "system_utilization": stats["system_utilization"],
+            "total_bikes": stats["total_bikes"],
+            "stations_in_shortage": stats["stations_in_shortage"],
+            "available_event_count": stats["available_event_count"],
+        }
+        link = {"label": "운영 통계 열기", "href": "/statistics"}
+
+    elif parsed.intent == "shortage":
+        short_zones = [z for z in stats["zones"] if z["shortage"] > 0]
+        names = ", ".join(z["ko"] for z in short_zones[:3]) or "없음"
+        answer = (
+            f"부족 대여소 {stats['stations_in_shortage']}곳, 총 부족 "
+            f"{stats['total_shortage_units']}대입니다. 부족 지역: {names}. "
+            "재배치 계획에서 보완할 수 있어요."
+        )
+        facts = {
+            "stations_in_shortage": stats["stations_in_shortage"],
+            "total_shortage_units": stats["total_shortage_units"],
+            "shortage_zones": [z["ko"] for z in short_zones],
+        }
+        link = {"label": "재배치 계획 열기", "href": "/rebalancing"}
+
+    elif parsed.intent == "surge":
+        top = stats["top_surge_zones"]
+        if top:
+            names = ", ".join(f"{z['ko']}({signed_delta(z['forecast_delta'])})" for z in top)
+            answer = f"수요가 급증한 지역: {names} (시간당 departures Δ). 이벤트로 인한 상승입니다."
+        else:
+            answer = "지금은 수요가 급증한 지역이 없어요."
+        facts = {
+            "affected_zone_count": stats["affected_zone_count"],
+            "top_surge_zones": [
+                {"ko": z["ko"], "forecast_delta": z["forecast_delta"]} for z in top
+            ],
+        }
+        link = {"label": "운영 통계 열기", "href": "/statistics"}
+
+    elif parsed.intent == "events":
+        events = engine.available_events(cutoff)
+        if events:
+            titles = "; ".join(f"{i + 1}) {e.event_title}" for i, e in enumerate(events))
+            answer = f"반영된 이벤트 {len(events)}건: {titles}."
+        else:
+            answer = "현재 시각 기준 공개된 이벤트가 없어요."
+        facts = {
+            "available_event_count": stats["available_event_count"],
+            "events_by_type": stats["events_by_type"],
+        }
+        link = {"label": "뉴스 검색 열기", "href": "/news"}
+
+    elif parsed.intent == "pricing":
+        pricing = pricing_quotes(engine, cutoff)
+        surcharged = [q for q in pricing["quotes"] if q["scarcity_surcharge"] > 0]
+        credited = [q for q in pricing["quotes"] if q["balancing_credit"] > 0]
+        max_tier = max((q["tier_multiplier"] for q in pricing["quotes"]), default=1.0)
+        answer = (
+            f"[SIMULATED · SHADOW] 할증 적용 {len(surcharged)}곳 (최대 ×{max_tier:.2f}), "
+            f"균형 크레딧 {len(credited)}곳. 실제 라이더에게 적용되지 않는 시뮬레이션입니다."
+        )
+        facts = {
+            "is_simulated": True,
+            "surcharged_count": len(surcharged),
+            "credited_count": len(credited),
+            "max_tier_multiplier": max_tier,
+        }
+        link = {"label": "요금 시뮬레이터 열기", "href": "/pricing"}
+
+    elif parsed.intent == "rebalance":
+        answer = (
+            f"지금 총 부족 {stats['total_shortage_units']}대 "
+            f"({stats['stations_in_shortage']}곳)입니다. 재배치 계획에서 이동 또는 추가 "
+            "자전거 최적 분배로 보완할 수 있어요."
+        )
+        facts = {
+            "total_shortage_units": stats["total_shortage_units"],
+            "stations_in_shortage": stats["stations_in_shortage"],
+        }
+        link = {"label": "재배치 계획 열기", "href": "/rebalancing"}
+
+    elif parsed.intent == "navigate" and parsed.target_path:
+        labels = {
+            "/statistics": "운영 통계",
+            "/rebalancing": "재배치 계획",
+            "/pricing": "요금 시뮬레이터",
+            "/news": "뉴스 검색",
+            "/anomaly": "이상 탐지",
+            "/experiment": "실험 랩",
+            "/scenario": "시나리오 비교",
+            "/why": "수요 급증 원인",
+        }
+        label = labels.get(parsed.target_path, parsed.target_path)
+        answer = f"{label} 화면으로 이동할게요."
+        link = {"label": f"{label} 열기", "href": parsed.target_path}
+
+    elif parsed.intent == "help":
+        answer = (
+            "전체 현황, 부족 대여소, 수요 급증, 이벤트, 요금(시뮬레이션), 재배치를 알려드리고 관련 "
+            "화면으로 바로 이동할 수 있어요. 예: '지금 현황 알려줘', '부족한 곳 어디야', "
+            "'요금 화면 열어'."
+        )
+
+    else:  # unknown -> clarification, never a fabricated answer
+        supported = False
+        answer = (
+            "질문을 이해하지 못했어요. 전체 현황, 부족 대여소, 수요 급증, 이벤트, 요금, 재배치를 "
+            "물어봐 주세요. 예: '지금 시스템 현황 어때?'"
+        )
+
+    return {
+        "mode": engine.mode,
+        "cutoff": engine.cutoff,
+        "model_version": engine.model_version,
+        "query": query,
+        "intent": parsed.intent,
+        "supported": supported,
+        "answer": answer,
+        "facts": facts,
+        "link": link,
+        "note": (
+            "규칙 기반(비-LLM) 운영 도우미입니다. 모든 수치는 대시보드와 동일한 API artifact"
+            "(operator_statistics / pricing_quotes)에서 그대로 가져오며, 임의 SQL은 실행하지 "
+            "않습니다(허용된 의도만). 이해하지 못한 질문에는 답을 지어내지 않고 되물어봅니다."
+        ),
+    }
+
+
+def signed_delta(x: float) -> str:
+    """'+3.9' / '-1.2' formatting for a demand delta (copilot verbalisation helper)."""
+    v = f"{x:.1f}"
+    return f"+{v}" if x > 0 else v

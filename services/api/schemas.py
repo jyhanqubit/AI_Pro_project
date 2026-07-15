@@ -223,3 +223,10 @@ class PricingQuoteRequest(BaseModel):
     cutoff: AwareDatetime | None = None
     stale: bool = False
     safety: bool = False
+
+
+class OpsAskRequest(BaseModel):
+    """An operator's natural-language query for the deterministic ops copilot (V2-07)."""
+
+    query: str = Field(min_length=1, max_length=200)
+    cutoff: AwareDatetime | None = None

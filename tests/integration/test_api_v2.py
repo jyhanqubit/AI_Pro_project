@@ -333,3 +333,51 @@ def test_pricing_is_deterministic(client: TestClient) -> None:
     assert [(q["station_id"], q["final_price"], q["quote_id"]) for q in a["quotes"]] == [
         (q["station_id"], q["final_price"], q["quote_id"]) for q in b["quotes"]
     ]
+
+
+# ---- ops copilot (deterministic, artifact-grounded) ------------------------------------------
+
+
+def test_ops_overview_facts_match_statistics(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/operator/ask", json={"query": "지금 현황 어때?"}).json()
+    stats = client.get("/v2/operator/statistics").json()
+    assert ask["intent"] == "overview"
+    assert ask["facts"]["system_utilization"] == stats["system_utilization"]
+    assert ask["facts"]["stations_in_shortage"] == stats["stations_in_shortage"]
+    assert ask["link"]["href"] == "/statistics"
+
+
+def test_ops_shortage_facts_match(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/operator/ask", json={"query": "부족한 곳 어디야"}).json()
+    stats = client.get("/v2/operator/statistics").json()
+    assert ask["facts"]["total_shortage_units"] == stats["total_shortage_units"]
+    assert ask["link"]["href"] == "/rebalancing"
+
+
+def test_ops_pricing_is_flagged_simulated(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/operator/ask", json={"query": "요금 상태"}).json()
+    assert ask["intent"] == "pricing"
+    assert ask["facts"]["is_simulated"] is True
+    assert "SIMULATED" in ask["answer"]
+    assert ask["link"]["href"] == "/pricing"
+
+
+def test_ops_navigate_returns_deeplink(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/operator/ask", json={"query": "재배치 계획 열어"}).json()
+    assert ask["intent"] == "navigate"
+    assert ask["link"]["href"] == "/rebalancing"
+
+
+def test_ops_unsupported_returns_clarification(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ask = client.post("/v2/operator/ask", json={"query": "환율 알려줘"}).json()
+    assert ask["supported"] is False
+    assert ask["link"] is None
+
+
+def test_ops_empty_query_is_rejected(client: TestClient) -> None:
+    assert client.post("/v2/operator/ask", json={"query": ""}).status_code == 422

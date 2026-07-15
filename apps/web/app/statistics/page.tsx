@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useReplay } from "../providers";
 import { useApi } from "@/lib/useApi";
 import {
@@ -7,9 +9,83 @@ import {
   type AvailabilityLevel,
   type OperatorStatistics,
   type OperatorTimeline,
+  type OpsAskResponse,
   type TimelinePoint,
 } from "@/lib/api";
 import { signed } from "@/lib/format";
+
+// Ops copilot: ask in natural language. Every fact comes from the same artifacts these dashboards
+// render (/v2/operator/ask, deterministic + grounded); answers can deep-link to a screen.
+const OPS_CHIPS = ["지금 현황", "부족 대여소", "수요 급증", "요금 상태"];
+
+function OpsCopilot({ cutoff }: { cutoff: string | null }) {
+  const [q, setQ] = useState("");
+  const [res, setRes] = useState<OpsAskResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function ask(query: string) {
+    const text = query.trim();
+    if (!text || !cutoff) return;
+    setLoading(true);
+    try {
+      setRes(await api.opsAsk(text, cutoff));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="card copilot">
+      <h2>🛠 운영 도우미에게 물어보세요</h2>
+      <div className="sub">
+        대시보드와 동일한 데이터로 답합니다 (규칙 기반 · 오프라인 · 임의 SQL 없음).
+      </div>
+      <div className="searchbar" style={{ marginTop: 10 }}>
+        <span className="search-icon" aria-hidden="true">💬</span>
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && ask(q)}
+          placeholder="예: 지금 시스템 현황 어때? · 부족한 곳 어디야 · 요금 화면 열어"
+          aria-label="운영 도우미 질문"
+        />
+        <button className="btn primary" onClick={() => ask(q)} disabled={loading || !cutoff}>
+          {loading ? "…" : "물어보기"}
+        </button>
+      </div>
+      <div className="copilot-chips">
+        {OPS_CHIPS.map((c) => (
+          <button
+            key={c}
+            className="chip"
+            onClick={() => {
+              setQ(c);
+              void ask(c);
+            }}
+          >
+            {c}
+          </button>
+        ))}
+      </div>
+      {error && <div className="notice error" style={{ marginTop: 10 }}>{error}</div>}
+      {res && (
+        <div className={`copilot-answer ${res.supported ? "" : "unsupported"}`}>
+          <p className="answer-text">{res.answer}</p>
+          {res.link && (
+            <Link href={res.link.href} className="btn primary ops-link">
+              {res.link.label} →
+            </Link>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Event-local hour label (12..18) from an ISO cutoff, matching the replay preset buttons.
 function hourLabel(iso: string): string {
@@ -192,7 +268,8 @@ function TimeSeries({
 }
 
 export default function StatisticsPage() {
-  const { refreshKey } = useReplay();
+  const { state, refreshKey } = useReplay();
+  const cutoff = state?.cutoff ?? null;
   const stats = useApi<OperatorStatistics>(() => api.operatorStatistics(), [refreshKey]);
   const timeline = useApi<OperatorTimeline>(() => api.operatorTimeline(), [refreshKey]);
 
@@ -230,6 +307,8 @@ export default function StatisticsPage() {
           집계합니다. 상단 재생 시각을 바꾸면 모든 지표가 as-of로 다시 계산됩니다.
         </p>
       </div>
+
+      <OpsCopilot cutoff={cutoff} />
 
       {/* KPI row */}
       <div className="grid cols-4">

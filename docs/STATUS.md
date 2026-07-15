@@ -59,6 +59,11 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   stale data → base, hard 1.50 cap, `base + surcharge == final` (auditable), and **no rider
   identity / reduced-fare / protected attribute** ever used. Operator `/pricing` screen with what-if
   scenario toggles. `POST /v2/pricing/quote`.
+- **Ops copilot** (V2-07) — an operator NL assistant (`POST /v2/operator/ask`). A deterministic
+  parser maps a query to an allowlisted intent and answers **only from the dashboard artifacts**
+  (`operator_statistics` / `pricing_quotes`) — no arbitrary SQL, no fabricated numbers; facts are
+  asserted to match the statistics endpoint. Answers can return a **deep-link** to the matching
+  screen. Rendered as a card on `/statistics`.
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---
