@@ -495,6 +495,28 @@ export interface PredictiveLiftResponse {
   note: string;
 }
 
+export interface NewsSyncArticle {
+  article_id: string;
+  title: string;
+  source: string;
+  published_at: string;
+  url: string;
+}
+
+export interface NewsSyncResponse {
+  status: "live" | "degraded";
+  mode: string;
+  query: string;
+  fetched_at: string;
+  fetched: number;
+  added_to_index: number;
+  unique_sources: number;
+  sources?: string[];
+  articles: NewsSyncArticle[];
+  degraded_reason?: string;
+  note: string;
+}
+
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
@@ -539,6 +561,11 @@ export const api = {
   experiments: () => req<ExperimentsResponse>("/v1/experiments/switchback"),
   modelLift: () => req<ModelLiftResponse>("/v1/model/lift"),
   predictiveLift: () => req<PredictiveLiftResponse>("/v2/model/predictive-lift"),
+  newsSync: (query?: string) =>
+    req<NewsSyncResponse>("/v2/news/sync", {
+      method: "POST",
+      body: JSON.stringify(query ? { query } : {}),
+    }),
   newsSearch: (q: string, k = 5) =>
     req<NewsSearchResponse>(`/v1/news/search?q=${encodeURIComponent(q)}&k=${k}`),
   newsClusters: (threshold = 0.3) =>

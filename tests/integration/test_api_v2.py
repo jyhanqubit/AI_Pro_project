@@ -427,3 +427,67 @@ def test_predictive_lift_is_honestly_blocked_offline(client: TestClient) -> None
     assert d["verdict"] == "blocked_data"
     assert d["claim_enabled"] is False
     assert d["coverage"]["unique_events"] >= 1  # real measured coverage numbers
+
+
+# ---- live news sync (V2) ---------------------------------------------------------------------
+
+
+def test_news_sync_degrades_gracefully_without_network(client: TestClient) -> None:
+    # No egress in tests → must return a labelled degraded result, never fabricated articles.
+    d = client.post("/v2/news/sync", json={"max_records": 5}).json()
+    assert d["status"] == "degraded"
+    assert d["mode"] == "live"
+    assert d["fetched"] == 0
+    assert d["articles"] == []
+    assert d["degraded_reason"]
+
+
+def test_news_sync_live_path_parses_and_dedups(monkeypatch) -> None:
+    # Mock the GDELT provider to return canned payloads (no network) and check the live path.
+    from pipelines.collectors import backfill
+
+    payloads = [
+        {
+            "article_id": "a1",
+            "title": "PATH delays near Hoboken",
+            "text": "",
+            "source": "nj.com",
+            "published_at": "2026-07-14T13:00:00+00:00",
+            "first_seen_at": "2026-07-14T13:00:00+00:00",
+            "url_hash": "h1",
+            "url": "http://x/1",
+        },
+        {  # duplicate url_hash → deduped
+            "article_id": "a1b",
+            "title": "PATH delays near Hoboken (dup)",
+            "text": "",
+            "source": "nj.com",
+            "published_at": "2026-07-14T13:00:00+00:00",
+            "first_seen_at": "2026-07-14T13:00:00+00:00",
+            "url_hash": "h1",
+            "url": "http://x/1b",
+        },
+        {
+            "article_id": "a2",
+            "title": "Union Square bike share surge",
+            "text": "",
+            "source": "nyt.com",
+            "published_at": "2026-07-14T14:00:00+00:00",
+            "first_seen_at": "2026-07-14T14:00:00+00:00",
+            "url_hash": "h2",
+            "url": "http://x/2",
+        },
+    ]
+    monkeypatch.setattr(backfill.GdeltNewsProvider, "fetch", lambda self: payloads)
+
+    from services.api.news_sync import sync_live_news
+
+    d = sync_live_news(max_records=5)
+    assert d["status"] == "live"
+    assert d["mode"] == "live"
+    assert d["fetched"] == 2  # 3 in, 1 duplicate url_hash removed
+    assert d["unique_sources"] == 2
+    titles = [a["title"] for a in d["articles"]]
+    assert "PATH delays near Hoboken" in titles
+    # Title-only snippet: no fabricated body is present in the response payload.
+    assert all("text" not in a for a in d["articles"])

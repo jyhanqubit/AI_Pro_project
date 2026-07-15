@@ -74,6 +74,13 @@ honestly labelled as the `demo-heuristic-v1` demo heuristic (not a measured Phas
   `make v2-evaluate-predictive-lift`) measures real coverage and honestly reports **`blocked_data`**
   (demo fixture far below the gate); a measured claim needs a real news backfill + training. Surfaced
   in the Model Lift Lab.
+- **Multi-region network** — expanded to 16 stations across 저지시티 / 호보켄 / 맨해튼 / 브루클린
+  (real coords, KO/EN names + aliases). Golden-path event zones kept intact; everything (search, map,
+  stats, pricing, allocation, copilots) picks up the regions automatically.
+- **On-demand live news sync** — a "뉴스 동기화" button (`POST /v2/news/sync`) pulls real news from
+  **GDELT DOC 2.0** (free, no key) and accumulates it into the vector store. Labelled `live` only
+  when it truly fetched; a network failure returns `degraded` with the reason and **no fabricated
+  articles** (offline sandbox → degraded; deploys with egress → live).
 - See `docs/V2_UX_UPDATE.md` for the full spec and reproduction steps.
 
 ---

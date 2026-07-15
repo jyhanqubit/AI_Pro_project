@@ -230,3 +230,11 @@ class OpsAskRequest(BaseModel):
 
     query: str = Field(min_length=1, max_length=200)
     cutoff: AwareDatetime | None = None
+
+
+class NewsSyncRequest(BaseModel):
+    """On-demand live news sync (V2). Empty body uses the default mobility query."""
+
+    query: str | None = Field(default=None, max_length=300)
+    timespan_hours: int = Field(default=72, ge=1, le=720)
+    max_records: int = Field(default=50, ge=1, le=250)

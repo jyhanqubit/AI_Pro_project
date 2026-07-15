@@ -217,6 +217,32 @@ passes **and** the 95% CI lies strictly above 0; otherwise the verdict is
   paired gain is fabricated. Surfaced in the Model Lift Lab with the coverage-gate table. A measured
   claim requires a real overlapping-news backfill + training run (blocked in this offline env).
 
+### 13. On-demand live news sync (free GDELT, graceful degrade)
+
+A "🔄 뉴스 동기화" button on the news screen pulls **real, timely mobility news from GDELT DOC 2.0**
+(free, no API key) on demand — `POST /v2/news/sync`. Fetched articles are deduplicated on `url_hash`
+and accumulated into the persistent news vector store, so they immediately become searchable.
+
+- Honest by construction (`services/api/news_sync.py`): results are labelled `live` only when they
+  actually came from GDELT this call; a network/API failure returns `status: "degraded"` with the
+  reason and **zero fabricated articles** — Demo Mode is never broken, fixture is never shown as
+  live. GDELT gives title + metadata only, so the body stays empty (title-only snippet).
+- Fast-fail (8s timeout, single retry) so the button degrades quickly with no egress. In the offline
+  sandbox it returns `degraded` (proxy blocks external hosts); deployed with outbound network it
+  pulls live news as-is.
+- Tests: the degrade path (no network → degraded, no fake data) and a monkeypatched live path
+  (parse + dedup on `url_hash`, title-only). Files: `services/api/news_sync.py`, `NewsSyncRequest`,
+  the `NewsSync` component in `apps/web/app/news/page.tsx`.
+
+### Multi-region station network
+
+The demo network was expanded from a 5-station Jersey City slice to **16 stations across 4 regions**
+(저지시티 / 호보켄 / 맨해튼 / 브루클린) with real approximate coordinates and Korean/English names +
+aliases (`data/fixtures/station_gazetteer.json`, `rebalancing_demo.json`). The JC/Hoboken event-zone
+stations are kept intact so the golden-path leakage/E2E behaviour is unchanged; the new regions add
+availability variety. Search, map, statistics, pricing, allocation, and both copilots pick up the
+regions automatically; search relevance stays 1.0 across the expanded gold set.
+
 ### Typography
 
 Korean-first gothic for readability: **Noto Sans KR** self-hosted via `next/font` (offline at

@@ -32,6 +32,7 @@ from .schemas import (
     HealthResponse,
     LocationOut,
     MoveOut,
+    NewsSyncRequest,
     OpsAskRequest,
     PricingQuoteRequest,
     RebalancingRequest,
@@ -347,6 +348,16 @@ def create_app() -> FastAPI:
         from .anomaly import anomalies
 
         return anomalies()
+
+    @app.post("/v2/news/sync")
+    def news_sync_endpoint(body: NewsSyncRequest | None = None) -> dict:
+        """V2: on-demand LIVE news pull from GDELT (free, no key). Degrades gracefully offline."""
+        from .news_sync import sync_live_news
+
+        req = body or NewsSyncRequest()
+        return sync_live_news(
+            req.query, timespan_hours=req.timespan_hours, max_records=req.max_records
+        )
 
     @app.get("/v1/news/search")
     def news_search(q: str, k: int = 5) -> dict:
