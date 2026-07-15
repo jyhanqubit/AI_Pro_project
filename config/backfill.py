@@ -13,16 +13,40 @@ BACKFILL_CONFIG_VERSION = "backfill-v1"
 
 # Ontology keywords that mark an article as a demand-relevant candidate (case-insensitive).
 DEFAULT_ONTOLOGY_TERMS: tuple[str, ...] = (
-    "path", "transit", "subway", "signal", "delay", "suspend", "closure", "road",
-    "concert", "venue", "event", "game", "festival", "parade", "weather", "storm",
-    "flood", "accident", "gathering", "protest", "march",
+    "path",
+    "transit",
+    "subway",
+    "signal",
+    "delay",
+    "suspend",
+    "closure",
+    "road",
+    "concert",
+    "venue",
+    "event",
+    "game",
+    "festival",
+    "parade",
+    "weather",
+    "storm",
+    "flood",
+    "accident",
+    "gathering",
+    "protest",
+    "march",
 )
 
 # City/region filter — only articles mentioning the served area are kept. Anchored on unambiguous
 # Hudson-County place names (bare "Newport"/"Grove"/"PATH" are too generic → false positives).
 DEFAULT_CITY_TERMS: tuple[str, ...] = (
-    "hoboken", "jersey city", "journal square", "grove street", "hudson county",
-    "exchange place", "newport pkwy", "jersey city city hall",
+    "hoboken",
+    "jersey city",
+    "journal square",
+    "grove street",
+    "hudson county",
+    "exchange place",
+    "newport pkwy",
+    "jersey city city hall",
 )
 
 
@@ -54,6 +78,21 @@ DEFAULT_GDELT_QUERY = (
     'e-bike OR "NJ Transit" OR PATH train OR "light rail" OR commute OR "road closure" OR '
     'detour OR "street closure" OR concert OR festival OR flood)'
 )
+
+# NYC preset for a real backfill over the Citi Bike core service area (Manhattan / Brooklyn /
+# Queens / Bronx). Pair with an NYC trip window (--start/--end) and the NYC gazetteer in
+# config/places.py so extracted events geocode onto zones that carry trip demand. `--region nyc`.
+NYC_GDELT_QUERY = (
+    '("New York City" OR Manhattan OR Brooklyn OR Queens OR "Times Square" OR '
+    '"Union Square" OR "Penn Station" OR "Grand Central" OR "Madison Square Garden" OR '
+    '"Barclays Center" OR Williamsburg OR Harlem) '
+    '("Citi Bike" OR CitiBike OR "bike share" OR "bike lane" OR bicycle OR cycling OR '
+    'e-bike OR subway OR MTA OR "service change" OR "signal problem" OR "road closure" OR '
+    'detour OR "street closure" OR concert OR festival OR parade OR marathon OR flood OR storm)'
+)
+
+# Region presets selectable on the live collector (`--region`). A `--query` override always wins.
+GDELT_QUERY_PRESETS: dict[str, str] = {"jc": DEFAULT_GDELT_QUERY, "nyc": NYC_GDELT_QUERY}
 
 
 @dataclass(frozen=True)
