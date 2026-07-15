@@ -26,9 +26,17 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Korean-first gothic stack. Noto Sans KR (self-hosted via next/font) leads; falls back to the
+     platform gothic (Apple SD Gothic Neo on iOS/macOS, Malgun Gothic on Windows) so text stays a
+     clean, readable 고딕체 everywhere even offline. */
+  font-family: var(--font-noto-sans-kr), "Noto Sans KR", "Pretendard",
+    "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", Roboto, sans-serif;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  word-break: keep-all;
 }
 
 a { color: var(--accent); text-decoration: none; }

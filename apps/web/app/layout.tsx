@@ -1,9 +1,20 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Noto_Sans_KR } from "next/font/google";
 import { ReplayProvider } from "./providers";
 import { Nav } from "@/components/Nav";
 import { ReplayControl } from "@/components/ReplayControl";
+
+// Korean-first gothic for readability. Self-hosted by next/font at build time (offline at
+// runtime); the CSS stack in globals.css falls back to the platform gothic
+// (Apple SD Gothic Neo / Malgun Gothic) if this is ever unavailable.
+const notoSansKr = Noto_Sans_KR({
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
+  display: "swap",
+  variable: "--font-noto-sans-kr",
+});
 
 export const metadata: Metadata = {
   title: "ShockFlow AI — 자전거 수요 예보",
@@ -13,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="ko">
+    <html lang="ko" className={notoSansKr.variable}>
       <body>
         <ReplayProvider>
           <header className="topbar">
