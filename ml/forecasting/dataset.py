@@ -12,6 +12,7 @@ never hidden (section 22).
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -176,21 +177,63 @@ def build_panel(
     )
 
 
+_TRIP_SUFFIXES = (".zip", ".csv")
+
+
+def resolve_trip_sources(source: str | Path | Sequence[str | Path] | None) -> list[Path]:
+    """Expand a file / directory / list into a sorted, de-duplicated list of trip files.
+
+    A directory is scanned for ``*.zip`` and ``*.csv``; when both an archive and its extracted CSV
+    are present for the same month, the CSV is dropped so a month is not counted twice. An explicit
+    list is honoured as given. ``None`` falls back to the bundled sample fixture.
+    """
+    if source is None:
+        return [CITIBIKE_SAMPLE_FIXTURE]
+    raw = [source] if isinstance(source, (str, Path)) else list(source)
+    files: list[Path] = []
+    for item in raw:
+        p = Path(item)
+        if p.is_dir():
+            entries = sorted(q for q in p.iterdir() if q.suffix.lower() in _TRIP_SUFFIXES)
+            # A ``.csv`` extracted from ``NAME.zip`` / ``NAME.csv.zip`` shares the archive's base.
+            zip_bases = {
+                q.name[:-4].removesuffix(".csv") for q in entries if q.suffix.lower() == ".zip"
+            }
+            for q in entries:
+                if q.suffix.lower() == ".zip" or q.stem not in zip_bases:
+                    files.append(q)
+        else:
+            files.append(p)
+    # De-duplicate, then sort for determinism.
+    return sorted(dict.fromkeys(files))
+
+
+def _collect_trips(paths: list[Path]) -> list:
+    """Concatenate trip records across every source file (one combined demand panel)."""
+    records: list = []
+    for p in paths:
+        records.extend(CitiBikeCollector(p).collect().records)
+    return records
+
+
 def load_real_panel(
-    source: Path | None = None,
+    source: str | Path | Sequence[str | Path] | None = None,
     *,
     news_source: Path | None = None,
     provider: str = "mock",
 ) -> Panel:
     """Collect Citi Bike trips -> demand cells -> features -> panel (offline).
 
+    ``source`` may be a single trip file, a **directory** of monthly archives, or a **list** of
+    files — all are concatenated into one demand panel (e.g. six months as a single window). A
+    directory de-duplicates a month present as both ``.zip`` and extracted ``.csv``.
+
     ``news_source`` (a JSONL article backfill) unlocks the real event ablation: its articles are
     extracted to events and joined into the B2-B4 columns as-of each target hour (leakage-safe). By
     default no news is joined, so B2-B4 == B1 (the honest zero-overlap baseline). To *measure* an
     LLM-feature lift, pass a news backfill whose availability overlaps the trip window.
     """
-    src = source or CITIBIKE_SAMPLE_FIXTURE
-    trips = CitiBikeCollector(src).collect().records
+    trips = _collect_trips(resolve_trip_sources(source))
     cells = aggregate_demand(trips)
     rows = build_demand_features(cells)
 
