@@ -10,6 +10,10 @@ keys. Live features are opt-in and degrade gracefully when their dependency is u
 
 ## 1. Requirements
 
+> **On Windows?** `make` and the `.sh` scripts are Unix tools. See **[docs/WINDOWS.md](WINDOWS.md)**
+> for the full native-PowerShell runbook (or use `wsl --install`). PowerShell data fetch:
+> `.\scripts\fetch_data.ps1 202601 202606 nyc`.
+
 | Component | Version | Notes |
 | --- | --- | --- |
 | Python | 3.11 | API + pipelines |
