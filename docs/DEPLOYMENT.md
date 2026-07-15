@@ -124,6 +124,13 @@ it never blocks search.
   names, capacity; current bike counts merged from `station_status` when available). Preview it first
   from the operator statistics screen ("🛰 실제 정류장 미리보기", `POST /v2/operator/stations/import`).
   Without egress the import/preview degrades and leaves the fixtures untouched.
+
+  **No outbound network on this host?** Download the feed in a browser
+  (`https://gbfs.citibikenyc.com/gbfs/en/station_information.json`) and import the saved file:
+
+  ```bash
+  python -m pipelines.collectors.import_gbfs_stations --from-file station_information.json --limit 40
+  ```
 - You can also add stations by hand: append matching `station_id`s to both files (coordinates +
   capacity + base_target in the rebalancing file; KO/EN names + aliases in the gazetteer). Search,
   map, statistics, pricing, allocation, and the copilots pick them up automatically.

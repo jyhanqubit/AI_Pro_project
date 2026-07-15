@@ -27,6 +27,7 @@ from pipelines.collectors.gbfs_stations import (
     BBox,
     StationImportUnavailable,
     fetch_station_information,
+    parse_station_information,
 )
 
 _ROOT = Path(__file__).resolve().parents[2]
@@ -108,6 +109,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=40, help="max stations to import (0 = all)")
     ap.add_argument("--bbox", default=None, help="lat_min,lat_max,lng_min,lng_max")
+    ap.add_argument(
+        "--from-file",
+        default=None,
+        help="parse a locally-downloaded GBFS station_information.json instead of the network "
+        "(use when this host has no egress: download the feed in a browser, then import the file)",
+    )
     args = ap.parse_args()
 
     bbox = None
@@ -115,12 +122,17 @@ def main() -> int:
         a, b, c, d = (float(x) for x in args.bbox.split(","))
         bbox = BBox(a, b, c, d)
 
-    try:
-        stations = fetch_station_information(bbox=bbox, limit=args.limit)
-    except StationImportUnavailable as e:
-        print(f"station import degraded: {e}")
-        print("Existing fixtures left untouched. Re-run where outbound network is available.")
-        return 1
+    if args.from_file:
+        raw = Path(args.from_file).read_bytes()
+        stations = parse_station_information(raw, bbox=bbox, limit=args.limit)
+    else:
+        try:
+            stations = fetch_station_information(bbox=bbox, limit=args.limit)
+        except StationImportUnavailable as e:
+            print(f"station import degraded: {e}")
+            print("Existing fixtures left untouched. Re-run where outbound network is available,")
+            print("or download station_information.json and pass it with --from-file PATH.")
+            return 1
 
     if not stations:
         print("No stations matched the filter; fixtures left untouched.")
