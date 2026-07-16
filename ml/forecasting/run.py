@@ -205,6 +205,13 @@ def main(argv: list[str] | None = None) -> None:
         help="bound the panel to the most recent N calendar months of demand. Use this if a full "
         "multi-month NYC window runs out of memory (MemoryError); real data, shorter window.",
     )
+    ap.add_argument(
+        "--test-from",
+        default=None,
+        help="hold out every hour on/after this local date (YYYY-MM-DD) as the test set, training "
+        "on everything before it (e.g. --test-from 2026-06-01 = train Jan-May, test June). "
+        "Default: the trailing 72h holdout.",
+    )
     ns = ap.parse_args(argv)
     # Trip sources: a --data-dir, one-or-more positional files, or None (bundled sample).
     source: str | Path | list[Path] | None
@@ -215,6 +222,14 @@ def main(argv: list[str] | None = None) -> None:
     else:
         source = None
     news_source = Path(ns.news) if ns.news else None
+
+    test_start: datetime | None = None
+    if ns.test_from:
+        from zoneinfo import ZoneInfo
+
+        from config.features import LOCAL_TZ
+
+        test_start = datetime.fromisoformat(ns.test_from).replace(tzinfo=ZoneInfo(LOCAL_TZ))
 
     print("ShockFlow AI - Phase 06 forecasting, tuning & evaluation\n")
     trip_files = resolve_trip_sources(source)
@@ -242,7 +257,9 @@ def main(argv: list[str] | None = None) -> None:
         f"{proof['event_features_zero']}"
     )
 
-    res = run_experiment(panel)
+    if test_start is not None:
+        print(f"holdout split: train < {ns.test_from} local, test >= {ns.test_from} local")
+    res = run_experiment(panel, test_start=test_start)
     res["event_feature_verification"] = proof
 
     REPORTS.mkdir(parents=True, exist_ok=True)

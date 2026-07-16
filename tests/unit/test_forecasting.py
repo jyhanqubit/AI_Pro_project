@@ -24,7 +24,12 @@ from ml.forecasting.metrics import (
     seasonal_naive_scale,
     wape,
 )
-from ml.forecasting.splits import final_holdout, rolling_origin_folds, to_hour_index
+from ml.forecasting.splits import (
+    final_holdout,
+    holdout_by_time,
+    rolling_origin_folds,
+    to_hour_index,
+)
 
 # --- Metrics --------------------------------------------------------------
 
@@ -124,6 +129,22 @@ def test_final_holdout_splits_by_time():
     dev, test = final_holdout(idx, final_test_hours=10)
     assert len(test) == 10 and len(dev) == 90
     assert idx[dev].max() < idx[test].min()  # dev strictly before test
+
+
+def test_holdout_by_time_trains_before_test_boundary():
+    hours = _hours(200)  # 2026-06-01 00:00 .. +199h
+    boundary = datetime(2026, 6, 6, tzinfo=UTC)  # test = hours >= Jun 6
+    dev, test = holdout_by_time(hours, boundary)
+    assert len(dev) + len(test) == 200
+    assert all(hours[i] < boundary for i in dev)
+    assert all(hours[i] >= boundary for i in test)
+    assert max(hours[i] for i in dev) < min(hours[i] for i in test)  # no future in train
+
+
+def test_holdout_by_time_empty_when_boundary_past_all_data():
+    hours = _hours(48)
+    dev, test = holdout_by_time(hours, datetime(2027, 1, 1, tzinfo=UTC))
+    assert len(test) == 0 and len(dev) == 48
 
 
 def test_rolling_origin_train_precedes_validation():

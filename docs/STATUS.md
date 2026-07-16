@@ -1,6 +1,22 @@
 # Project Status
 
-_Last updated: 2026-07-15_
+_Last updated: 2026-07-16_
+
+## Measured results — event-aware forecasting lift (real data)
+
+The central product claim was tested end-to-end on real data (see `docs/EVENT_LIFT_FINDINGS.md`):
+train on Jan–May 2026, hold out June, compare a demand+calendar baseline against the same model given
+event-derived features.
+
+- **NYC permitted events → measured improvement.** 20.3M real Citi Bike trips streamed to
+  borough×hour, joined with 63,070 real NYC permitted events (leakage-safe, public permit schedule).
+  June-holdout WAPE fell **0.1013 → 0.0996 (−1.65% relative)**; paired day-block bootstrap verdict
+  **`measured_improvement`**, 95% CI **[0.36, 5.11]** (above zero). Reproduce:
+  `python -m ml.forecasting.borough_event_lift`. Model-attributed, not causal; borough grain is a
+  documented approximation of the H3 product grain.
+- **June weather → honest negative.** Same design with NOAA Central Park weather: WAPE **0.4868 →
+  0.4893**, verdict **`negative_lift`** (CI below zero). Mild June has little weather variance; the
+  result is reported as-is, not hidden. Reproduce: `python -m ml.forecasting.weather_lift`.
 
 ## Current status — V2 usability update (UI, search, operator analytics)
 

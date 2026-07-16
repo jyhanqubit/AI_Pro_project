@@ -34,6 +34,21 @@ def final_holdout(hour_idx: np.ndarray, final_test_hours: int) -> tuple[np.ndarr
     return dev, test
 
 
+def holdout_by_time(
+    hours: list[datetime], test_start: datetime
+) -> tuple[np.ndarray, np.ndarray]:
+    """Split row positions at a calendar boundary: test = hours >= ``test_start``.
+
+    An expanding-window holdout (development is every hour strictly before ``test_start``, so no
+    future row informs a past prediction — §11.3). Used to hold out a specific period, e.g.
+    train on Jan-May and test on June. Both inputs are timezone-aware.
+    """
+    is_test = np.array([h >= test_start for h in hours], dtype=bool)
+    dev = np.where(~is_test)[0]
+    test = np.where(is_test)[0]
+    return dev, test
+
+
 def rolling_origin_folds(
     hour_idx: np.ndarray, n_splits: int, cv_test_hours: int
 ) -> list[tuple[np.ndarray, np.ndarray]]:
