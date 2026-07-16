@@ -225,6 +225,18 @@ class PricingQuoteRequest(BaseModel):
     safety: bool = False
 
 
+class RevenueRequest(BaseModel):
+    """Event-toggle → forecast → pricing → revenue request (V2-05, SIMULATED SHADOW).
+
+    ``disabled_event_ids`` turns the named events off before forecasting; ``elasticity`` is the
+    explicit demand-response assumption used to model the revenue comparison.
+    """
+
+    cutoff: AwareDatetime | None = None
+    disabled_event_ids: list[str] = Field(default_factory=list)
+    elasticity: float = Field(default=0.5, ge=0.0, le=3.0)
+
+
 class OpsAskRequest(BaseModel):
     """An operator's natural-language query for the deterministic ops copilot (V2-07)."""
 

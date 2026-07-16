@@ -107,10 +107,16 @@ class StationView:
     event_aware_forecast: float
 
 
-def station_views(engine: ReplayEngine, cutoff: datetime) -> list[StationView]:
-    """Every demo station with its as-of inventory, availability, and zone demand delta."""
-    problem, base_targets = build_problem(engine, cutoff)
-    fc = {zf.zone_id: zf for zf in engine.forecasts(cutoff)}
+def station_views(
+    engine: ReplayEngine, cutoff: datetime, disabled_event_ids: tuple[str, ...] = ()
+) -> list[StationView]:
+    """Every demo station with its as-of inventory, availability, and zone demand delta.
+
+    ``disabled_event_ids`` turns the named events off before forecasting, so the demand delta and
+    the event-adjusted target reflect a scenario without those events (operator event-toggle path).
+    """
+    problem, base_targets = build_problem(engine, cutoff, disabled_event_ids=disabled_event_ids)
+    fc = {zf.zone_id: zf for zf in engine.forecasts(cutoff, disabled_event_ids)}
     views: list[StationView] = []
     for s in problem.stations:
         zone = s.zone_id or ""
@@ -684,6 +690,95 @@ def pricing_quotes(
             "않습니다. 안전/긴급 이벤트나 stale 데이터에는 할증하지 않고 기본요금으로 되돌립니다. "
             "component 합(base+surcharge)은 최종가와 일치하며, 상한은 1.50배입니다. 탄력성/전환 "
             "추정치가 없으므로 모든 결과는 simulated로 표기합니다."
+        ),
+    }
+
+
+def revenue_projection(
+    engine: ReplayEngine,
+    cutoff: datetime,
+    disabled_event_ids: tuple[str, ...] = (),
+    *,
+    elasticity: float = 0.5,
+) -> dict:
+    """Event-toggle → demand → pricing → revenue, all as-of the cutoff (V2-05, SIMULATED SHADOW).
+
+    Turning events off (``disabled_event_ids``) re-runs the demo-heuristic forecast without them,
+    which shrinks the event-aware demand delta, the resulting scarcity surcharge, and the modeled
+    revenue uplift — so the operator can see, on one screen, how much of the dynamic-pricing revenue
+    is actually driven by the events. Revenue is a SIMULATED policy comparison under an explicit
+    demand-elasticity assumption; no rider is charged and there is no real conversion log (§22).
+    """
+    from config.pricing_v2 import SIMULATED_DISCLAIMER, DynamicFareConfig
+    from ml.pricing.revenue import compare_revenue
+    from ml.pricing.revenue_eval import build_lines
+
+    cfg = DynamicFareConfig()
+    lines = build_lines(engine, cutoff, cfg, disabled_event_ids=disabled_event_ids)
+    cmp = compare_revenue(lines, elasticity=elasticity)
+
+    # Network demand under the current toggle (baseline vs event-aware, from the zone forecasts).
+    fc = engine.forecasts(cutoff, disabled_event_ids)
+    base_total = sum(z.baseline_forecast for z in fc)
+    ea_total = sum(z.event_aware_forecast for z in fc)
+    affected = sum(1 for z in fc if abs(z.forecast_delta) > 1e-9)
+    max_tier = max((r.multiplier for r in cmp.dynamic.stations), default=1.0)
+
+    top = sorted(cmp.dynamic.stations, key=lambda s: (-s.multiplier, -s.revenue))[:8]
+    delta_pct = round(100 * (ea_total - base_total) / base_total, 1) if base_total else 0.0
+    return {
+        "mode": engine.mode,
+        "cutoff": cutoff.isoformat(),
+        "is_simulated": True,
+        "shadow": True,
+        "disclaimer": SIMULATED_DISCLAIMER,
+        "model_version": engine.model_version,
+        "pricing_config_version": cfg.version,
+        "elasticity": elasticity,
+        "base_fare": cfg.base_fare,
+        "max_multiplier": cfg.max_multiplier,
+        "disabled_event_ids": list(disabled_event_ids),
+        "demand": {
+            "baseline_total": round(base_total, 1),
+            "event_aware_total": round(ea_total, 1),
+            "delta": round(ea_total - base_total, 1),
+            "delta_pct": delta_pct,
+            "affected_zones": affected,
+            "n_stations": len(lines),
+        },
+        "pricing": {
+            "surcharged_stations": cmp.dynamic.surcharged_stations,
+            "max_multiplier": round(max_tier, 3),
+            "base_fare": cfg.base_fare,
+            "cap": cfg.max_multiplier,
+        },
+        "revenue": {
+            "flat_revenue": cmp.flat.total_revenue,
+            "flat_fulfilled": cmp.flat.total_fulfilled,
+            "dynamic_revenue": cmp.dynamic.total_revenue,
+            "dynamic_fulfilled": cmp.dynamic.total_fulfilled,
+            "revenue_uplift": cmp.revenue_uplift,
+            "revenue_uplift_pct": cmp.revenue_uplift_pct,
+            "fulfilled_delta": cmp.fulfilled_delta,
+        },
+        "stations": [
+            {
+                "station_id": s.station_id,
+                "zone_id": s.zone_id,
+                "multiplier": s.multiplier,
+                "final_price": s.final_price,
+                "would_be_renters": s.would_be_renters,
+                "available_bikes": s.available_bikes,
+                "fulfilled_rentals": s.fulfilled_rentals,
+                "revenue": s.revenue,
+                "tier_reason": s.tier_reason,
+            }
+            for s in top
+        ],
+        "note": (
+            "이벤트 토글 → 수요예측(데모 휴리스틱) → 동적요금 → 수익까지의 SIMULATED SHADOW "
+            "체인입니다. 이벤트를 끄면 수요 델타·할증·수익 상승분이 함께 줄어듭니다. 수익은 명시된 "
+            "수요탄력성 가정하의 정책 비교이며, 라이더에게 부과되지 않습니다."
         ),
     }
 

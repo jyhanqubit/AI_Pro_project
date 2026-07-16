@@ -7,6 +7,7 @@ import { useRole } from "@/app/role";
 // Operator tools. In rider mode these are hidden entirely (clean consumer view); the rider only
 // ever sees the home screen plus, when drilled into "why is this busy?", a back link.
 const OPERATOR_TABS = [
+  { href: "/control", label: "관제탑" },
   { href: "/statistics", label: "운영 통계" },
   { href: "/why", label: "수요 급증 원인" },
   { href: "/news", label: "뉴스 검색" },
