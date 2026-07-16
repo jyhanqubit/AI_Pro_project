@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from optimization.classical.enumeration import enumerate_plans
+from optimization.classical.enumeration import bounded_subproblem, enumerate_plans
+from optimization.classical.milp import milp_plan
 from optimization.quantum.qubo import (
     brute_force_qubo,
     build_qubo,
@@ -44,10 +45,22 @@ def main() -> None:
                 f"({m.distance_km:.2f} km)"
             )
 
-    # Exact oracle agrees with the MILP optimum.
+    # Exact oracle cross-checks the MILP. Full-scale exact enumeration is intractable (that is the
+    # whole point of the MILP, §14.1), so both solvers run on a small, tractable slice of the
+    # problem — the largest surplus/deficit stations with a bounded vehicle capacity.
     problem, _ = build_problem(engine, POST_EVENT_CUTOFF)
-    _, exact_cost = enumerate_plans(problem)
-    print(f"\n[exact ] enumeration optimum cost = {exact_cost.total_cost} (MILP must match)")
+    sub = bounded_subproblem(problem)
+    _, sub_milp_cost = milp_plan(sub)
+    _, exact_cost = enumerate_plans(sub)
+    match = sub_milp_cost.total_cost == exact_cost.total_cost
+    print(
+        f"\n[exact ] validation slice: {len(sub.stations)} stations, "
+        f"vehicle_cap={sub.vehicle_capacity}"
+    )
+    print(
+        f"[exact ] MILP cost {sub_milp_cost.total_cost} vs exact enumeration "
+        f"{exact_cost.total_cost}  -> match: {match}"
+    )
 
     # --- Quantum Research Mode: small QUBO validated against exact enumeration --------------
     print("\n== Quantum Research Mode (QUBO) — research only; simulator, no advantage claim ==")
