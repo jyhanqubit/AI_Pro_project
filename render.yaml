@@ -1,0 +1,32 @@
+# Render blueprint — ShockFlow AI API (persistent FastAPI server).
+#
+# The app keeps replay state (the as-of cutoff) in server memory, so the backend must be an
+# always-on server, NOT a serverless function (serverless would lose the cutoff between calls).
+# Render's free web service fits; it spins down when idle, so the first request after a pause has a
+# cold start (~30-60s). Everything runs in offline Demo Mode — no API keys, no live collectors.
+#
+# Deploy: render.com -> New -> Blueprint -> pick this repo. After the web frontend is up, set
+# SHOCKFLOW_CORS_ORIGINS to the frontend origin (e.g. https://your-app.vercel.app) and redeploy.
+services:
+  - type: web
+    name: shockflow-api
+    runtime: python
+    plan: free
+    buildCommand: pip install -e ".[api,ml]"
+    startCommand: uvicorn services.api.app:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /v1/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: SHOCKFLOW_MODE
+        value: demo_fixture
+      - key: ENABLE_GBFS_LIVE
+        value: "false"
+      - key: ENABLE_GDELT_LIVE
+        value: "false"
+      - key: LLM_PROVIDER
+        value: mock
+      # Set this to your deployed frontend origin (comma-separated for more than one), e.g.
+      # https://shockflow.vercel.app — then redeploy so the browser is allowed by CORS.
+      - key: SHOCKFLOW_CORS_ORIGINS
+        sync: false

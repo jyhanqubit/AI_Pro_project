@@ -8,6 +8,7 @@ fabricated success (sections 12, 22).
 
 from __future__ import annotations
 
+import os
 from datetime import datetime
 from typing import Annotated
 
@@ -112,10 +113,15 @@ def create_app() -> FastAPI:
         summary="Event-aware demand forecasting & rebalancing decision support (Phase 08).",
     )
 
-    # Local/LAN dev CORS: the Next.js operator UI runs on :3000 (localhost, 127.0.0.1, or the
-    # PC's LAN IP for mobile viewing). Scoped to port 3000; Demo Mode is offline.
+    # CORS. Local/LAN dev serves the Next.js UI on :3000 (localhost / 127.0.0.1 / the PC's LAN IP).
+    # For a deployed frontend (e.g. Vercel), set SHOCKFLOW_CORS_ORIGINS to a comma-separated list of
+    # exact origins (https://your-app.vercel.app) — the regex still covers :3000 for local dev.
+    deployed_origins = [
+        o.strip() for o in os.environ.get("SHOCKFLOW_CORS_ORIGINS", "").split(",") if o.strip()
+    ]
     app.add_middleware(
         CORSMiddleware,
+        allow_origins=deployed_origins,
         allow_origin_regex=r"http://[\w.-]+:3000",
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
