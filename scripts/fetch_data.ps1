@@ -22,6 +22,9 @@ param(
   [string]$From   = "202601",
   [string]$To     = "202606",
   [string]$Region = "nyc",
+  [ValidateSet("gdelt", "gdelt_bulk", "guardian")]
+  [string]$NewsSource = "gdelt",
+  [string]$GuardianKey = "",
   [int]$NewsDelaySeconds = 6
 )
 
@@ -65,8 +68,9 @@ python -m pipelines.collectors.download_citibike --from $From --to $To @jc
 Write-Host ""
 
 # 2) NEWS (per month, then combine into one JSONL) -------------------------------------------------
-Write-Host "== 2/3  news (GDELT DOC 2.0, free, no key; needs egress) =="
+Write-Host "== 2/3  news (source: $NewsSource; needs egress) =="
 $env:ENABLE_GDELT_LIVE = "true"
+if ($GuardianKey) { $env:GUARDIAN_API_KEY = $GuardianKey }  # shell only — never committed
 $newsDir  = "data\fixtures\news_live"
 $combined = Join-Path $newsDir ("news_{0}_{1}_{2}.jsonl" -f $Region, $From, $To)
 New-Item -ItemType Directory -Force -Path $newsDir | Out-Null
@@ -81,7 +85,7 @@ foreach ($m in $months) {
   $end   = "{0:D4}{1:D2}01000000" -f $ny, $nm
   Write-Host "  - $m : $start .. $end"
   try {
-    python -m pipelines.collectors.collect_live_news --live --region $Region `
+    python -m pipelines.collectors.collect_live_news --live --source $NewsSource --region $Region `
       --start $start --end $end --max-records 250 --stamp "${Region}_$m"
   } catch {
     Write-Host "    (month $m degraded - continuing)"

@@ -16,6 +16,15 @@
   If set, the lift step uses real Claude extraction (installs `anthropic`); otherwise it uses the
   offline mock extractor on the same real news.
 
+.PARAMETER NewsSource
+  Which real news source to pull: gdelt (default; DOC API, ~last 3 months, rate-limited),
+  guardian (free key, full archive, real headlines — best for the lift), or gdelt_bulk (no key,
+  no rate limit, full archive, but URL + GDELT theme tags only, no headlines).
+
+.PARAMETER GuardianKey
+  Free Guardian developer key (open-platform.theguardian.com/access) for -NewsSource guardian.
+  Shell-only; never committed.
+
 .PARAMETER SkipInstall / SkipDemo / SkipData / SkipLift
   Turn off individual stages.
 
@@ -25,6 +34,8 @@
 .EXAMPLE
   .\scripts\run_all.ps1                                  # demo + data + lift(mock)
   .\scripts\run_all.ps1 -AnthropicKey sk-ant-xxx         # real Claude extraction
+  .\scripts\run_all.ps1 -NewsSource guardian -GuardianKey xxxx   # full-history real headlines
+  .\scripts\run_all.ps1 -NewsSource gdelt_bulk           # no key, no rate limit, full history
   .\scripts\run_all.ps1 -From 202601 -To 202606 -WithDatabases -WithDocker
   .\scripts\run_all.ps1 -SkipData -SkipLift              # just setup + offline demo
 #>
@@ -35,6 +46,9 @@ param(
   [string]$Region       = "nyc",
   [string]$AnthropicKey = "",
   [string]$Model        = "claude-opus-4-8",
+  [ValidateSet("gdelt", "gdelt_bulk", "guardian")]
+  [string]$NewsSource   = "gdelt",
+  [string]$GuardianKey  = "",
   [int]$NewsDelaySeconds = 6,
   [switch]$SkipInstall,
   [switch]$SkipDemo,
@@ -112,8 +126,9 @@ if (-not $SkipData) {
   $jc = @(); if ($Region -eq "jc") { $jc = @("--jersey-city") }
   & $Py -m pipelines.collectors.download_citibike --from $From --to $To @jc
 
-  Step "news (GDELT per month -> one JSONL; needs internet)"
+  Step "news ($NewsSource per month -> one JSONL; needs internet)"
   $env:ENABLE_GDELT_LIVE = "true"
+  if ($GuardianKey) { $env:GUARDIAN_API_KEY = $GuardianKey }  # shell only — never committed
   New-Item -ItemType Directory -Force -Path "data\fixtures\news_live" | Out-Null
   New-Item -ItemType File -Force -Path $combined | Out-Null
   $first = $true
@@ -124,7 +139,7 @@ if (-not $SkipData) {
     if ($mo -eq 12) { $ny = $y + 1; $nm = 1 } else { $ny = $y; $nm = $mo + 1 }
     $start = "${m}01000000"; $end = "{0:D4}{1:D2}01000000" -f $ny, $nm
     Write-Host "     $m : $start .. $end"
-    & $Py -m pipelines.collectors.collect_live_news --live --region $Region `
+    & $Py -m pipelines.collectors.collect_live_news --live --source $NewsSource --region $Region `
       --start $start --end $end --max-records 250 --stamp "${Region}_$m"
     $snap = Join-Path "data\fixtures\news_live" ("news_gdelt_{0}_{1}.jsonl" -f $Region, $m)
     if (Test-Path $snap) { Get-Content $snap | Add-Content $combined }

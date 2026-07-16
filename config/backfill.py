@@ -95,6 +95,23 @@ NYC_GDELT_QUERY = (
 GDELT_QUERY_PRESETS: dict[str, str] = {"jc": DEFAULT_GDELT_QUERY, "nyc": NYC_GDELT_QUERY}
 
 
+# Guardian Content API query presets (§7.4). Guardian's query syntax uses AND/OR/quotes; anchor on
+# the served area AND a mobility/crowd term so results are demand-relevant. `--source guardian`.
+GUARDIAN_JC_QUERY = (
+    '("Jersey City" OR Hoboken OR "Journal Square" OR "Hudson County") '
+    'AND ("bike share" OR "Citi Bike" OR "bike lane" OR cycling OR "NJ Transit" OR PATH OR '
+    '"light rail" OR commute OR "road closure" OR detour OR concert OR festival OR flood)'
+)
+GUARDIAN_NYC_QUERY = (
+    '("New York City" OR Manhattan OR Brooklyn OR Queens OR "Times Square" OR '
+    '"Madison Square Garden" OR "Penn Station") '
+    'AND ("bike share" OR "Citi Bike" OR "bike lane" OR cycling OR subway OR MTA OR '
+    '"service change" OR "road closure" OR detour OR concert OR festival OR parade OR '
+    'marathon OR flood OR storm)'
+)
+GUARDIAN_QUERY_PRESETS: dict[str, str] = {"jc": GUARDIAN_JC_QUERY, "nyc": GUARDIAN_NYC_QUERY}
+
+
 @dataclass(frozen=True)
 class GdeltConfig:
     query: str = DEFAULT_GDELT_QUERY

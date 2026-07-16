@@ -20,9 +20,16 @@ import os
 import sys
 from pathlib import Path
 
-from config.backfill import GDELT_QUERY_PRESETS, BackfillConfig, GdeltConfig
+from config.backfill import (
+    GDELT_QUERY_PRESETS,
+    GUARDIAN_QUERY_PRESETS,
+    BackfillConfig,
+    GdeltConfig,
+)
 from pipelines.collectors.backfill import GdeltNewsProvider, backfill_news
 from pipelines.collectors.coverage import coverage_gate, coverage_report
+from pipelines.collectors.gdelt_bulk_provider import GdeltBulkNewsProvider
+from pipelines.collectors.guardian_provider import GuardianNewsProvider
 
 _ROOT = Path(__file__).resolve().parents[2]
 _SNAP_DIR = _ROOT / "data" / "fixtures" / "news_live"
@@ -51,9 +58,72 @@ def _snapshot(articles, stamp: str) -> Path:
     return out
 
 
+def _ymd(stamp: str | None) -> str | None:
+    """'YYYYMMDDHHMMSS' -> 'YYYY-MM-DD' for the Guardian date params (None passes through)."""
+    if not stamp or len(stamp) < 8:
+        return None
+    return f"{stamp[0:4]}-{stamp[4:6]}-{stamp[6:8]}"
+
+
+def _build_provider(args):
+    """Construct the news provider selected by --source (all opt-in; offline-safe defaults)."""
+    if args.source == "guardian":
+        query = args.query or GUARDIAN_QUERY_PRESETS[args.region]
+        # Guardian's to-date is inclusive; the collector's --end is an exclusive window boundary, so
+        # this may include the boundary day — dedup + the trip-window join keep that leakage-safe.
+        max_pages = max(1, -(-(args.max_records or 1000) // 200)) if args.max_records else 5
+        return GuardianNewsProvider(
+            query,
+            api_key=os.environ.get("GUARDIAN_API_KEY"),
+            enabled=True,
+            from_date=_ymd(args.start),
+            to_date=_ymd(args.end),
+            max_pages=max_pages,
+            retries=args.retries,
+            backoff_s=args.backoff,
+        )
+    if args.source == "gdelt_bulk":
+        return GdeltBulkNewsProvider(
+            enabled=True,
+            start=args.start,
+            end=args.end,
+            require_nyc=(args.region == "nyc"),  # jc is US-NJ; theme-only filter there
+            max_files=args.max_records or 96,  # here --max-records caps 15-min files, not articles
+            retries=max(1, args.retries // 2),
+            backoff_s=args.backoff,
+        )
+    # default: GDELT DOC 2.0 API
+    query = args.query or GDELT_QUERY_PRESETS[args.region]
+    gcfg = GdeltConfig(
+        enabled=True,
+        start=args.start,
+        end=args.end,
+        query=query,
+        max_records=args.max_records or GdeltConfig.max_records,
+    )
+    return GdeltNewsProvider(
+        gcfg.query,
+        enabled=True,
+        start=gcfg.start,
+        end=gcfg.end,
+        max_records=gcfg.max_records,
+        source_lang=gcfg.source_lang,
+        retries=args.retries,
+        backoff_s=args.backoff,
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--live", action="store_true", help="enable the live GDELT fetch (opt-in)")
+    ap.add_argument("--live", action="store_true", help="enable the live fetch (opt-in)")
+    ap.add_argument(
+        "--source",
+        choices=("gdelt", "gdelt_bulk", "guardian"),
+        default="gdelt",
+        help="news source: gdelt (DOC API, ~last 3 months, rate-limited); gdelt_bulk (GKG export "
+        "files — no key, no rate limit, full archive, but no headlines); guardian (Content API — "
+        "free key via GUARDIAN_API_KEY, full archive, real headlines+summaries).",
+    )
     ap.add_argument("--start", default=None, help="YYYYMMDDHHMMSS UTC window start")
     ap.add_argument("--end", default=None, help="YYYYMMDDHHMMSS UTC window end")
     ap.add_argument("--stamp", default="latest", help="snapshot filename stamp (no clock in code)")
@@ -97,30 +167,13 @@ def main() -> int:
         print("Offline paths use data/fixtures/news_demo.jsonl (make v1-backfill-news).")
         return 0
 
-    # A zero-width or reversed window makes GDELT return an error page (looks like a JSON/429
+    # A zero-width or reversed window makes the sources return an error page (looks like a JSON/429
     # failure). Fail fast with a clear message instead.
     if args.start and args.end and args.start >= args.end:
         print(f"invalid window: --start {args.start} must be BEFORE --end {args.end}")
         return 1
 
-    query = args.query or GDELT_QUERY_PRESETS[args.region]
-    gcfg = GdeltConfig(
-        enabled=True,
-        start=args.start,
-        end=args.end,
-        query=query,
-        max_records=args.max_records or GdeltConfig.max_records,
-    )
-    provider = GdeltNewsProvider(
-        gcfg.query,
-        enabled=True,
-        start=gcfg.start,
-        end=gcfg.end,
-        max_records=gcfg.max_records,
-        source_lang=gcfg.source_lang,
-        retries=args.retries,
-        backoff_s=args.backoff,
-    )
+    provider = _build_provider(args)
     # GDELT DOC returns title only and already location/topic-matched the FULL text server-side, so
     # a local title-only re-filter would wrongly drop relevant items. Trust the GDELT query here.
     cfg = BackfillConfig(
@@ -133,12 +186,12 @@ def main() -> int:
     gate = coverage_gate(rep, cfg)
 
     if res.report.degraded:
-        print(f"GDELT degraded: {res.report.degraded_reason}")
+        print(f"{args.source} degraded: {res.report.degraded_reason}")
         return 1
 
     snap = _snapshot(res.articles, args.stamp)
     print(
-        f"GDELT live: raw={rep.raw_article_count} candidate={rep.candidate_article_count} "
+        f"{args.source} live: raw={rep.raw_article_count} candidate={rep.candidate_article_count} "
         f"accepted={rep.accepted_count} sources={rep.unique_source_count}"
     )
     print(f"coverage gate passed: {gate.passed}  {gate.reasons or ''}")
