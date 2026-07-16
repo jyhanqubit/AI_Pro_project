@@ -287,6 +287,21 @@ def run(data_dir: str, events_path: str, test_from: str, target: str = PRIMARY_T
     # How many test rows actually carry an event signal (for honest event-window reading).
     ev_test = (df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0)
     days = sorted({h.date().isoformat() for h in np.array(hours, dtype=object)[test_pos]})
+
+    # City-wide daily series over the test window: actual vs baseline vs +events (for plotting).
+    test_hours = np.array(hours, dtype=object)[test_pos]
+    by_day: dict[str, list[float]] = {}
+    for i, hh in enumerate(test_hours):
+        d = hh.date().isoformat()
+        acc = by_day.setdefault(d, [0.0, 0.0, 0.0])
+        acc[0] += float(y_test[i])
+        acc[1] += float(pred_b1[i])
+        acc[2] += float(pred_be[i])
+    daily_series = [
+        {"date": d, "actual": round(v[0], 1), "pred_b1": round(v[1], 1), "pred_events": round(v[2], 1)}
+        for d, v in sorted(by_day.items())
+    ]
+
     return {
         "grain": "borough-hour (nearest-centroid; approximate)",
         "target": target,
@@ -304,6 +319,7 @@ def run(data_dir: str, events_path: str, test_from: str, target: str = PRIMARY_T
         "wape_abs_reduction": round(wape_b1 - wape_be, 4),
         "wape_rel_reduction_pct": round(100 * (wape_b1 - wape_be) / wape_b1, 2) if wape_b1 else 0.0,
         "predictive_lift": lift,
+        "daily_series": daily_series,
     }
 
 
