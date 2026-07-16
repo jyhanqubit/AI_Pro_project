@@ -97,6 +97,12 @@ def main() -> int:
         print("Offline paths use data/fixtures/news_demo.jsonl (make v1-backfill-news).")
         return 0
 
+    # A zero-width or reversed window makes GDELT return an error page (looks like a JSON/429
+    # failure). Fail fast with a clear message instead.
+    if args.start and args.end and args.start >= args.end:
+        print(f"invalid window: --start {args.start} must be BEFORE --end {args.end}")
+        return 1
+
     query = args.query or GDELT_QUERY_PRESETS[args.region]
     gcfg = GdeltConfig(
         enabled=True,
