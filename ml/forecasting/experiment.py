@@ -8,6 +8,7 @@ including the event ablation collapsing to B1 on a window that predates the cura
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any
 
 import numpy as np
@@ -32,7 +33,12 @@ from ml.forecasting.dataset import Panel
 from ml.forecasting.feature_selection import permutation_importances, select_top_k, wape_scorer
 from ml.forecasting.metrics import evaluate, forecast_delta_stability, mae
 from ml.forecasting.models import algorithm_names, make_pipeline
-from ml.forecasting.splits import final_holdout, rolling_origin_folds, to_hour_index
+from ml.forecasting.splits import (
+    final_holdout,
+    holdout_by_time,
+    rolling_origin_folds,
+    to_hour_index,
+)
 
 
 def usable_frame(panel: Panel) -> pd.DataFrame:
@@ -48,21 +54,58 @@ def _matrix(df: pd.DataFrame, cols: list[str]) -> np.ndarray:
     return df[cols].to_numpy(dtype=float)
 
 
-def _split_positions(df: pd.DataFrame) -> tuple[np.ndarray, np.ndarray, list]:
+# Panel columns that carry an as-of event/graph contribution; a test row is "event-affected" when
+# any is non-zero (real news joined & available at that hour). Empty on the zero-overlap default.
+_EVENT_SIGNAL_COLS = (
+    "article_count_24h",
+    "article_count_6h",
+    "event_severity_sum",
+    "transit_disruption_flag",
+    "graph_distance_decayed_impact",
+    "graph_neighbor_zone_impact",
+    "graph_transit_exposure",
+)
+
+
+def _split_positions(
+    df: pd.DataFrame, test_start: datetime | None = None
+) -> tuple[np.ndarray, np.ndarray, list]:
     hour_idx = to_hour_index(list(df["hour_start"]))
-    dev_pos, test_pos = final_holdout(hour_idx, FINAL_TEST_HOURS)
+    if test_start is not None:
+        dev_pos, test_pos = holdout_by_time(list(df["hour_start"]), test_start)
+    else:
+        dev_pos, test_pos = final_holdout(hour_idx, FINAL_TEST_HOURS)
     folds = rolling_origin_folds(hour_idx[dev_pos], CV_SPLITS, CV_TEST_HOURS)
     return dev_pos, test_pos, folds
 
 
-def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]:
-    """Run the full Phase 06 experiment and return a JSON-serialisable result dict."""
+def _event_mask(df: pd.DataFrame, test_pos: np.ndarray) -> np.ndarray:
+    """Boolean mask over the test rows that carry a non-zero as-of event/graph signal.
+
+    Marks the rows an available event actually touches, so event-window WAPE measures the LLM
+    feature effect where it applies. All-False on the zero-overlap default (no fabricated windows).
+    """
+    cols = [c for c in _EVENT_SIGNAL_COLS if c in df.columns]
+    if not cols:
+        return np.zeros(len(test_pos), dtype=bool)
+    signal = df[cols].abs().sum(axis=1).to_numpy() > 0
+    return signal[test_pos]
+
+
+def run_experiment(
+    panel: Panel, target: str = PRIMARY_TARGET, *, test_start: datetime | None = None
+) -> dict[str, Any]:
+    """Run the full Phase 06 experiment and return a JSON-serialisable result dict.
+
+    ``test_start`` (aware) holds out every hour >= it as an expanding-window test set (e.g. train
+    Jan-May, test June); ``None`` keeps the default trailing ``FINAL_TEST_HOURS`` holdout.
+    """
     df = usable_frame(panel)
     prefix = TARGET_PREFIX[target]
     y = df[target].to_numpy(dtype=float)
     y_prev = df[f"{prefix}_lag_1"].to_numpy(dtype=float)
 
-    dev_pos, test_pos, folds = _split_positions(df)
+    dev_pos, test_pos, folds = _split_positions(df, test_start)
     if len(test_pos) == 0 or not folds:
         raise ValueError("insufficient temporal span for rolling-origin evaluation")
 
@@ -70,8 +113,9 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
     y_prev_test = y_prev[test_pos]
     # MASE denominator: in-sample seasonal-naive MAE on the development set (section 11.4).
     scale = mae(y_dev, seasonal_naive_predict(df.iloc[dev_pos], target))
-    # No event falls in the test window (curated events postdate the data): honest empty mask.
-    event_mask_test: np.ndarray = np.zeros(len(test_pos), dtype=bool)
+    # Real event-window mask: the test rows an available event actually touches (empty on the
+    # zero-overlap default; non-empty once real overlapping news is joined).
+    event_mask_test: np.ndarray = _event_mask(df, test_pos)
 
     def ev(pred: np.ndarray) -> dict[str, float]:
         """Evaluate a prediction against the test target with the configured cost weights."""
@@ -95,7 +139,11 @@ def run_experiment(panel: Panel, target: str = PRIMARY_TARGET) -> dict[str, Any]
         "n_cv_folds": len(folds),
         "n_features_b1": len(b1_cols),
         "seasonal_scale_mae": scale,
-        "test_window_hours": FINAL_TEST_HOURS,
+        "test_window_hours": int(np.ptp(to_hour_index(list(df["hour_start"]))[test_pos])) + 1
+        if test_start is not None
+        else FINAL_TEST_HOURS,
+        "test_start": test_start.isoformat() if test_start is not None else None,
+        "test_event_rows": int(event_mask_test.sum()),
         "ocs_shortage_cost": SHORTAGE_COST,
         "ocs_overflow_cost": OVERFLOW_COST,
     }
