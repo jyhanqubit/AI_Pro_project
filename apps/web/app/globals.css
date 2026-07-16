@@ -143,6 +143,8 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 .notice.warn { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, var(--border)); }
 
 .footer-note { color: var(--muted); font-size: 12px; margin-top: 24px; border-top: 1px solid var(--border); padding-top: 12px; }
+.footer-credit { color: var(--muted); font-size: 12px; margin-top: 10px; letter-spacing: .01em; }
+.footer-credit strong { color: var(--text); font-weight: 700; }
 
 /* ---- Rider home ---------------------------------------------------------- */
 .hero h1 { font-size: 24px; margin: 0 0 6px; }
