@@ -10,7 +10,11 @@ from __future__ import annotations
 import pytest
 
 from config.rebalancing import RebalancingCosts
-from optimization.classical.enumeration import enumerate_plans
+from optimization.classical.enumeration import (
+    ExactSolverError,
+    bounded_subproblem,
+    enumerate_plans,
+)
 from optimization.classical.feasibility import check_feasibility
 from optimization.classical.greedy import greedy_plan
 from optimization.classical.milp import milp_plan
@@ -128,3 +132,44 @@ def test_milp_respects_binding_vehicle_capacity() -> None:
     assert check_feasibility(p, plan).feasible
     assert plan.total_moved <= 6
     assert cost.shortage_units >= 16 - 6
+
+
+def _large_problem() -> RebalancingProblem:
+    """A network far too large for exact enumeration (20 surplus x 20 deficit stations)."""
+    stations = []
+    for k in range(20):  # surplus stations: 35 bikes above target
+        lat = 40.72 + k * 1e-3
+        stations.append(
+            Station(f"S{k:02d}", f"surplus {k}", lat, -74.03, bikes=40, capacity=50, target=5)
+        )
+    for k in range(20):  # deficit stations: 38 bikes below target
+        lat = 40.73 + k * 1e-3
+        stations.append(
+            Station(f"D{k:02d}", f"deficit {k}", lat, -74.04, bikes=2, capacity=50, target=40)
+        )
+    return RebalancingProblem(stations=tuple(stations), vehicle_capacity=68)
+
+
+def test_full_scale_enumeration_is_refused() -> None:
+    # The oracle must refuse an intractable instance rather than hang (§14.1).
+    with pytest.raises(ExactSolverError):
+        enumerate_plans(_large_problem())
+
+
+def test_bounded_subproblem_is_enumerable_and_matches_milp() -> None:
+    big = _large_problem()
+    sub = bounded_subproblem(big, max_origins=2, max_dests=2, max_combinations=500_000)
+    # Small, tractable slice carved from the large problem.
+    assert 0 < len(sub.stations) <= 4
+    # The exact oracle now runs (does not raise) and the MILP matches it on the same slice.
+    _, exact_cost = enumerate_plans(sub)
+    _, milp_cost = milp_plan(sub)
+    assert milp_cost.total_cost == pytest.approx(exact_cost.total_cost)
+
+
+def test_bounded_subproblem_is_deterministic() -> None:
+    big = _large_problem()
+    a = bounded_subproblem(big)
+    b = bounded_subproblem(big)
+    assert [s.station_id for s in a.stations] == [s.station_id for s in b.stations]
+    assert a.vehicle_capacity == b.vehicle_capacity
