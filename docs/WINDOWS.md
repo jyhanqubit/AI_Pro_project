@@ -14,6 +14,8 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 
 .\scripts\run_all.ps1                                 # setup + offline demo + data + lift(mock)
 .\scripts\run_all.ps1 -AnthropicKey "sk-ant-..."      # + real Claude extraction
+.\scripts\run_all.ps1 -NewsSource guardian -GuardianKey "xxxx"  # full-history real headlines
+.\scripts\run_all.ps1 -NewsSource gdelt_bulk          # no key, no rate limit, full history
 .\scripts\run_all.ps1 -From 202601 -To 202606 -WithDatabases -WithDocker
 .\scripts\run_all.ps1 -SkipData -SkipLift             # just setup + offline demo
 ```
@@ -88,9 +90,21 @@ cd apps\web; npm install; npm run dev        # window 2  -> http://localhost:300
 
 ## B. Real data → measure the LLM-feature lift
 
+### Choosing a news source (`-NewsSource`)
+
+GDELT's DOC API is rate-limited and only serves ~the last 3 months. Two more sources are wired in:
+
+| Source | Key | History | Headlines? | Notes |
+| --- | --- | --- | --- | --- |
+| `gdelt` (default) | none | ~last 3 months | yes (title) | throttled — 429s on bursts |
+| `guardian` | free `GUARDIAN_API_KEY` | 1999→ full | **yes** (title + summary) | best for LLM lift; get a key at open-platform.theguardian.com/access |
+| `gdelt_bulk` | none | 2015→ full | **no** (URL + GDELT theme tags only) | no rate limit; coverage/signal source, not prose |
+
 ```powershell
 # B-1. Fetch trips + news + stations for a month range, one command:
-.\scripts\fetch_data.ps1 202601 202606 nyc
+.\scripts\fetch_data.ps1 202601 202606 nyc                          # default: gdelt
+.\scripts\fetch_data.ps1 202601 202606 nyc -NewsSource guardian -GuardianKey "xxxx"
+.\scripts\fetch_data.ps1 202601 202606 nyc -NewsSource gdelt_bulk   # no key, full history
 
 # B-2. Real Claude extraction key:
 pip install anthropic
@@ -134,6 +148,8 @@ pip install -e ".[vectorstore]"; python -m ml.vectorstore.demo
 | `make: term not recognized` | `make` isn't on Windows — use the commands above (or WSL) |
 | `blocked_data`, too few rows | trip window too short — fetch more months |
 | event features all 0 | news window doesn't overlap the trip window — align the fetch months |
-| `GDELT degraded … 429 Too Many Requests` | rate-limited by bursty querying. The collector now backs off exponentially and the scripts space months out; if it still trips, raise the gap (`.\scripts\run_all.ps1 -NewsDelaySeconds 15`) or re-run in a few minutes (only the missing months refetch) |
+| `GDELT degraded … 429 Too Many Requests` | rate-limited by bursty querying. The collector now backs off exponentially and the scripts space months out; if it still trips, raise the gap (`.\scripts\run_all.ps1 -NewsDelaySeconds 15`) or re-run in a few minutes (only the missing months refetch). For older months (>~3 months back) GDELT DOC has no data at all — switch to `-NewsSource guardian` or `-NewsSource gdelt_bulk` for full history |
+| `guardian degraded … key missing` | get a free developer key at open-platform.theguardian.com/access and pass `-GuardianKey "xxxx"` (or `$env:GUARDIAN_API_KEY`) |
+| `gdelt_bulk` returns few rows for a month | by default it caps at `--max-records 96` 15-min files (~1 day). A full month is ~2,880 files — fetch day-by-day (narrow `--start/--end`) or raise the cap; it has no headlines, so use it as a coverage/signal source and Guardian for prose |
 | `GDELT degraded` (other) | no egress — run where the internet is reachable |
 | extraction all errors | `$env:ANTHROPIC_API_KEY` unset, or `pip install anthropic` missing |
