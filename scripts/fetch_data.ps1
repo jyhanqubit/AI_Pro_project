@@ -76,7 +76,7 @@ foreach ($m in $months) {
   if (-not $first) { Start-Sleep -Seconds $NewsDelaySeconds }  # space out (GDELT 429s on bursts)
   $first = $false
   $y = [int]$m.Substring(0, 4); $mo = [int]$m.Substring(4, 2)
-  if ($mo -eq 12) { $ny = $y + 1; $nm = 1 } else { $ny = $y; $nm = $mo }
+  if ($mo -eq 12) { $ny = $y + 1; $nm = 1 } else { $ny = $y; $nm = $mo + 1 }
   $start = "${m}01000000"
   $end   = "{0:D4}{1:D2}01000000" -f $ny, $nm
   Write-Host "  - $m : $start .. $end"
