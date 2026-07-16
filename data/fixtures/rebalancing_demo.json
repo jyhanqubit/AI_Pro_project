@@ -53,7 +53,7 @@
       "name": "28 Ave & 44 St",
       "lat": 40.764089,
       "lng": -73.910651,
-      "bikes_available": 15,
+      "bikes_available": 14,
       "capacity": 19,
       "base_target": 8
     },
@@ -62,7 +62,7 @@
       "name": "Prospect Ave & E 151 St",
       "lat": 40.814232,
       "lng": -73.903927,
-      "bikes_available": 18,
+      "bikes_available": 15,
       "capacity": 21,
       "base_target": 8
     },
@@ -71,7 +71,7 @@
       "name": "41 Ave & 67 St",
       "lat": 40.74446,
       "lng": -73.89764,
-      "bikes_available": 1,
+      "bikes_available": 3,
       "capacity": 20,
       "base_target": 8
     },
@@ -80,7 +80,7 @@
       "name": "E 5 St & Ave A",
       "lat": 40.72479,
       "lng": -73.984301,
-      "bikes_available": 41,
+      "bikes_available": 44,
       "capacity": 48,
       "base_target": 19
     },
@@ -89,7 +89,7 @@
       "name": "Perry St & Greenwich Ave",
       "lat": 40.735918,
       "lng": -74.000939,
-      "bikes_available": 21,
+      "bikes_available": 9,
       "capacity": 53,
       "base_target": 21
     },
@@ -98,7 +98,7 @@
       "name": "Bergen St & Kingston Ave",
       "lat": 40.6756,
       "lng": -73.9415,
-      "bikes_available": 19,
+      "bikes_available": 18,
       "capacity": 22,
       "base_target": 9
     },
@@ -107,7 +107,7 @@
       "name": "Degraw St & 3 Ave",
       "lat": 40.67977,
       "lng": -73.9847,
-      "bikes_available": 31,
+      "bikes_available": 19,
       "capacity": 35,
       "base_target": 14
     },
@@ -116,7 +116,7 @@
       "name": "E 54 St & 1 Ave",
       "lat": 40.756265,
       "lng": -73.964179,
-      "bikes_available": 25,
+      "bikes_available": 27,
       "capacity": 41,
       "base_target": 16
     },
@@ -125,7 +125,7 @@
       "name": "Peck Slip & South St",
       "lat": 40.707519,
       "lng": -74.001081,
-      "bikes_available": 37,
+      "bikes_available": 23,
       "capacity": 45,
       "base_target": 18
     },
@@ -143,7 +143,7 @@
       "name": "Adam Clayton Powell Blvd & W 132 St",
       "lat": 40.813539,
       "lng": -73.94521,
-      "bikes_available": 17,
+      "bikes_available": 19,
       "capacity": 23,
       "base_target": 9
     },
@@ -161,7 +161,7 @@
       "name": "Boston Rd & E 167 St",
       "lat": 40.828199,
       "lng": -73.903719,
-      "bikes_available": 6,
+      "bikes_available": 11,
       "capacity": 21,
       "base_target": 8
     },
@@ -170,7 +170,7 @@
       "name": "Riverside Dr & W 138 St",
       "lat": 40.823168,
       "lng": -73.955857,
-      "bikes_available": 20,
+      "bikes_available": 22,
       "capacity": 30,
       "base_target": 12
     },
@@ -179,7 +179,7 @@
       "name": "Macon St & Patchen Ave",
       "lat": 40.68374,
       "lng": -73.9261,
-      "bikes_available": 19,
+      "bikes_available": 9,
       "capacity": 19,
       "base_target": 8
     },
@@ -188,7 +188,7 @@
       "name": "Bergen St & 4 Ave",
       "lat": 40.682564,
       "lng": -73.979898,
-      "bikes_available": 2,
+      "bikes_available": 3,
       "capacity": 34,
       "base_target": 14
     },
@@ -197,7 +197,7 @@
       "name": "5 Ave & E 135 St",
       "lat": 40.812191,
       "lng": -73.937838,
-      "bikes_available": 19,
+      "bikes_available": 21,
       "capacity": 21,
       "base_target": 8
     },
@@ -206,7 +206,7 @@
       "name": "W Tremont Ave & Montgomery Ave",
       "lat": 40.851788,
       "lng": -73.916418,
-      "bikes_available": 4,
+      "bikes_available": 1,
       "capacity": 21,
       "base_target": 8
     },
@@ -215,7 +215,7 @@
       "name": "Flatbush Ave & Lincoln Rd",
       "lat": 40.66131,
       "lng": -73.96091,
-      "bikes_available": 12,
+      "bikes_available": 9,
       "capacity": 23,
       "base_target": 9
     },
@@ -224,7 +224,7 @@
       "name": "Bergen St & Mother Gaston Blvd",
       "lat": 40.67374,
       "lng": -73.90852,
-      "bikes_available": 22,
+      "bikes_available": 19,
       "capacity": 24,
       "base_target": 10
     },
@@ -233,7 +233,7 @@
       "name": "Park Circle & East Dr",
       "lat": 40.651566,
       "lng": -73.972212,
-      "bikes_available": 11,
+      "bikes_available": 27,
       "capacity": 29,
       "base_target": 12
     },
@@ -242,7 +242,7 @@
       "name": "Skillman Ave & Honeywell St",
       "lat": 40.747148,
       "lng": -73.929024,
-      "bikes_available": 5,
+      "bikes_available": 2,
       "capacity": 19,
       "base_target": 8
     },
@@ -260,7 +260,7 @@
       "name": "Fulton St & Williams Ave",
       "lat": 40.67709,
       "lng": -73.9008,
-      "bikes_available": 18,
+      "bikes_available": 20,
       "capacity": 21,
       "base_target": 8
     },
@@ -269,7 +269,7 @@
       "name": "3 Ave & E 163 St",
       "lat": 40.823872,
       "lng": -73.908699,
-      "bikes_available": 5,
+      "bikes_available": 6,
       "capacity": 27,
       "base_target": 11
     },
@@ -278,7 +278,7 @@
       "name": "Goulden Ave & W 205 St",
       "lat": 40.87812,
       "lng": -73.89192,
-      "bikes_available": 15,
+      "bikes_available": 13,
       "capacity": 19,
       "base_target": 8
     },
@@ -287,7 +287,7 @@
       "name": "8 Ave & W 49 St",
       "lat": 40.761712,
       "lng": -73.986551,
-      "bikes_available": 4,
+      "bikes_available": 11,
       "capacity": 65,
       "base_target": 26
     },
@@ -296,7 +296,7 @@
       "name": "Bushwick Ave & Forrest St",
       "lat": 40.70076,
       "lng": -73.93641,
-      "bikes_available": 17,
+      "bikes_available": 16,
       "capacity": 20,
       "base_target": 8
     },
@@ -305,7 +305,7 @@
       "name": "Sumpter St & Fulton St",
       "lat": 40.67923,
       "lng": -73.92588,
-      "bikes_available": 9,
+      "bikes_available": 16,
       "capacity": 19,
       "base_target": 8
     },
@@ -314,7 +314,7 @@
       "name": "St Nicholas Ave & W 157 St",
       "lat": 40.832314,
       "lng": -73.94102,
-      "bikes_available": 5,
+      "bikes_available": 4,
       "capacity": 20,
       "base_target": 8
     },
@@ -323,7 +323,7 @@
       "name": "E 163 St & Union Ave",
       "lat": 40.822545,
       "lng": -73.901824,
-      "bikes_available": 5,
+      "bikes_available": 10,
       "capacity": 24,
       "base_target": 10
     },
@@ -332,7 +332,7 @@
       "name": "Broadway & 51 St",
       "lat": 40.754164,
       "lng": -73.908906,
-      "bikes_available": 20,
+      "bikes_available": 24,
       "capacity": 27,
       "base_target": 11
     },
@@ -341,7 +341,7 @@
       "name": "W 35 St & 9 Ave",
       "lat": 40.754145,
       "lng": -73.996089,
-      "bikes_available": 1,
+      "bikes_available": 9,
       "capacity": 32,
       "base_target": 13
     },
@@ -350,7 +350,7 @@
       "name": "College Ave & E 170 St",
       "lat": 40.837576,
       "lng": -73.910489,
-      "bikes_available": 6,
+      "bikes_available": 7,
       "capacity": 24,
       "base_target": 10
     },
@@ -359,7 +359,7 @@
       "name": "Madison Ave & E 26 St",
       "lat": 40.742685,
       "lng": -73.986713,
-      "bikes_available": 0,
+      "bikes_available": 1,
       "capacity": 75,
       "base_target": 30
     },
@@ -377,7 +377,7 @@
       "name": "72 St & Woodside Ave",
       "lat": 40.74288,
       "lng": -73.89283,
-      "bikes_available": 8,
+      "bikes_available": 9,
       "capacity": 19,
       "base_target": 8
     },
@@ -386,7 +386,7 @@
       "name": "37 St & 24 Ave",
       "lat": 40.770148,
       "lng": -73.912094,
-      "bikes_available": 18,
+      "bikes_available": 17,
       "capacity": 19,
       "base_target": 8
     },
@@ -395,7 +395,7 @@
       "name": "Orchard St & Grand St",
       "lat": 40.717318,
       "lng": -73.990678,
-      "bikes_available": 34,
+      "bikes_available": 23,
       "capacity": 45,
       "base_target": 18
     },
