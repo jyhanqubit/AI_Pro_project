@@ -53,7 +53,7 @@
       "name": "28 Ave & 44 St",
       "lat": 40.764089,
       "lng": -73.910651,
-      "bikes_available": 14,
+      "bikes_available": 16,
       "capacity": 19,
       "base_target": 8
     },
@@ -116,7 +116,7 @@
       "name": "E 54 St & 1 Ave",
       "lat": 40.756265,
       "lng": -73.964179,
-      "bikes_available": 27,
+      "bikes_available": 29,
       "capacity": 41,
       "base_target": 16
     },
@@ -125,7 +125,7 @@
       "name": "Peck Slip & South St",
       "lat": 40.707519,
       "lng": -74.001081,
-      "bikes_available": 23,
+      "bikes_available": 25,
       "capacity": 45,
       "base_target": 18
     },
@@ -170,7 +170,7 @@
       "name": "Riverside Dr & W 138 St",
       "lat": 40.823168,
       "lng": -73.955857,
-      "bikes_available": 22,
+      "bikes_available": 24,
       "capacity": 30,
       "base_target": 12
     },
@@ -179,7 +179,7 @@
       "name": "Macon St & Patchen Ave",
       "lat": 40.68374,
       "lng": -73.9261,
-      "bikes_available": 9,
+      "bikes_available": 10,
       "capacity": 19,
       "base_target": 8
     },
@@ -215,7 +215,7 @@
       "name": "Flatbush Ave & Lincoln Rd",
       "lat": 40.66131,
       "lng": -73.96091,
-      "bikes_available": 9,
+      "bikes_available": 12,
       "capacity": 23,
       "base_target": 9
     },
@@ -251,7 +251,7 @@
       "name": "St Marks Ave & Ralph Ave",
       "lat": 40.67372,
       "lng": -73.92199,
-      "bikes_available": 4,
+      "bikes_available": 5,
       "capacity": 19,
       "base_target": 8
     },
@@ -260,7 +260,7 @@
       "name": "Fulton St & Williams Ave",
       "lat": 40.67709,
       "lng": -73.9008,
-      "bikes_available": 20,
+      "bikes_available": 19,
       "capacity": 21,
       "base_target": 8
     },
@@ -269,7 +269,7 @@
       "name": "3 Ave & E 163 St",
       "lat": 40.823872,
       "lng": -73.908699,
-      "bikes_available": 6,
+      "bikes_available": 7,
       "capacity": 27,
       "base_target": 11
     },
@@ -278,7 +278,7 @@
       "name": "Goulden Ave & W 205 St",
       "lat": 40.87812,
       "lng": -73.89192,
-      "bikes_available": 13,
+      "bikes_available": 14,
       "capacity": 19,
       "base_target": 8
     },
@@ -287,7 +287,7 @@
       "name": "8 Ave & W 49 St",
       "lat": 40.761712,
       "lng": -73.986551,
-      "bikes_available": 11,
+      "bikes_available": 9,
       "capacity": 65,
       "base_target": 26
     },
@@ -323,7 +323,7 @@
       "name": "E 163 St & Union Ave",
       "lat": 40.822545,
       "lng": -73.901824,
-      "bikes_available": 10,
+      "bikes_available": 9,
       "capacity": 24,
       "base_target": 10
     },
@@ -332,7 +332,7 @@
       "name": "Broadway & 51 St",
       "lat": 40.754164,
       "lng": -73.908906,
-      "bikes_available": 24,
+      "bikes_available": 25,
       "capacity": 27,
       "base_target": 11
     },
@@ -359,7 +359,7 @@
       "name": "Madison Ave & E 26 St",
       "lat": 40.742685,
       "lng": -73.986713,
-      "bikes_available": 1,
+      "bikes_available": 0,
       "capacity": 75,
       "base_target": 30
     },
@@ -386,7 +386,7 @@
       "name": "37 St & 24 Ave",
       "lat": 40.770148,
       "lng": -73.912094,
-      "bikes_available": 17,
+      "bikes_available": 16,
       "capacity": 19,
       "base_target": 8
     },
@@ -395,7 +395,7 @@
       "name": "Orchard St & Grand St",
       "lat": 40.717318,
       "lng": -73.990678,
-      "bikes_available": 23,
+      "bikes_available": 25,
       "capacity": 45,
       "base_target": 18
     },
