@@ -114,6 +114,11 @@ $env:ANTHROPIC_API_KEY = "sk-ant-..."       # shell only — never commit
 # B-3. Combine all six months into one panel and measure lift:
 python -m ml.forecasting.run --data-dir data\raw\citibike `
   --news data\fixtures\news_live\news_nyc_202601_202606.jsonl --provider anthropic
+
+# Out of memory on a full 6-month NYC window? Bound it to the most recent N months (still real
+# data, just a shorter panel) — via the script (-MaxMonths 3) or the command (--max-months 3):
+python -m ml.forecasting.run --data-dir data\raw\citibike --max-months 3 `
+  --news data\fixtures\news_live\news_nyc_202601_202606.jsonl --provider anthropic
 ```
 
 Output: `reports\phase06_results.json` (B0–B4 leaderboard + lift). Verdict only:
@@ -146,6 +151,8 @@ pip install -e ".[vectorstore]"; python -m ml.vectorstore.demo
 | `neither 'setup.py' nor 'pyproject.toml' found` | You're not in the repo root — `cd AI_Pro_project`; `Test-Path pyproject.toml` must be `True` |
 | `Activate.ps1 cannot be loaded … execution policy` | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` then activate |
 | `make: term not recognized` | `make` isn't on Windows — use the commands above (or WSL) |
+| `MemoryError` in the lift step | a full 6-month NYC panel is too big for this machine's RAM — bound it with `-MaxMonths 3` (script) or `--max-months 3` (command); still real data, shorter window |
+| `DenseSpanTooLarge … likely a corrupt timestamp` | one trip row has a bad date stretching the hourly grid over years — drop that file/rows, or use `--max-months` |
 | `blocked_data`, too few rows | trip window too short — fetch more months |
 | event features all 0 | news window doesn't overlap the trip window — align the fetch months |
 | `GDELT degraded … 429 Too Many Requests` | rate-limited by bursty querying. The collector now backs off exponentially and the scripts space months out; if it still trips, raise the gap (`.\scripts\run_all.ps1 -NewsDelaySeconds 15`) or re-run in a few minutes (only the missing months refetch). For older months (>~3 months back) GDELT DOC has no data at all — switch to `-NewsSource guardian` or `-NewsSource gdelt_bulk` for full history |

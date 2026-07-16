@@ -56,16 +56,34 @@ def to_local_hour(aware: datetime, tz: ZoneInfo) -> datetime:
     return local.replace(minute=0, second=0, microsecond=0)
 
 
+# Guard against a pathological span: a single corrupt/mis-parsed timestamp (e.g. a birth-year or
+# epoch value read as a date) would otherwise make the gap-free grid billions of hours long and
+# exhaust memory. Any legitimate single panel is far under this (10 years of hours).
+MAX_DENSE_SPAN_HOURS = 10 * 366 * 24
+
+
+class DenseSpanTooLarge(ValueError):
+    """The observed hour span is implausibly large — almost always a corrupt timestamp."""
+
+
 def dense_hourly_index(local_hours: list[datetime], tz: ZoneInfo) -> list[datetime]:
     """Build a gap-free hourly index (local, aware) spanning the observed hours.
 
     Steps in UTC so DST-transition days yield the correct 23- or 25-hour spans and each
-    distinct instant maps to exactly one bucket.
+    distinct instant maps to exactly one bucket. Raises :class:`DenseSpanTooLarge` if the span is
+    implausibly wide (a corrupt timestamp) rather than exhausting memory.
     """
     if not local_hours:
         return []
     instants = sorted({h.astimezone(UTC) for h in local_hours})
     start, end = instants[0], instants[-1]
+    span_hours = (end - start).total_seconds() / 3600.0
+    if span_hours > MAX_DENSE_SPAN_HOURS:
+        raise DenseSpanTooLarge(
+            f"observed hour span {start.isoformat()} .. {end.isoformat()} is "
+            f"{span_hours / 24 / 365:.1f} years — likely a corrupt timestamp in the trip data. "
+            "Drop the bad rows, or bound the panel with --max-months."
+        )
     index: list[datetime] = []
     cur = start
     while cur <= end:

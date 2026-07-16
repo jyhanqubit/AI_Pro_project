@@ -198,6 +198,13 @@ def main(argv: list[str] | None = None) -> None:
         help="event-extraction provider for --news (mock = deterministic offline; anthropic = real "
         "Claude extraction, needs the SDK + ANTHROPIC_API_KEY). Only used when --news is given.",
     )
+    ap.add_argument(
+        "--max-months",
+        type=int,
+        default=None,
+        help="bound the panel to the most recent N calendar months of demand. Use this if a full "
+        "multi-month NYC window runs out of memory (MemoryError); real data, shorter window.",
+    )
     ns = ap.parse_args(argv)
     # Trip sources: a --data-dir, one-or-more positional files, or None (bundled sample).
     source: str | Path | list[Path] | None
@@ -214,7 +221,9 @@ def main(argv: list[str] | None = None) -> None:
     print(f"trip sources: {len(trip_files)} file(s)")
     for tf in trip_files:
         print(f"  {tf}")
-    panel = load_real_panel(source, news_source=news_source, provider=ns.provider)
+    panel = load_real_panel(
+        source, news_source=news_source, provider=ns.provider, max_months=ns.max_months
+    )
     df = usable_frame(panel)
     distinct_hours = int(df["hour_start"].nunique()) if not df.empty else 0
     if df.empty or distinct_hours < MIN_USABLE_HOURS:
