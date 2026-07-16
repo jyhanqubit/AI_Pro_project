@@ -128,8 +128,22 @@ class GdeltNewsProvider:
             except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError) as e:
                 last = e
                 if attempt < self.retries - 1:
-                    time.sleep(self.backoff_s * (attempt + 1))  # linear backoff (GDELT 429s)
+                    time.sleep(self._retry_wait(e, attempt))
         raise ProviderUnavailable(f"GDELT fetch failed after {self.retries} attempts: {last}")
+
+    def _retry_wait(self, err: Exception, attempt: int) -> float:
+        """Backoff seconds before the next attempt.
+
+        GDELT rate-limits bursty querying with HTTP 429; honour its ``Retry-After`` header when
+        present, else back off **exponentially** (429 needs a longer pause than a transient error).
+        Other errors use the gentler linear backoff. Capped so a run never hangs for minutes.
+        """
+        if isinstance(err, urllib.error.HTTPError) and err.code == 429:
+            retry_after = err.headers.get("Retry-After") if err.headers else None
+            if retry_after and str(retry_after).strip().isdigit():
+                return min(120.0, float(retry_after))
+            return min(120.0, self.backoff_s * (2**attempt))  # 8, 16, 32, 64 …
+        return self.backoff_s * (attempt + 1)  # linear for transient errors
 
     @staticmethod
     def _to_payload(a: dict) -> dict:

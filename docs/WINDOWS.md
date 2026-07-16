@@ -134,5 +134,6 @@ pip install -e ".[vectorstore]"; python -m ml.vectorstore.demo
 | `make: term not recognized` | `make` isn't on Windows — use the commands above (or WSL) |
 | `blocked_data`, too few rows | trip window too short — fetch more months |
 | event features all 0 | news window doesn't overlap the trip window — align the fetch months |
-| `GDELT degraded` | no egress — run where the internet is reachable |
+| `GDELT degraded … 429 Too Many Requests` | rate-limited by bursty querying. The collector now backs off exponentially and the scripts space months out; if it still trips, raise the gap (`.\scripts\run_all.ps1 -NewsDelaySeconds 15`) or re-run in a few minutes (only the missing months refetch) |
+| `GDELT degraded` (other) | no egress — run where the internet is reachable |
 | extraction all errors | `$env:ANTHROPIC_API_KEY` unset, or `pip install anthropic` missing |

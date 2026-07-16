@@ -53,7 +53,11 @@ NEWS_DIR="data/fixtures/news_live"
 COMBINED="$NEWS_DIR/news_${REGION}_${FROM}_${TO}.jsonl"
 mkdir -p "$NEWS_DIR"
 : > "$COMBINED"   # truncate/create the combined file
+NEWS_DELAY="${NEWS_DELAY:-6}"   # seconds between months (GDELT 429s on bursts)
+FIRST=1
 for m in $MONTHS; do
+  [ "$FIRST" = "1" ] || sleep "$NEWS_DELAY"
+  FIRST=0
   Y="${m:0:4}"; MO="${m:4:2}"
   START="${m}01000000"
   END="$(python -c "y=$Y; mo=$MO; ny,nm=(y+1,1) if mo==12 else (y,mo+1); print(f'{ny:04d}{nm:02d}01000000')")"

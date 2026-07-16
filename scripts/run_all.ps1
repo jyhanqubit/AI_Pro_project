@@ -35,6 +35,7 @@ param(
   [string]$Region       = "nyc",
   [string]$AnthropicKey = "",
   [string]$Model        = "claude-opus-4-8",
+  [int]$NewsDelaySeconds = 6,
   [switch]$SkipInstall,
   [switch]$SkipDemo,
   [switch]$SkipData,
@@ -115,7 +116,10 @@ if (-not $SkipData) {
   $env:ENABLE_GDELT_LIVE = "true"
   New-Item -ItemType Directory -Force -Path "data\fixtures\news_live" | Out-Null
   New-Item -ItemType File -Force -Path $combined | Out-Null
+  $first = $true
   foreach ($m in $months) {
+    if (-not $first) { Start-Sleep -Seconds $NewsDelaySeconds }  # space out (GDELT 429s on bursts)
+    $first = $false
     $y = [int]$m.Substring(0, 4); $mo = [int]$m.Substring(4, 2)
     if ($mo -eq 12) { $ny = $y + 1; $nm = 1 } else { $ny = $y; $nm = $mo }
     $start = "${m}01000000"; $end = "{0:D4}{1:D2}01000000" -f $ny, $nm
