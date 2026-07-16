@@ -77,6 +77,18 @@ def main() -> int:
         help="max GDELT records to request (raise for a real backfill to clear the coverage gate; "
         "GDELT caps a single request at 250)",
     )
+    ap.add_argument(
+        "--retries",
+        type=int,
+        default=6,
+        help="GDELT fetch attempts before giving up (429s back off exponentially; default 6)",
+    )
+    ap.add_argument(
+        "--backoff",
+        type=float,
+        default=10.0,
+        help="base backoff seconds between GDELT retries (default 10; raise if 429s persist)",
+    )
     args = ap.parse_args()
 
     enabled = args.live or os.environ.get("ENABLE_GDELT_LIVE", "").lower() == "true"
@@ -100,6 +112,8 @@ def main() -> int:
         end=gcfg.end,
         max_records=gcfg.max_records,
         source_lang=gcfg.source_lang,
+        retries=args.retries,
+        backoff_s=args.backoff,
     )
     # GDELT DOC returns title only and already location/topic-matched the FULL text server-side, so
     # a local title-only re-filter would wrongly drop relevant items. Trust the GDELT query here.
