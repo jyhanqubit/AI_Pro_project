@@ -90,6 +90,30 @@ def test_scenario_toggle_reverts_event_effect(client: TestClient) -> None:
         assert z["scenario_forecast"] == pytest.approx(z["baseline_forecast"])
 
 
+def test_pricing_revenue_chain_reacts_to_event_toggle(client: TestClient) -> None:
+    _set(client, CONCERT)
+    ids = [e["event_id"] for e in client.get("/v1/events").json()["events"]]
+    assert ids  # events are live at the concert cutoff
+
+    on = client.post(
+        "/v2/pricing/revenue", json={"cutoff": CONCERT, "disabled_event_ids": []}
+    ).json()
+    off = client.post(
+        "/v2/pricing/revenue", json={"cutoff": CONCERT, "disabled_event_ids": ids}
+    ).json()
+
+    # Simulated shadow, never a live price.
+    assert on["is_simulated"] is True and on["shadow"] is True
+    # Events on: a real event-driven demand delta; turning them all off zeroes it.
+    assert on["demand"]["delta"] > 0
+    assert off["demand"]["delta"] == pytest.approx(0.0)
+    assert off["demand"]["affected_zones"] == 0
+    # The event-driven revenue uplift shrinks (or vanishes) once events are disabled.
+    assert on["revenue"]["revenue_uplift"] >= off["revenue"]["revenue_uplift"]
+    # Component sum sanity: dynamic revenue is reported for both policies.
+    assert on["revenue"]["dynamic_revenue"] >= on["revenue"]["flat_revenue"]
+
+
 def test_rebalancing_returns_feasible_plan(client: TestClient) -> None:
     # Before the event the plan is feasible. (Real live inventory may carry a baseline shortage the
     # solver also relieves, so we don't assert zero moves here — only feasibility.)

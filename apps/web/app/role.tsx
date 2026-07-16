@@ -18,6 +18,7 @@ export type Role = "rider" | "operator";
 // `/why` is intentionally excluded: the rider station sheet links to it ("why is this busy?"), so
 // it must stay reachable in rider mode.
 const OPERATOR_ONLY = new Set([
+  "/control",
   "/statistics",
   "/news",
   "/scenario",

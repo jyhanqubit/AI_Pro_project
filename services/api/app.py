@@ -39,6 +39,7 @@ from .schemas import (
     RebalancingResponse,
     RecommendationApiRequest,
     ReplayState,
+    RevenueRequest,
     RiderAskRequest,
     ScenarioRequest,
     ScenarioResponse,
@@ -418,6 +419,16 @@ def create_app() -> FastAPI:
         from .v2 import pricing_quotes
 
         return pricing_quotes(engine, engine.cutoff, stale=body.stale, safety=body.safety)
+
+    @app.post("/v2/pricing/revenue")
+    def pricing_revenue_endpoint(engine: EngineDep, body: RevenueRequest) -> dict:
+        """V2-05: event toggle → demand → pricing → revenue on one call (SIMULATED SHADOW)."""
+        from .v2 import revenue_projection
+
+        cutoff = body.cutoff or engine.cutoff
+        return revenue_projection(
+            engine, cutoff, tuple(body.disabled_event_ids), elasticity=body.elasticity
+        )
 
     @app.post("/v2/operator/stations/import")
     def stations_import_endpoint(limit: int = 60) -> dict:

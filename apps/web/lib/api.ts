@@ -547,6 +547,53 @@ async function req<T>(path: string, init?: RequestInit): Promise<T> {
   return (await res.json()) as T;
 }
 
+export interface RevenueResponse {
+  mode: OperatingMode;
+  cutoff: string;
+  is_simulated: boolean;
+  shadow: boolean;
+  disclaimer: string;
+  elasticity: number;
+  base_fare: number;
+  max_multiplier: number;
+  disabled_event_ids: string[];
+  demand: {
+    baseline_total: number;
+    event_aware_total: number;
+    delta: number;
+    delta_pct: number;
+    affected_zones: number;
+    n_stations: number;
+  };
+  pricing: {
+    surcharged_stations: number;
+    max_multiplier: number;
+    base_fare: number;
+    cap: number;
+  };
+  revenue: {
+    flat_revenue: number;
+    flat_fulfilled: number;
+    dynamic_revenue: number;
+    dynamic_fulfilled: number;
+    revenue_uplift: number;
+    revenue_uplift_pct: number;
+    fulfilled_delta: number;
+  };
+  stations: {
+    station_id: string;
+    zone_id: string;
+    multiplier: number;
+    final_price: number;
+    would_be_renters: number;
+    available_bikes: number;
+    fulfilled_rentals: number;
+    revenue: number;
+    tier_reason: string;
+  }[];
+  note: string;
+}
+
 export const api = {
   health: () => req<{ status: string; mode: OperatingMode }>("/v1/health"),
   replayState: () => req<ReplayState>("/v1/replay/state"),
@@ -609,6 +656,15 @@ export const api = {
         stale: opts?.stale ?? false,
         safety: opts?.safety ?? false,
         cutoff: opts?.cutoff ?? null,
+      }),
+    }),
+  revenue: (cutoff: string, disabled: string[], elasticity = 0.5) =>
+    req<RevenueResponse>("/v2/pricing/revenue", {
+      method: "POST",
+      body: JSON.stringify({
+        cutoff,
+        disabled_event_ids: disabled,
+        elasticity,
       }),
     }),
   allocateExtraBikes: (extraBikes: number, cutoff?: string) =>

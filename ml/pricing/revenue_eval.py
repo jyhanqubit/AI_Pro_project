@@ -44,7 +44,12 @@ REFERENCE_ELASTICITY = 0.5
 
 
 def build_lines(
-    engine: ReplayEngine, cutoff: datetime, cfg: DynamicFareConfig, *, severity: float = 1.0
+    engine: ReplayEngine,
+    cutoff: datetime,
+    cfg: DynamicFareConfig,
+    *,
+    severity: float = 1.0,
+    disabled_event_ids: tuple[str, ...] = (),
 ) -> list[tuple[StationDemand, PriceQuote]]:
     """Pair each station's as-of demand with its shipped dynamic quote (the real pricing path).
 
@@ -52,9 +57,12 @@ def build_lines(
     scales the demo-heuristic demand delta and the event-driven part of the target
     (``target - base_target``) to model a stronger version of the same event. ``severity == 1.0``
     reproduces the shipped quote exactly. Base inventory scarcity is never amplified.
+
+    ``disabled_event_ids`` turns the named events off before forecasting, so the demand delta,
+    targets and thus the surcharge reflect a scenario without those events (operator event-toggle).
     """
-    views = station_views(engine, cutoff)
-    events = engine.available_events(cutoff)
+    views = station_views(engine, cutoff, disabled_event_ids)
+    events = engine.available_events(cutoff, disabled_event_ids)
     from config.pricing_v2 import NO_SURCHARGE_EVENT_TYPES
 
     safety_block = any(str(e.event_type) in NO_SURCHARGE_EVENT_TYPES for e in events)

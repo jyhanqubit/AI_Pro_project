@@ -61,12 +61,21 @@ def _load_fixture() -> dict:
 
 
 def build_problem(
-    engine: ReplayEngine, cutoff: datetime, *, vehicle_capacity: int | None = None
+    engine: ReplayEngine,
+    cutoff: datetime,
+    *,
+    vehicle_capacity: int | None = None,
+    disabled_event_ids: tuple[str, ...] = (),
 ) -> tuple[RebalancingProblem, dict[str, int]]:
-    """Build the as-of rebalancing problem; also return each station's base_target."""
+    """Build the as-of rebalancing problem; also return each station's base_target.
+
+    ``disabled_event_ids`` turns the named events off before forecasting, so the station targets
+    reflect a scenario with those events removed (the operator event-toggle path).
+    """
     fixture = _load_fixture()
     # Event-aware forecast delta per demo zone as-of the cutoff (labelled demo heuristic).
-    zone_delta = {zf.zone_id: zf.forecast_delta for zf in engine.forecasts(cutoff)}
+    fc = engine.forecasts(cutoff, disabled_event_ids)
+    zone_delta = {zf.zone_id: zf.forecast_delta for zf in fc}
 
     stations: list[Station] = []
     base_targets: dict[str, int] = {}
