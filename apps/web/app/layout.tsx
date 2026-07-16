@@ -46,6 +46,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                 그래프 이벤트 노출 지표를 반영합니다. 뉴스 동기화 시 불러온 실시간 뉴스에는 LIVE 배지가
                 붙습니다.
               </p>
+              <p className="footer-credit">
+                Made by <strong>Jaiden JungYun Han</strong> · © 2026 · All rights reserved
+              </p>
             </div>
           </RoleProvider>
         </ReplayProvider>
