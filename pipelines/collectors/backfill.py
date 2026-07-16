@@ -65,6 +65,23 @@ def _is_429(err: Exception) -> bool:
     return isinstance(err, urllib.error.HTTPError) and err.code == 429
 
 
+class _GdeltTextResponse(RuntimeError):
+    """GDELT returned HTTP 200 with a non-JSON body (its soft rate-limit / error pages do this).
+
+    Carries a snippet of the actual body so the caller can see *why* (e.g. a rate-limit notice, or
+    an out-of-range window — GDELT DOC only serves roughly the last few months).
+    """
+
+    def __init__(self, snippet: str) -> None:
+        super().__init__(snippet)
+        self.snippet = snippet
+
+
+def _looks_rate_limited(text: str) -> bool:
+    t = text.lower()
+    return "rate limit" in t or "too many" in t or "throttl" in t or "429" in t
+
+
 class GdeltNewsProvider:
     """Real GDELT DOC 2.0 news provider (V1_Prompt §7).
 
@@ -129,38 +146,69 @@ class GdeltNewsProvider:
                 req = urllib.request.Request(url, headers=headers)
                 with urllib.request.urlopen(req, timeout=self.timeout) as r:  # noqa: S310
                     raw = r.read().decode("utf-8", "replace")
-                articles = json.loads(raw).get("articles", []) if raw.strip() else []
+                if not raw.strip():
+                    return []
+                try:
+                    parsed = json.loads(raw)
+                except json.JSONDecodeError as je:
+                    # GDELT often replies HTTP 200 with a plain-text notice instead of JSON — a soft
+                    # rate-limit page, or an out-of-range window (DOC only serves ~the last months).
+                    # Surface the real body so the caller sees *why* rather than a bare parse error.
+                    snippet = _WS.sub(" ", raw).strip()[:200]
+                    raise _GdeltTextResponse(snippet) from je
+                articles = parsed.get("articles", [])
                 return [self._to_payload(a) for a in articles if a.get("url") and a.get("title")]
-            except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError) as e:
+            except (
+                urllib.error.HTTPError,
+                urllib.error.URLError,
+                TimeoutError,
+                _GdeltTextResponse,
+            ) as e:
                 last = e
                 if attempt < self.retries - 1:
                     wait = self._retry_wait(e, attempt)
-                    reason = "HTTP 429 (rate limit)" if _is_429(e) else type(e).__name__
+                    reason = self._reason(e)
                     print(
                         f"[gdelt] {reason}; waiting {wait:.0f}s "
                         f"(attempt {attempt + 1}/{self.retries})",
                         file=sys.stderr,
                     )
                     time.sleep(wait)
+        detail = self._reason(last) if last is not None else "unknown"
         raise ProviderUnavailable(
-            f"GDELT fetch failed after {self.retries} attempts: {last}. If this is a 429, GDELT is "
-            "rate-limiting your IP for a while — wait a few minutes and re-run (only the missing "
-            "months refetch), slow down (--backoff 20 or the scripts' -NewsDelaySeconds 20+), or "
-            "fetch fewer months at a time."
+            f"GDELT fetch failed after {self.retries} attempts: {detail}. Two common causes: "
+            "(1) rate limiting — GDELT throttles bursty querying (HTTP 429, or a 200 with a "
+            "text notice); wait a few minutes and re-run (only the missing months refetch), or "
+            "slow down (--backoff 20 / the scripts' -NewsDelaySeconds 20+). "
+            "(2) out-of-range window — GDELT DOC 2.0 only serves roughly the last ~3 months, so a "
+            "start/end older than that returns no JSON; query recent months instead."
         )
+
+    @staticmethod
+    def _reason(err: Exception) -> str:
+        """Human-readable retry reason (surfaces GDELT's own body for soft rate-limits)."""
+        if _is_429(err):
+            return "HTTP 429 (rate limit)"
+        if isinstance(err, _GdeltTextResponse):
+            kind = "rate-limit/notice" if _looks_rate_limited(err.snippet) else "non-JSON body"
+            return f"GDELT {kind}: {err.snippet!r}"
+        return type(err).__name__
 
     def _retry_wait(self, err: Exception, attempt: int) -> float:
         """Backoff seconds before the next attempt.
 
         GDELT rate-limits bursty querying with HTTP 429; honour its ``Retry-After`` header when
         present, else back off **exponentially** (429 needs a longer pause than a transient error).
-        Other errors use the gentler linear backoff. Capped so a run never hangs for minutes.
+        A HTTP-200 text body that reads like a rate-limit notice is treated the same way. Other
+        errors use the gentler linear backoff. Capped so a run never hangs for minutes.
         """
         if isinstance(err, urllib.error.HTTPError) and err.code == 429:
             retry_after = err.headers.get("Retry-After") if err.headers else None
             if retry_after and str(retry_after).strip().isdigit():
                 return min(120.0, float(retry_after))
             return min(120.0, self.backoff_s * (2**attempt))  # 10, 20, 40, 80 …
+        if isinstance(err, _GdeltTextResponse) and _looks_rate_limited(err.snippet):
+            return min(120.0, self.backoff_s * (2**attempt))  # soft rate-limit → exponential too
         return self.backoff_s * (attempt + 1)  # linear for transient errors
 
     @staticmethod
