@@ -216,11 +216,40 @@ def _collect_trips(paths: list[Path]) -> list:
     return records
 
 
+def _months_before(dt: datetime, n: int) -> datetime:
+    """Start-of-month boundary ``n`` calendar months before ``dt`` (same tzinfo)."""
+    total = (dt.year * 12 + (dt.month - 1)) - n
+    year, month = divmod(total, 12)
+    return dt.replace(year=year, month=month + 1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+
+def _window_cells(cells: list, max_months: int | None) -> list:
+    """Keep only the most recent ``max_months`` calendar months of demand cells (memory bound).
+
+    A full multi-month NYC panel can exceed a laptop's RAM once expanded to per-zone-hour feature
+    rows. Bounding the window to the most recent N months keeps the run tractable while staying real
+    data (no fabrication). ``None`` keeps everything.
+    """
+    if max_months is None or not cells:
+        return cells
+    latest = max(c.hour_start for c in cells)
+    cutoff = _months_before(latest, max_months - 1)  # inclusive of the latest month
+    kept = [c for c in cells if c.hour_start >= cutoff]
+    dropped = len(cells) - len(kept)
+    if dropped:
+        print(
+            f"[window] --max-months {max_months}: kept {len(kept)} cells since "
+            f"{cutoff.date().isoformat()}, dropped {dropped} older cells"
+        )
+    return kept
+
+
 def load_real_panel(
     source: str | Path | Sequence[str | Path] | None = None,
     *,
     news_source: Path | None = None,
     provider: str = "mock",
+    max_months: int | None = None,
 ) -> Panel:
     """Collect Citi Bike trips -> demand cells -> features -> panel (offline).
 
@@ -228,13 +257,16 @@ def load_real_panel(
     files — all are concatenated into one demand panel (e.g. six months as a single window). A
     directory de-duplicates a month present as both ``.zip`` and extracted ``.csv``.
 
+    ``max_months`` bounds the panel to the most recent N calendar months of demand (memory guard for
+    large multi-month NYC windows on a laptop); ``None`` keeps everything.
+
     ``news_source`` (a JSONL article backfill) unlocks the real event ablation: its articles are
     extracted to events and joined into the B2-B4 columns as-of each target hour (leakage-safe). By
     default no news is joined, so B2-B4 == B1 (the honest zero-overlap baseline). To *measure* an
     LLM-feature lift, pass a news backfill whose availability overlaps the trip window.
     """
     trips = _collect_trips(resolve_trip_sources(source))
-    cells = aggregate_demand(trips)
+    cells = _window_cells(aggregate_demand(trips), max_months)
     rows = build_demand_features(cells)
 
     events: list = []

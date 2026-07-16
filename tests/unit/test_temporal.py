@@ -9,7 +9,10 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from pipelines.features.temporal import (
+    DenseSpanTooLarge,
     classify_local,
     dense_hourly_index,
     localize,
@@ -79,3 +82,21 @@ def test_dense_index_reflects_dst_day_lengths():
 
     assert fall_back == normal + 1
     assert spring_fwd == normal - 1
+
+
+def test_dense_index_rejects_corrupt_timestamp_span():
+    # A single mis-parsed timestamp (year 1970) alongside real 2026 data would build a ~56-year
+    # grid and exhaust memory; the guard raises a clear error instead.
+    hours = [
+        datetime(1970, 1, 1, 0, tzinfo=NY),
+        datetime(2026, 6, 15, 10, tzinfo=NY),
+    ]
+    with pytest.raises(DenseSpanTooLarge):
+        dense_hourly_index(hours, NY)
+
+
+def test_dense_index_allows_a_normal_multi_month_span():
+    # Six real months is well under the guard (no false positive).
+    hours = [datetime(2026, 1, 1, 0, tzinfo=NY), datetime(2026, 6, 30, 23, tzinfo=NY)]
+    index = dense_hourly_index(hours, NY)
+    assert len(index) > 4000  # ~180 days of hours

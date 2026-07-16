@@ -25,6 +25,10 @@
   Free Guardian developer key (open-platform.theguardian.com/access) for -NewsSource guardian.
   Shell-only; never committed.
 
+.PARAMETER MaxMonths
+  Bound the lift panel to the most recent N months of demand. Use this if a full 6-month NYC
+  window runs out of memory (MemoryError). 0 (default) keeps every month.
+
 .PARAMETER SkipInstall / SkipDemo / SkipData / SkipLift
   Turn off individual stages.
 
@@ -50,6 +54,7 @@ param(
   [string]$NewsSource   = "gdelt",
   [string]$GuardianKey  = "",
   [int]$NewsDelaySeconds = 6,
+  [int]$MaxMonths       = 0,
   [switch]$SkipInstall,
   [switch]$SkipDemo,
   [switch]$SkipData,
@@ -165,7 +170,9 @@ if (-not $SkipLift) {
   }
   $newsArgs = @()
   if (Test-Path $combined) { $newsArgs = @("--news", $combined) }
-  & $Py -m ml.forecasting.run --data-dir "data\raw\citibike" @newsArgs --provider $provider
+  $memArgs = @()
+  if ($MaxMonths -gt 0) { $memArgs = @("--max-months", $MaxMonths) }  # bound RAM on big NYC windows
+  & $Py -m ml.forecasting.run --data-dir "data\raw\citibike" @newsArgs @memArgs --provider $provider
   Write-Host "     report -> reports\phase06_results.json"
 }
 
