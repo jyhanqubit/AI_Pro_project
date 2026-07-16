@@ -21,7 +21,8 @@
 param(
   [string]$From   = "202601",
   [string]$To     = "202606",
-  [string]$Region = "nyc"
+  [string]$Region = "nyc",
+  [int]$NewsDelaySeconds = 6
 )
 
 # Note: default ErrorActionPreference (Continue) — external tools that print warnings to stderr
@@ -70,7 +71,10 @@ $newsDir  = "data\fixtures\news_live"
 $combined = Join-Path $newsDir ("news_{0}_{1}_{2}.jsonl" -f $Region, $From, $To)
 New-Item -ItemType Directory -Force -Path $newsDir | Out-Null
 New-Item -ItemType File -Force -Path $combined | Out-Null    # create / truncate to empty
+$first = $true
 foreach ($m in $months) {
+  if (-not $first) { Start-Sleep -Seconds $NewsDelaySeconds }  # space out (GDELT 429s on bursts)
+  $first = $false
   $y = [int]$m.Substring(0, 4); $mo = [int]$m.Substring(4, 2)
   if ($mo -eq 12) { $ny = $y + 1; $nm = 1 } else { $ny = $y; $nm = $mo }
   $start = "${m}01000000"
