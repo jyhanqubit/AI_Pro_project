@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import time
 import urllib.error
 import urllib.parse
@@ -59,6 +60,11 @@ class FixtureNewsProvider:
 _GDELT_DOC = "https://api.gdeltproject.org/api/v2/doc/doc"
 
 
+def _is_429(err: Exception) -> bool:
+    """True for an HTTP 429 (GDELT rate limit)."""
+    return isinstance(err, urllib.error.HTTPError) and err.code == 429
+
+
 class GdeltNewsProvider:
     """Real GDELT DOC 2.0 news provider (V1_Prompt §7).
 
@@ -81,8 +87,8 @@ class GdeltNewsProvider:
         max_records: int = 75,
         source_lang: str = "english",
         timeout: float = 30.0,
-        retries: int = 4,
-        backoff_s: float = 8.0,
+        retries: int = 6,
+        backoff_s: float = 10.0,
     ) -> None:
         self.query = query
         self.enabled = enabled
@@ -128,8 +134,20 @@ class GdeltNewsProvider:
             except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError, ValueError) as e:
                 last = e
                 if attempt < self.retries - 1:
-                    time.sleep(self._retry_wait(e, attempt))
-        raise ProviderUnavailable(f"GDELT fetch failed after {self.retries} attempts: {last}")
+                    wait = self._retry_wait(e, attempt)
+                    reason = "HTTP 429 (rate limit)" if _is_429(e) else type(e).__name__
+                    print(
+                        f"[gdelt] {reason}; waiting {wait:.0f}s "
+                        f"(attempt {attempt + 1}/{self.retries})",
+                        file=sys.stderr,
+                    )
+                    time.sleep(wait)
+        raise ProviderUnavailable(
+            f"GDELT fetch failed after {self.retries} attempts: {last}. If this is a 429, GDELT is "
+            "rate-limiting your IP for a while — wait a few minutes and re-run (only the missing "
+            "months refetch), slow down (--backoff 20 or the scripts' -NewsDelaySeconds 20+), or "
+            "fetch fewer months at a time."
+        )
 
     def _retry_wait(self, err: Exception, attempt: int) -> float:
         """Backoff seconds before the next attempt.
@@ -142,7 +160,7 @@ class GdeltNewsProvider:
             retry_after = err.headers.get("Retry-After") if err.headers else None
             if retry_after and str(retry_after).strip().isdigit():
                 return min(120.0, float(retry_after))
-            return min(120.0, self.backoff_s * (2**attempt))  # 8, 16, 32, 64 …
+            return min(120.0, self.backoff_s * (2**attempt))  # 10, 20, 40, 80 …
         return self.backoff_s * (attempt + 1)  # linear for transient errors
 
     @staticmethod
