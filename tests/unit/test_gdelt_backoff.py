@@ -9,7 +9,11 @@ from __future__ import annotations
 
 import urllib.error
 
-from pipelines.collectors.backfill import GdeltNewsProvider
+from pipelines.collectors.backfill import (
+    GdeltNewsProvider,
+    _GdeltTextResponse,
+    _looks_rate_limited,
+)
 
 
 def _provider() -> GdeltNewsProvider:
@@ -45,3 +49,34 @@ def test_transient_error_uses_linear_backoff() -> None:
 
 def test_non_429_http_error_uses_linear_backoff() -> None:
     assert _provider()._retry_wait(_http_error(503), attempt=1) == 16.0
+
+
+def test_soft_rate_limit_text_backs_off_exponentially() -> None:
+    # GDELT HTTP-200 text notice that reads like a rate limit → exponential (like a 429).
+    p = _provider()
+    err = _GdeltTextResponse("Your query is being rate limited. Please slow down.")
+    assert p._retry_wait(err, attempt=0) == 8.0
+    assert p._retry_wait(err, attempt=1) == 16.0
+    assert p._retry_wait(err, attempt=4) == 120.0  # 8*16 -> capped
+
+
+def test_non_rate_limit_text_uses_linear_backoff() -> None:
+    # A non-JSON body that is NOT a rate-limit notice (e.g. out-of-range window) → linear.
+    p = _provider()
+    err = _GdeltTextResponse("No results found for the requested window.")
+    assert p._retry_wait(err, attempt=0) == 8.0
+    assert p._retry_wait(err, attempt=1) == 16.0
+
+
+def test_looks_rate_limited_detects_notices() -> None:
+    assert _looks_rate_limited("You are being RATE LIMITED")
+    assert _looks_rate_limited("too many requests")
+    assert _looks_rate_limited("request throttled")
+    assert not _looks_rate_limited("no articles matched your query")
+
+
+def test_reason_surfaces_gdelt_body() -> None:
+    p = _provider()
+    assert "rate-limit/notice" in p._reason(_GdeltTextResponse("rate limit exceeded"))
+    assert "non-JSON body" in p._reason(_GdeltTextResponse("out of range window"))
+    assert p._reason(_http_error(429)) == "HTTP 429 (rate limit)"
