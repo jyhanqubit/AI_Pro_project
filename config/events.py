@@ -14,6 +14,9 @@ PROMPT_VERSION = "mock-v1"
 # Prompt version for the real (opt-in) Anthropic provider; kept distinct from the mock so a
 # stored extraction's provenance always identifies which extractor produced it.
 ANTHROPIC_PROMPT_VERSION = "anthropic-extract-v1"
+# Prompt version for the real (opt-in) OpenAI provider (GPT-4o). Distinct again so a stored
+# extraction's provenance identifies which extractor produced it.
+OPENAI_PROMPT_VERSION = "openai-extract-v1"
 
 # Confidence handling (section 8): below threshold is rejected or quarantined.
 CONFIDENCE_THRESHOLD = 0.5
