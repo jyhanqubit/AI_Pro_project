@@ -43,6 +43,10 @@ recsys = [
 vectorstore = [
     "faiss-cpu>=1.8",  # persistent ANN index: recsys FaissIndex + accumulating news vector store
 ]
+llm = [
+    "openai>=1.30",  # opt-in real GPT-4o event extraction (LLM_PROVIDER=openai)
+    "anthropic>=0.34",  # opt-in real Claude event extraction (LLM_PROVIDER=anthropic)
+]
 
 [tool.setuptools]
 # Explicit package list; keeps the scaffold importable under pip -e install.
@@ -86,7 +90,7 @@ warn_unused_ignores = true
 disallow_untyped_defs = false  # tighten per-module as contracts land
 
 [[tool.mypy.overrides]]
-module = ["h3", "numpy.*", "scipy.*", "neo4j", "anthropic", "sklearn.*", "pandas.*", "matplotlib.*", "joblib.*", "qiskit.*", "qiskit_aer.*", "qiskit_optimization.*", "qiskit_algorithms.*"]
+module = ["h3", "numpy.*", "scipy.*", "neo4j", "anthropic", "openai", "sklearn.*", "pandas.*", "matplotlib.*", "joblib.*", "qiskit.*", "qiskit_aer.*", "qiskit_optimization.*", "qiskit_algorithms.*"]
 ignore_missing_imports = true  # third-party libs without usable stubs for our purposes
 follow_imports = "skip"
 

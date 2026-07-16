@@ -42,10 +42,11 @@ class ExtractionRunMetadata:
 def build_provider(name: str) -> LlmProvider:
     """Resolve an extraction provider by name. ``mock`` is the offline default (Demo Mode).
 
-    ``anthropic`` is the opt-in real Claude extractor — it needs the ``anthropic`` SDK and
-    credentials (``ANTHROPIC_API_KEY`` / an ``ant auth login`` profile), and is constructed lazily
-    so this call never requires either. A missing SDK/key surfaces only when it actually runs, as a
-    per-article extraction error (never a fabricated event).
+    ``anthropic`` (Claude) and ``openai`` (GPT-4o) are the opt-in real extractors. Each needs its
+    own SDK and credentials (``ANTHROPIC_API_KEY`` / an ``ant auth login`` profile for Anthropic;
+    ``OPENAI_API_KEY`` or ``openai_api_key`` for OpenAI) and is constructed lazily so this call
+    never requires either. A missing SDK/key surfaces only when it actually runs, as a per-article
+    extraction error (never a fabricated event).
     """
     if name == "mock":
         return MockLlmProvider()
@@ -53,7 +54,13 @@ def build_provider(name: str) -> LlmProvider:
         from .anthropic_provider import AnthropicLlmProvider
 
         return AnthropicLlmProvider()
-    raise ValueError(f"unknown LLM provider: {name!r} (available: 'mock', 'anthropic')")
+    if name == "openai":
+        from .openai_provider import OpenAiLlmProvider
+
+        return OpenAiLlmProvider()
+    raise ValueError(
+        f"unknown LLM provider: {name!r} (available: 'mock', 'anthropic', 'openai')"
+    )
 
 
 def _status_for(confidence: float, threshold: float, low_conf_action: str) -> ExtractionStatus:
