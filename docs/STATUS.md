@@ -18,6 +18,32 @@ event-derived features.
   0.4893**, verdict **`negative_lift`** (CI below zero). Mild June has little weather variance; the
   result is reported as-is, not hidden. Reproduce: `python -m ml.forecasting.weather_lift`.
 
+## LLM extraction providers (opt-in)
+
+The event extractor selects a provider by `LLM_PROVIDER` (`config/settings.py`). Demo Mode and all
+tests use the deterministic offline `mock`. Two real, opt-in providers now exist behind the same
+`LlmProvider.extract(article) -> list[dict]` interface, each lazily imported so the mock path needs
+no SDK/key:
+
+- **`anthropic`** (Claude) — `ANTHROPIC_API_KEY` / `LLM_MODEL`.
+- **`openai`** (GPT-4o) — `OPENAI_API_KEY` / `OPENAI_MODEL` (default `gpt-4o`); `pip install -e ".[llm]"`.
+
+Both enforce the §8/§22 guardrails identically: forced structured output, verbatim evidence
+grounding, deterministic gazetteer geocoding (never model coordinates), bounded severity/confidence,
+provenance on every extraction, and honest degrade (raises if the SDK/key is absent — never a
+fabricated event). Covered by `tests/unit/test_openai_provider.py` and `test_anthropic_provider.py`.
+
+## Event graph built from real repo data
+
+`make seed-graph` (`scripts/build_graph.py`) populates the §9 event graph directly from data already
+in the repo, so it is no longer a 2-event demo. It combines **news** (`data/fixtures/news_live/*.jsonl`
+→ mock extraction, provenance-rich) with **NYC permitted events**
+(`nyc_permitted_events_filtered.jsonl.gz`, 63k rows → borough-centroid grounded, spatially rich).
+Measured build (`--permitted-limit 2000`): **2,090 events / 5,770 nodes / 11,850 edges / 6 zones**,
+replay-idempotent, audit clean; a portable node-link JSON snapshot is written under
+`data/processed/graph/` (git-ignored). `--backend neo4j` writes to a live server. The graph remains
+an audit/provenance surface (§9); forecasting features stay pure functions off this critical path.
+
 ## Current status — V2 usability update (UI, search, operator analytics)
 
 A backward-compatible, usability-focused increment on top of V1. Scope: a redesigned rider home in
