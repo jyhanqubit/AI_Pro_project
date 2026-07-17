@@ -445,10 +445,12 @@ def create_app() -> FastAPI:
 
     @app.post("/v2/operator/ask")
     def ops_ask_endpoint(engine: EngineDep, body: OpsAskRequest) -> dict:
-        """V2-07 ops copilot: deterministic, artifact-grounded answers + dashboard deep-links."""
-        from .v2 import ops_ask
+        """V2-08 ops copilot: GraphRAG (LLM over the as-of event graph) when a key is configured,
+        else the deterministic rule-based answer. Response carries ``answer_mode``.
+        """
+        from .v2 import ops_copilot_answer
 
-        return ops_ask(engine, body.query, engine.cutoff)
+        return ops_copilot_answer(engine, body.query, engine.cutoff)
 
     @app.get("/v2/operator/statistics")
     def operator_statistics_endpoint(engine: EngineDep) -> dict:

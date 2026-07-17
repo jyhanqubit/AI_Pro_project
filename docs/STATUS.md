@@ -33,6 +33,20 @@ grounding, deterministic gazetteer geocoding (never model coordinates), bounded 
 provenance on every extraction, and honest degrade (raises if the SDK/key is absent — never a
 fabricated event). Covered by `tests/unit/test_openai_provider.py` and `test_anthropic_provider.py`.
 
+## GraphRAG operator copilot (V2-08)
+
+The operator "운영 도우미" (`POST /v2/operator/ask`, shown on `/statistics`) now upgrades automatically
+when an LLM key is configured. With `LLM_PROVIDER=openai`/`anthropic` + a key it answers via
+**GraphRAG**: `services/api/graphrag.py` retrieves the as-of event graph (events + grounded evidence +
+affected zones + model-attributed forecast delta — the same ReplayEngine artifacts the dashboards
+use) and asks the model to answer *using only that context and citing event ids*. Cited ids are
+validated against the context, so the copilot can never surface an event the graph did not contain
+(§22). With the default `mock` provider — or a missing SDK/key, or any provider error — it degrades
+to the deterministic rule-based `ops_ask`. The response gains `answer_mode`
+(`graphrag_llm`/`rule_based`) + validated `citations`; the UI shows a badge and the cited events.
+`services/api/llm_chat.py` is the degrading chat helper (test-injectable, offline). Covered by
+`tests/integration/test_graphrag_copilot.py`. See `docs/LOCAL_GPT.md` for the local key setup.
+
 ## Event graph built from real repo data
 
 `make seed-graph` (`scripts/build_graph.py`) populates the §9 event graph directly from data already
