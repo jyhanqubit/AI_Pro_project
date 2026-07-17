@@ -287,6 +287,11 @@ input[type="range"] { width: 100%; accent-color: var(--replay); }
 }
 .copilot-answer.unsupported { border-left-color: var(--muted); }
 .copilot-answer .answer-text { margin: 0; font-size: 15px; line-height: 1.6; }
+.copilot-badge-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.copilot-citations { margin-top: 10px; }
+.copilot-citations ul { margin: 4px 0 0; padding-left: 16px; }
+.copilot-citations li { font-size: 13px; line-height: 1.6; }
+.copilot-citations code { font-size: 12px; background: var(--panel); padding: 1px 5px; border-radius: 4px; }
 .ops-link { display: inline-block; margin-top: 10px; text-decoration: none; }
 .ops-link:hover { text-decoration: none; }
 

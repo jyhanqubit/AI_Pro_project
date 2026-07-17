@@ -16,6 +16,108 @@ function Bar({ v, max }: { v: number; max: number }) {
   );
 }
 
+// Directional lift (방향별 리프트): measured June-holdout decomposition of *which direction* the event
+// feature moved the forecast vs the demand+calendar baseline, and whether that direction reduced error.
+// Static, self-contained visualization of real numbers from `python -m ml.forecasting.lift_direction`.
+// The aggregate reconciles exactly with the headline (MAE 165.23 → 162.50, +2.73/row, n=3366).
+type DirRow = {
+  key: string;
+  dir: string;
+  tone: "increase" | "decrease" | "flat";
+  rows: number;
+  improvedPct: number;
+  errReduction: number;
+};
+
+const DIR_ROWS: DirRow[] = [
+  { key: "up", dir: "위로 밀어올림 (pred > 기준선)", tone: "increase", rows: 1394, improvedPct: 56.0, errReduction: 5.23 },
+  { key: "down", dir: "아래로 끌어내림 (pred < 기준선)", tone: "decrease", rows: 1832, improvedPct: 62.0, errReduction: 1.03 },
+  { key: "flat", dir: "거의 변화 없음", tone: "flat", rows: 140, improvedPct: 53.6, errReduction: 0.02 },
+];
+
+// Accuracy-improvement rate by direction — real numbers shown as text; bars are a visual aid only.
+const IMPROVED_BARS: { label: string; pct: number; tone: "up" | "down" | "" }[] = [
+  { label: "위로 밀어올림", pct: 56.0, tone: "up" },
+  { label: "아래로 끌어내림", pct: 62.0, tone: "down" },
+  { label: "수요 하락 + 아래로 보정", pct: 95.2, tone: "" },
+];
+
+function DirectionalLiftCard() {
+  return (
+    <div className="card">
+      <h2>이벤트 피처는 수요를 낮추는 방향으로도 맞힌다 — 방향별 분석</h2>
+      <div className="sub">
+        동일한 6월 홀드아웃(테스트 3,366행)에서, 이벤트 피처가 예측을 기준선(수요+달력) 대비 어느
+        방향으로 움직였는지, 그리고 그 방향이 실제 오차를 줄였는지를 측정했습니다.
+      </div>
+      <p className="muted" style={{ marginTop: 0, lineHeight: 1.9 }}>
+        이벤트 피처는 <strong>양방향</strong>입니다 — 예측을 위로 올리기보다 아래로 끌어내리는 경우가 더
+        많고(<span className="mono">1,832행</span> vs <span className="mono">1,394행</span>), 아래로
+        내리는 보정이 더 자주 적중합니다(<strong>62% vs 56%</strong>). 가장 큰 이득은 예정된 폐쇄 등으로
+        수요가 꺼지는 구간(dip)을 제대로 잡아낼 때 나옵니다. 이는 모델 기여(model-attributed)이며
+        인과가 아니고, 자치구(borough) 단위는 H3 제품 그레인의 근사치입니다.
+      </p>
+
+      <div className="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>방향</th>
+              <th>행 수</th>
+              <th>정확도 개선(%)</th>
+              <th>평균 오차 감소</th>
+            </tr>
+          </thead>
+          <tbody>
+            {DIR_ROWS.map((r) => (
+              <tr key={r.key}>
+                <td>
+                  <span className={`pill ${r.tone === "flat" ? "" : r.tone}`}>{r.dir}</span>
+                </td>
+                <td className="mono">{r.rows.toLocaleString()}</td>
+                <td className="mono">{r.improvedPct.toFixed(1)}%</td>
+                <td className="mono">+{r.errReduction.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="muted small" style={{ marginTop: 8 }}>
+        정확도 개선(%) = 해당 방향에서 이벤트 반영 예측의 |오차|가 기준선보다 작아진 행의 비율. 평균 오차
+        감소 단위는 라이드/구·시간.
+      </p>
+
+      <div style={{ marginTop: 14 }}>
+        <div className="ts-title">방향별 정확도 개선율 비교</div>
+        <div className="barlist" role="img" aria-label="방향별 정확도 개선율: 위로 밀어올림 56.0%, 아래로 끌어내림 62.0%, 수요 하락에 아래로 보정 95.2%">
+          {IMPROVED_BARS.map((b) => (
+            <div key={b.label} className="barlist-row">
+              <div className="bl-label">{b.label}</div>
+              <div className="bl-track">
+                <div className={`bl-fill ${b.tone}`} style={{ width: `${b.pct}%` }} />
+              </div>
+              <div className="bl-value">{b.pct.toFixed(1)}%</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="notice warn" style={{ marginTop: 14 }}>
+        <strong>가장 큰 단일 이득</strong>: 실제 수요가 기준선 예측보다 <strong>낮게</strong> 들어오고
+        이벤트 피처가 예측을 아래로 끌어내린 <span className="mono">1,193행</span>에서{" "}
+        <strong>95.2%</strong>가 정확도 개선, 평균 오차 감소 <strong>+17.4 라이드/구·시간</strong>. 즉
+        예정된 폐쇄로 수요가 꺼지는 <strong>수요 하락(dip)</strong>을 잡아내는 것이 이벤트 피처의 핵심
+        기여입니다.
+      </div>
+
+      <p className="muted small" style={{ marginTop: 10 }}>
+        이 분해는 헤드라인과 정확히 일치합니다 (MAE 165.23 → 162.50, 행당 +2.73, n=3,366). 재현:{" "}
+        <span className="mono">python -m ml.forecasting.lift_direction</span>
+      </p>
+    </div>
+  );
+}
+
 // V2-02 predictive-lift protocol result (works offline; honestly blocked_data on the demo fixture).
 function PredictiveLiftCard() {
   const { refreshKey } = useReplay();
@@ -74,6 +176,7 @@ export default function ModelLiftLab() {
     return (
       <div className="grid" style={{ gap: 20 }}>
         <PredictiveLiftCard />
+        <DirectionalLiftCard />
         <div className="notice">
           V1 측정 ablation(B0–B4)은 학습 산출물이 있어야 표시됩니다 ({ml.error}). 위 V2-02
           predictive-lift 판정은 오프라인에서 동작합니다.
@@ -168,6 +271,8 @@ export default function ModelLiftLab() {
           </table>
         </div>
       </div>
+
+      <DirectionalLiftCard />
 
       <div className="card">
         <h2>무슨 뜻인가</h2>

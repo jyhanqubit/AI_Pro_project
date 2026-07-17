@@ -475,6 +475,11 @@ export interface OpsAskResponse {
   facts: Record<string, unknown>;
   link: { label: string; href: string } | null;
   note: string;
+  // V2-08 GraphRAG: "graphrag_llm" when a GPT/Claude key is configured, else "rule_based".
+  answer_mode?: "graphrag_llm" | "rule_based";
+  llm_provider?: string;
+  citations?: { event_id: string; title: string }[];
+  grounded_event_count?: number;
 }
 
 export interface PredictiveLiftResponse {
