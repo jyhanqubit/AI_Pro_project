@@ -1,8 +1,15 @@
 // Typed client for the ShockFlow API (section 12). Mirrors services/api/schemas.py.
 // All calls are read-only or idempotent; Demo Mode runs offline against `make api`.
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE ?? "http://127.0.0.1:8000";
+// NEXT_PUBLIC_API_BASE (set in the host, e.g. Vercel) always wins. When it is absent, a production
+// build defaults to the hosted demo API so the deployed site works out of the box, while local dev
+// (`next dev` / `make web`) defaults to the local API on :8000.
+const DEFAULT_API_BASE =
+  process.env.NODE_ENV === "production"
+    ? "https://shockflow-api.onrender.com"
+    : "http://127.0.0.1:8000";
+
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? DEFAULT_API_BASE;
 
 export type OperatingMode =
   | "demo_fixture"
