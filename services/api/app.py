@@ -114,15 +114,16 @@ def create_app() -> FastAPI:
     )
 
     # CORS. Local/LAN dev serves the Next.js UI on :3000 (localhost / 127.0.0.1 / the PC's LAN IP).
-    # For a deployed frontend (e.g. Vercel), set SHOCKFLOW_CORS_ORIGINS to a comma-separated list of
-    # exact origins (https://your-app.vercel.app) — the regex still covers :3000 for local dev.
+    # Any Vercel deployment (*.vercel.app, incl. preview URLs) is allowed by default so the hosted
+    # frontend works without extra config; SHOCKFLOW_CORS_ORIGINS can add more exact origins
+    # (e.g. a custom domain) as a comma-separated list.
     deployed_origins = [
         o.strip() for o in os.environ.get("SHOCKFLOW_CORS_ORIGINS", "").split(",") if o.strip()
     ]
     app.add_middleware(
         CORSMiddleware,
         allow_origins=deployed_origins,
-        allow_origin_regex=r"http://[\w.-]+:3000",
+        allow_origin_regex=r"http://[\w.-]+:3000|https://[\w-]+\.vercel\.app",
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )
