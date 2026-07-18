@@ -534,11 +534,20 @@ export interface StationImportResponse {
 }
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    cache: "no-store",
-  });
+  const url = `${API_BASE}${path}`;
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      ...init,
+      headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
+      cache: "no-store",
+    });
+  } catch (e) {
+    // Surface the exact URL the browser tried, so a deploy issue is diagnosable at a glance
+    // (localhost = NEXT_PUBLIC_API_BASE not built in; onrender = reachable but CORS-blocked).
+    const msg = e instanceof Error ? e.message : String(e);
+    throw new Error(`요청 실패 → ${url} (${msg})`);
+  }
   if (!res.ok) {
     let detail = res.statusText;
     try {
