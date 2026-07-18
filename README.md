@@ -179,7 +179,7 @@ WAPE를 재배치 목적함수 쪽으로 굽힌 원리적 일반화이고, Phase
 
 **best 모델은 CV WAPE 기준으로 knn**(`n_neighbors=30`, `weights=distance`)이 뽑혔습니다. test에서
 WAPE 0.5161, MASE 0.7936 — MASE가 1보다 작으니 주간 seasonal naive를 이깁니다(B0 대비 test WAPE
-약 21.6% 개선). 다만 정직하게 덧붙이면, 손대지 않은 test 창에서는 extra_trees(0.4922)와 boosting
+약 21.6% 개선). 다만 짚어두면, 손대지 않은 test 창에서는 extra_trees(0.4922)와 boosting
 계열(약 0.497)이 knn을 근소하게 앞섭니다. 선택은 프로토콜대로 **test가 아닌 CV로** 했기 때문에
 knn을 대표 모델로 보고합니다. tree/knn 계열은 test WAPE 0.49~0.53 구간에 촘촘히 모여 있어, 이
 데이터에서는 알고리즘 종류보다 feature가 성능을 좌우한다는 뜻입니다.
@@ -218,7 +218,7 @@ feature를 하나씩 섞었을 때 WAPE가 얼마나 나빠지는지로 측정�
 **feature selection**: 상위 12개만 남겨 다시 학습하면 test WAPE 0.512로, 32개 전체(0.5161)와
 동등하거나 오히려 근소하게 낫습니다. 예측력의 대부분이 소수의 history feature에 몰려 있다는 뜻입니다.
 
-### ablation B0–B4 (정직한 보고)
+### ablation B0–B4 (측정 결과 그대로)
 
 | 단계 | feature | WAPE | MAE | MASE |
 |---|---|---|---|---|
@@ -228,7 +228,7 @@ feature를 하나씩 섞었을 때 WAPE가 얼마나 나빠지는지로 측정�
 | B3 (+ LLM event features) | 37 | 0.5161 | 1.401 | 0.7936 |
 | B4 (+ graph-propagated features) | 40 | 0.5161 | 1.401 | 0.7936 |
 
-**정직한 읽기**: 이 6월 평가 창에서 유일한 curated 이벤트는 데이터보다 뒤인 2026-07-12라, 가용성
+**해석**: 이 6월 평가 창에서 유일한 curated 이벤트는 데이터보다 뒤인 2026-07-12라, 가용성
 규칙(§5.2)에 따라 모든 event/graph feature가 0이 됩니다. runner가 창의 마지막 cutoff
 (2026-06-30 23:00)에서 `build_graph_features`를 호출해 snapshot 0개임을 실제로 확인했고, 그래서
 B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 **이벤트 효과는 이 창에서는 입증
@@ -265,7 +265,7 @@ event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_featu
 v0 위에 backward-compatible 증분으로 V1을 구현했습니다 — 측정된 모델 스토리(B0–B4),
 어텐션 듀얼인코더 추천 + reranker + 정책, 동적 인센티브·정책 시뮬레이션, 클러스터드 스위치백 실험,
 이상 탐지, 라이브 섀도(pending label), **FAISS 뉴스 벡터 스토어**(누적 수집·의미 검색·같은 사건 클러스터).
-웹 콘솔은 8개 화면. 모든 값은 measured / pending / simulated / blocked 중 하나로 정직하게 표기합니다.
+웹 콘솔은 8개 화면. 모든 값은 measured / pending / simulated / blocked 중 하나로 명시합니다.
 
 ```bash
 make v1-collect-news-live     # (opt-in) 실제 GDELT 뉴스 수집 → FAISS 스토어에 누적
@@ -297,7 +297,7 @@ heuristic(`demo-heuristic-v1`)입니다.
 - **추가 자전거 최적 분배** — `POST /v2/operator/rebalancing/allocate` (운영자가 추가 자전거 **m**대를
   입력하면, 부족한 대여소에 어떻게 나눠야 이익이 최대일지 계산). 비대칭 목적(부족 3 : 과잉 1)이 분리·볼록
   이라 greedy 한계이익 배분이 전역 최적이며 완전탐색과 일치 검증. 목표 충족 뒤 남는 자전거는 창고 보유로
-  정직 보고. `/rebalancing` 화면 상단의 "추가 자전거 최적 분배" 카드에서 m을 입력합니다.
+  그대로 보고합니다. `/rebalancing` 화면 상단의 "추가 자전거 최적 분배" 카드에서 m을 입력합니다.
 
 ```bash
 make api    # v1 + v2 엔드포인트 (오프라인, :8000)
