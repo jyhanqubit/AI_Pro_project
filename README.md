@@ -16,6 +16,60 @@ Citi Bike 수요 이력
 
 개발 전반의 운영 계약은 [CLAUDE.md](CLAUDE.md)에 정리해 두었습니다.
 
+---
+
+## 👀 채용 심사자용 빠른 안내 (Reviewer Guide)
+
+이 저장소는 포트폴리오 **Side Project(9–11페이지) — ShockFlow AI**의 실제 구현체입니다.
+바쁘시면 **1) 스크린샷만**, 시간이 되시면 **2) 3분 실행**, 주장을 검증하시려면 **3) 수치 재현**
+순서로 보시면 됩니다. 모두 **API 키 없이 완전 오프라인**으로 동작합니다.
+
+### 1. 메인 화면 (설치 없이 바로)
+
+포트폴리오 9페이지의 두 운영자 화면입니다.
+
+**관제탑** — 이벤트를 켜고 끄면 수요·할증·수익이 함께 움직입니다
+![관제탑](docs/screenshots/control_tower.png)
+
+**운영 통계** — 재생 시점 기준으로 재고·이벤트·수요 변화를 한 화면에 집계
+![운영 통계](docs/screenshots/operator_stats.png)
+
+### 2. 직접 실행 (약 3분, 키 불필요)
+
+```bash
+git clone https://github.com/jyhanqubit/AI_Pro_project && cd AI_Pro_project
+make install                                # Python 가상환경 + 패키지
+make api                                    # 백엔드: http://127.0.0.1:8000
+# ── 새 터미널에서 ──
+cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
+```
+
+브라우저에서 **http://localhost:3000** → 우상단 **운영자**로 전환 → **관제탑 / 운영 통계**.
+관제탑에서 이벤트 토글을 끄면(= 이벤트를 모르는 baseline) 수요·할증·수익 상승분이 사라지는 것을
+직접 확인할 수 있습니다. `운영 통계` 화면의 **운영 도우미**는 이벤트 그래프에 근거해 답하며, GPT/Claude
+키를 넣으면 GraphRAG(LLM)로, 없으면 규칙 기반으로 자동 동작합니다([docs/LOCAL_GPT.md](docs/LOCAL_GPT.md)).
+
+### 3. 포트폴리오 수치 재현 (핵심 주장 검증)
+
+가벼운 항목은 즉시 재현되고, 예측 리프트는 원본 트립(약 3GB, 저장소에 미포함 §7.1)을 내려받아야
+재실행됩니다. **측정 결과 자체는 `reports/`에 커밋**되어 있어 다운로드 없이 바로 볼 수 있습니다.
+
+| 포트폴리오 주장 (10페이지) | 확인 / 재현 | 위치 |
+|---|---|---|
+| 재배치 부족 **146→78(−47%)**, MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 · 오프라인 |
+| GraphRAG: 검색 없는 raw LLM **환각 10/10** → 근거 응답 0, 정답 **40%→100%** | `python -m scripts.graphrag_eval` | 콘솔 · 오프라인 |
+| 이벤트 그래프 **5,770 노드 · 11,850 엣지** | `make seed-graph` | `data/processed/graph/event_graph.json` |
+| 이벤트 피처 리프트 **WAPE −1.65%** (95% CI [0.36, 5.11]) | 결과 확인: `reports/borough_event_lift.json` · 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
+| 방향별 리프트 (수요 급락 **95.2%** 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요) · 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
+| 전체 테스트 | `make test` | 375 passed |
+
+> **정직성 표기.** 화면의 `7/12` 수치는 라벨된 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
+> **2026년 1–6월 실데이터 측정치**입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로,
+> 답변은 illustrative이며 실제 LLM 출력으로 교체해 재채점할 수 있습니다. 자세한 구분은
+> [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md)와 [docs/STATUS.md](docs/STATUS.md)에 있습니다.
+
+---
+
 ## 운영 모드
 
 모든 레코드와 응답, 화면은 자신의 모드를 명시합니다. `demo_fixture`, `historical_replay`,
