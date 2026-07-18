@@ -1,0 +1,32 @@
+{
+  "target": "departures",
+  "n_train_rows": 145354,
+  "n_test_rows": 40439,
+  "test_from": "2026-06-01",
+  "test_days": "2026-06-01..2026-06-30",
+  "zones": 210,
+  "baseline_demand_calendar": {
+    "wape": 0.4868,
+    "mae": 1.3181
+  },
+  "plus_weather": {
+    "wape": 0.4893,
+    "mae": 1.3249
+  },
+  "wape_abs_reduction": -0.0025,
+  "wape_rel_reduction_pct": -0.51,
+  "predictive_lift": {
+    "n": 40439,
+    "n_blocks": 30,
+    "mean_loss_m0": 1.318136,
+    "mean_loss_m1": 1.324893,
+    "verdict": "negative_lift",
+    "claim_enabled": false,
+    "mean_gain": -0.006758,
+    "ci_95": [
+      -0.010348,
+      -0.003341
+    ],
+    "coverage_ok": true
+  }
+}

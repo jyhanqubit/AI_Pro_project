@@ -1,0 +1,40 @@
+{
+  "grain": "borough-hour (nearest-centroid; approximate)",
+  "target": "departures",
+  "n_train_rows": 14759,
+  "n_test_rows": 3366,
+  "test_rows_with_event": 2718,
+  "boroughs": [
+    "Bronx",
+    "Brooklyn",
+    "Manhattan",
+    "Queens",
+    "Staten Island"
+  ],
+  "test_from": "2026-06-01",
+  "test_days": "2026-06-01..2026-06-30",
+  "baseline_demand_calendar": {
+    "wape": 0.1013,
+    "mae": 165.2266
+  },
+  "plus_events": {
+    "wape": 0.0996,
+    "mae": 162.4983
+  },
+  "wape_abs_reduction": 0.0017,
+  "wape_rel_reduction_pct": 1.65,
+  "predictive_lift": {
+    "n": 3366,
+    "n_blocks": 30,
+    "mean_loss_m0": 165.22663,
+    "mean_loss_m1": 162.498333,
+    "verdict": "measured_improvement",
+    "claim_enabled": true,
+    "mean_gain": 2.728296,
+    "ci_95": [
+      0.362984,
+      5.106939
+    ],
+    "coverage_ok": true
+  }
+}
