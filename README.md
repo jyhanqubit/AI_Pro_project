@@ -45,9 +45,9 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 ```
 
 브라우저에서 **http://localhost:3000** → 우상단 **운영자**로 전환 → **관제탑 / 운영 통계**.
-관제탑에서 이벤트 토글을 끄면(= 이벤트를 모르는 baseline) 수요·할증·수익 상승분이 사라지는 것을
+관제탑에서 이벤트 토글을 끄면(= 이벤트를 반영하지 않은 기준값) 수요·할증·수익 상승분이 사라지는 것을
 직접 확인할 수 있습니다. `운영 통계` 화면의 **운영 도우미**는 이벤트 그래프에 근거해 답하며, GPT/Claude
-키를 넣으면 GraphRAG(LLM)로, 없으면 규칙 기반으로 자동 동작합니다([docs/LOCAL_GPT.md](docs/LOCAL_GPT.md)).
+키를 넣으면 GraphRAG(LLM)로, 없으면 규칙 기반으로 동작합니다([docs/LOCAL_GPT.md](docs/LOCAL_GPT.md)).
 
 ### 3. 포트폴리오 수치 재현 (핵심 주장 검증)
 
@@ -63,9 +63,9 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 방향별 리프트 (수요 급락 **95.2%** 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요) · 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
 | 전체 테스트 | `make test` | 375 passed |
 
-> **정직성 표기.** 화면의 `7/12` 수치는 라벨된 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
+> **Note.** 화면의 `7/12` 수치는 라벨을 붙인 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
 > **2026년 1–6월 실데이터 측정치**입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로,
-> 답변은 illustrative이며 실제 LLM 출력으로 교체해 재채점할 수 있습니다. 자세한 구분은
+> 답변은 예시이며 실제 LLM 출력으로 교체해 다시 채점할 수 있습니다. 자세한 구분은
 > [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md)와 [docs/STATUS.md](docs/STATUS.md)에 있습니다.
 
 ---
