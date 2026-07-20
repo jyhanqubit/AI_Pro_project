@@ -970,3 +970,13 @@ The final package must clearly distinguish:
 - known limitations
 
 The 90-second demo and README must match the actual implementation exactly.
+
+---
+
+## 24. V2 Addendum
+
+The V2 business-value plan extends this contract. See the imported addendum for V2 mission,
+required evidence, profit integrity, claims taxonomy, phase order (V2-00 … V2-09), and the
+artifact-based completion rule. The base contract above stays in force for V2 work.
+
+@CLAUDE_V2_APPEND_REVISED.md

@@ -1,6 +1,20 @@
 # Project Status
 
-_Last updated: 2026-07-16_
+_Last updated: 2026-07-20_
+
+## V2 kickoff — LLM net-business-value verification (scaffolding)
+
+V2 has been scaffolded on branch `claude/upgrade-v1-to-v2-fsn80p`: docs and folders only, **no
+measured V2 results yet**. The V2 contract is `CLAUDE_V2_APPEND_REVISED.md` (imported by
+`CLAUDE.md`); the plan lives in `docs/v2/` (start at `docs/v2/README.md`). V2 verifies — with
+versioned artifacts under `reports/v2/**` — whether LLM/event features add measurable predictive
+lift and whether that lift converts to profit net of LLM cost.
+
+- **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
+- **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
+- **Phases:** V2-00 … V2-09, all `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
+  results below remain the current measured record until a V2 phase re-measures them.
 
 ## Measured results — event-aware forecasting lift (real data)
 

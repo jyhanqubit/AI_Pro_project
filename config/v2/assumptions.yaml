@@ -1,0 +1,9 @@
+# V2 profit/regret assumption set (TEMPLATE).
+# Every value is an ASSUMPTION (claim_status: assumption) until sourced. Do not treat as measured.
+version: v2-assumptions-0
+margin_per_rental: null           # currency per completed rental
+shortage_externality: null        # cost per unit of unmet demand
+overflow_penalty: null            # cost per unit of dock overflow
+distance_cost_per_unit_km: null   # relocation cost per unit-km
+elasticity: null                  # demand response to price/incentive (V2-05)
+notes: "Fill from a cited source before use; keep contribution margin and shortage externality separate."

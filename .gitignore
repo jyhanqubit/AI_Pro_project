@@ -36,6 +36,9 @@ reports/**
 # small measured-result summaries kept for reviewer verification (no 3GB download needed)
 !reports/borough_event_lift.json
 !reports/weather_lift.json
+# V2 report scaffolding + small measured summaries (reviewer-verifiable; large binaries below still ignored)
+!reports/v2/
+!reports/v2/**
 *.parquet
 *.joblib
 *.pkl
