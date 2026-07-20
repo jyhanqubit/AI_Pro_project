@@ -12,12 +12,18 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 **PASSED**; V2-01 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**; V2-02 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
 - **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
   `ResultEnvelope`, honesty rules enforced in code, 22 tests green); `make v2-audit` gate
   (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.
   Findings: 0 domain drift; JC-vs-NYC data nuance recorded; test-count inconsistency and legacy
   `v2-*` phase-number collision flagged for cleanup.
+- **V2-01 done (measured):** `ml/forecasting/h3_multiholdout.py` (`make v2-holdout`) +
+  `promoted.py` serving loader. Real JC Citi Bike Mar–Aug 2024, **210,042** H3 zone×hour rows /
+  **234** zones, 3 rolling monthly windows. Promoted `hist_gradient_boosting`; aggregate
+  **WAPE 0.4828 ± 0.0030, MASE 0.7996** (beats B0 seasonal-naive ~0.648 every window).
+  Artifacts: `reports/v2/holdout/{h3_multiholdout,promoted_model}.json`. 5 leakage/window tests.
+  Scope: JC slice, B1 features only (events = V2-03), promotion pool bounded, API wiring = V2-07.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 

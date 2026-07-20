@@ -23,13 +23,21 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   legacy `v2-*` phase-number collision.
 
 ## V2-01 — Measured Model Productization & H3 Multi-Holdout
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Promote a measured forecasting model artifact and serve it in non-demo modes;
   evaluate it across multiple rolling H3 holdout windows (not a single split).
 - **Acceptance:** Promoted model manifest referenced by the API; ≥3 rolling-origin holdout
   windows with WAPE/MAE/MASE reported per window and aggregated; no random split; leakage tests pass.
-- **Artifact:** `reports/v2/holdout/h3_multiholdout.json` + `reports/v2/holdout/README.md`.
+- **Artifact:** `reports/v2/holdout/h3_multiholdout.json` + `promoted_model.json` + `README.md`.
 - **Command:** `make v2-holdout`. See `V2_EVALUATION_PROTOCOL.md`.
+- **Delivered (measured):** `ml/forecasting/h3_multiholdout.py` (runner) + `promoted.py` (serving
+  loader). Real JC Citi Bike Mar–Aug 2024, 210,042 H3 rows / 234 zones, 3 rolling monthly windows.
+  Promoted `hist_gradient_boosting`; aggregate **WAPE 0.4828 ± 0.0030, MASE 0.7996** (beats B0
+  seasonal-naive ~0.648 every window). Leakage guard + window/aggregate tests:
+  `pytest tests/unit/test_v2_multiholdout.py` → 5 passed.
+- **Honest scope / carry-forward:** JC slice (not NYC-wide); B1 (demand+calendar) features only
+  (events B2–B4 = V2-03); promotion pool bounded to `ridge`+`hist_gradient_boosting`
+  (`--algos all` = full zoo); API serving wiring lands in **V2-07** (loader contract ready now).
 
 ## V2-02 — Profit / Regret Ledger
 - **Status:** PLANNED

@@ -3,6 +3,14 @@
 Extends `../EVALUATION_PROTOCOL.md`. V2 replaces the single holdout window with a **rolling /
 expanding multi-holdout** so lift is not an artifact of one lucky split.
 
+> **Status: implemented + measured (V2-01).** Runner `ml/forecasting/h3_multiholdout.py`
+> (`make v2-holdout`). First measured run: real Citi Bike **Jersey City** Mar–Aug 2024,
+> 210,042 H3 zone×hour rows / 234 zones, 3 monthly rolling windows. Promoted model
+> `hist_gradient_boosting`; aggregate WAPE **0.4828 ± 0.0030**, MASE **0.7996** (beats B0 ~0.648).
+> Full result: `reports/v2/holdout/`. Honest scope: JC (not NYC-wide), B1 features only
+> (events = V2-03), promotion pool bounded to `ridge` + `hist_gradient_boosting` (`--algos all`
+> for the full zoo).
+
 ## Design
 
 - **Grain:** H3 zone × local hour (`America/New_York`), targets `departures`, `arrivals`,

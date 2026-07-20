@@ -47,8 +47,8 @@ Rules:
 
 | Claim | Phase | Artifact (target) | claim_status | Value |
 |---|---|---|---|---|
-| Served model is the promoted measured model | V2-01 | `reports/v2/holdout/` | pending | — |
-| H3 multi-holdout WAPE/MAE/MASE | V2-01 | `reports/v2/holdout/h3_multiholdout.json` | pending | — |
+| Promoted measured model artifact exists + loadable for serving | V2-01 | `reports/v2/holdout/promoted_model.json` | **measured** | `hist_gradient_boosting` (lr=0.05, depth=8, iters=600), served via `ml/forecasting/promoted.py`; API wiring → V2-07 |
+| H3 multi-holdout WAPE (aggregate, 3 rolling windows, JC 2024) | V2-01 | `reports/v2/holdout/h3_multiholdout.json` | **measured** | WAPE **0.4828 ± 0.0030**, MASE **0.7996 ± 0.0186**, beats B0 ~0.648 |
 | No-Event vs Rule-Event vs LLM-Event lift | V2-03 | `reports/v2/llm_value/incremental_value.json` | pending | — |
 | LLM incremental cost | V2-03 | `reports/v2/llm_value/` | pending | — |
 | Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | pending | — |
