@@ -1,9 +1,39 @@
-# V2 profit/regret assumption set (TEMPLATE).
-# Every value is an ASSUMPTION (claim_status: assumption) until sourced. Do not treat as measured.
-version: v2-assumptions-0
-margin_per_rental: null           # currency per completed rental
-shortage_externality: null        # cost per unit of unmet demand
-overflow_penalty: null            # cost per unit of dock overflow
-distance_cost_per_unit_km: null   # relocation cost per unit-km
-elasticity: null                  # demand response to price/incentive (V2-05)
-notes: "Fill from a cited source before use; keep contribution margin and shortage externality separate."
+# V2 profit/regret assumption set.
+#
+# Every monetary value here is an ASSUMPTION (claim_status: assumption), NOT a measured economic
+# figure. The ledger's UNIT counts (shortage/overflow/realized rentals) are measured from real
+# demand + the real forecast; only the $-conversion below is assumption-conditioned. Any profit/
+# regret number produced with this set is therefore `simulated` (assumption-conditioned), and a
+# sensitivity sweep over these values is required before quoting a headline dollar figure.
+#
+# `sourced: false` until each value is replaced with a cited source. Do not present as measured.
+version: v2-assumptions-1
+sourced: false
+
+# Contribution margin earned per completed rental (revenue minus variable cost). Kept STRICTLY
+# separate from the shortage externality below — a lost rental reduces realized margin; it is
+# never *also* charged as a shortage cost (that would double-count). See docs/v2/V2_PROFIT_REGRET_LEDGER.md.
+margin_per_rental: 1.50
+
+# Operational / goodwill externality per unit of UNMET demand, OVER AND ABOVE the lost margin
+# (rider turned away, degraded service). Not the lost rental revenue.
+shortage_externality: 1.00
+
+# Cost per unit of over-provisioned inventory (idle capital + a dock blocked for returns).
+overflow_penalty: 0.30
+
+# Per-bike repositioning cost used by the V2-02 single-period newsvendor proxy (no station
+# geography in the holdout panel). The geography-aware per-unit-km cost below is used by V2-04 MPC.
+reposition_cost_per_unit: 0.40
+
+# Relocation cost per bike-kilometre (V2-04 MPC, real origin->destination distances).
+distance_cost_per_unit_km: 0.50
+
+# Demand response to price/incentive (V2-05 dynamic pricing). Placeholder assumption.
+elasticity: -0.30
+
+notes: >-
+  Placeholder assumptions, not sourced. Condition for Oracle to be a valid upper bound in the
+  single-period model: margin_per_rental + shortage_externality > reposition_cost_per_unit
+  (1.50 + 1.00 > 0.40, holds). Replace with cited values + rerun the sensitivity sweep before any
+  dollar figure leaves `simulated` status.

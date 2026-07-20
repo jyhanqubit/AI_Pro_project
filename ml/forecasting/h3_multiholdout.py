@@ -218,6 +218,43 @@ def evaluate_windows(
     return out
 
 
+def predict_windows(
+    df: pd.DataFrame,
+    b1_cols: list[str],
+    target: str,
+    promoted: dict[str, Any],
+    windows: list[tuple[datetime, datetime]],
+) -> list[dict[str, Any]]:
+    """Refit the promoted model per window and return raw predictions for downstream accounting.
+
+    Returns one dict per window with numpy arrays: ``actual`` (y_true), ``model`` (promoted
+    forecast), ``seasonal_naive`` (the B0 status-quo baseline). Reused by the V2-02 ledger so the
+    profit/regret run uses the *same* promoted model and the *same* leakage-safe windows as V2-01.
+    """
+    y = df[target].to_numpy(dtype=float)
+    x = _matrix(df, b1_cols)
+    hours = list(df["hour_start"])
+    out: list[dict[str, Any]] = []
+    for i, (start, end) in enumerate(windows):
+        train_pos, test_pos = bounded_holdout(hours, start, end)
+        if train_pos.size == 0 or test_pos.size == 0:
+            continue
+        assert max(hours[p] for p in train_pos) < start, "train/test overlap — leakage!"
+        est = _fit_promoted(promoted["algorithm"], promoted["params"])
+        est.fit(x[train_pos], y[train_pos])
+        out.append(
+            {
+                "window_id": i,
+                "test_start": start.isoformat(),
+                "test_end": end.isoformat(),
+                "actual": y[test_pos],
+                "model": np.asarray(est.predict(x[test_pos]), dtype=float),
+                "seasonal_naive": seasonal_naive_predict(df.iloc[test_pos], target),
+            }
+        )
+    return out
+
+
 def _agg(windows: list[dict[str, Any]], key: str) -> dict[str, float]:
     vals = [w["metrics"][key] for w in windows if "metrics" in w and np.isfinite(w["metrics"][key])]
     if not vals:

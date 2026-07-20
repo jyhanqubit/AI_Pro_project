@@ -24,10 +24,13 @@ from __future__ import annotations
 
 from .enums import PRODUCT_DECISION_STATUSES, ClaimStatus, claimstate_to_status
 from .envelope import ResultEnvelope
+from .ledger import LedgerAssumptions, PolicyLedger
 
 __all__ = [
     "ClaimStatus",
+    "LedgerAssumptions",
     "PRODUCT_DECISION_STATUSES",
+    "PolicyLedger",
     "ResultEnvelope",
     "claimstate_to_status",
 ]

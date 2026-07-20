@@ -51,7 +51,7 @@ Rules:
 | H3 multi-holdout WAPE (aggregate, 3 rolling windows, JC 2024) | V2-01 | `reports/v2/holdout/h3_multiholdout.json` | **measured** | WAPE **0.4828 ± 0.0030**, MASE **0.7996 ± 0.0186**, beats B0 ~0.648 |
 | No-Event vs Rule-Event vs LLM-Event lift | V2-03 | `reports/v2/llm_value/incremental_value.json` | pending | — |
 | LLM incremental cost | V2-03 | `reports/v2/llm_value/` | pending | — |
-| Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | pending | — |
+| Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | **simulated** ($ assumption-conditioned; units measured) | Promoted forecast nets **+$103,271** vs seasonal-naive over 114,079 zone-hours; sign positive across all 9 cost settings; regret vs Oracle $218,697 |
 | MPC vs No-Action/Greedy/MILP | V2-04 | `reports/v2/mpc/policy_comparison.json` | pending | — |
 | Pricing sensitivity + guardrail audit | V2-05 | `reports/v2/pricing/` | pending | — |
 | Copilot correctness + relevance | V2-06 | `reports/v2/copilot/correctness_benchmark.json` | pending | — |

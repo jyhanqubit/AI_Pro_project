@@ -40,7 +40,7 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   (`--algos all` = full zoo); API serving wiring lands in **V2-07** (loader contract ready now).
 
 ## V2-02 — Profit / Regret Ledger
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Translate forecast error into money: expected shortage cost, overflow cost,
   relocation cost, and regret vs Oracle upper bound.
 - **Acceptance:** Contribution margin and shortage externality kept separate; no double-count of
@@ -48,6 +48,14 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   offline upper bound.
 - **Artifact:** `reports/v2/ledger/profit_regret.json` + `reports/v2/ledger/README.md`.
 - **Command:** `make v2-ledger`. See `V2_PROFIT_REGRET_LEDGER.md`.
+- **Delivered:** `optimization/ledger.py` (pure accounting) + `ledger_run.py` (runner) +
+  `contracts/v2/ledger.py` (typed) + `config/v2/assumptions.yaml` (`v2-assumptions-1`).
+  Result: promoted forecast nets **+$103,271** vs seasonal-naive over 114,079 zone-hour decisions
+  (sign robust across all 9 cost settings), regret vs Oracle **$218,697**. Units measured, dollars
+  `simulated`. Tests: `pytest tests/unit/test_v2_ledger.py` → 8 passed (no-double-count, Oracle
+  upper-bound/regret≥0, better-forecast-earns-more).
+- **Honest scope / carry-forward:** single-period **stocking** economics only — **relocation = 0**
+  (origin→destination moves = V2-04 MPC); dollars stay `simulated` until assumptions are sourced.
 
 ## V2-03 — LLM Incremental Value Ablation
 - **Status:** PLANNED

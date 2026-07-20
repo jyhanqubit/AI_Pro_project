@@ -3,6 +3,14 @@
 Translates forecast quality into money without inflating the story. Predictive lift is only
 useful if it survives conversion to operational profit.
 
+> **Status: implemented + run (V2-02).** Accounting `optimization/ledger.py` (pure functions),
+> runner `optimization/ledger_run.py` (`make v2-ledger`), typed contract `contracts/v2/ledger.py`.
+> First run (assumption set `v2-assumptions-1`, JC 2024, 114,079 zone-hour decisions): the V2-01
+> promoted forecast nets **+$103,271** vs the seasonal-naive status quo (sign positive across all
+> 9 cost settings), regret vs Oracle **$218,697**. Unit counts measured; dollars `simulated`
+> (assumptions `sourced: false`). Scope: single-period stocking; **relocation = 0** here
+> (origin→destination moves are V2-04). Full result: `reports/v2/ledger/`.
+
 ## Accounting model
 
 Per zone-hour decision, the ledger accounts:

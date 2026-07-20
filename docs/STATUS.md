@@ -12,7 +12,7 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**; V2-02 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**; V2-03 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
 - **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
   `ResultEnvelope`, honesty rules enforced in code, 22 tests green); `make v2-audit` gate
   (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.
@@ -24,6 +24,12 @@ lift and whether that lift converts to profit net of LLM cost.
   **WAPE 0.4828 ± 0.0030, MASE 0.7996** (beats B0 seasonal-naive ~0.648 every window).
   Artifacts: `reports/v2/holdout/{h3_multiholdout,promoted_model}.json`. 5 leakage/window tests.
   Scope: JC slice, B1 features only (events = V2-03), promotion pool bounded, API wiring = V2-07.
+- **V2-02 done:** profit/regret ledger `optimization/ledger.py` + `ledger_run.py` (`make v2-ledger`)
+  + typed `contracts/v2/ledger.py` + versioned `config/v2/assumptions.yaml`. Over 114,079 zone-hour
+  decisions the V2-01 forecast nets **+$103,271** vs seasonal-naive (sign robust across all 9 cost
+  settings), regret vs Oracle **$218,697**. Unit counts measured; dollars `simulated` (assumptions
+  not yet sourced). 8 tests (no-double-count, Oracle upper-bound). Relocation deferred to V2-04.
+  Artifact: `reports/v2/ledger/profit_regret.json`.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
