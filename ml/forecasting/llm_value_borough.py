@@ -58,6 +58,28 @@ _NY = ZoneInfo("America/New_York")
 _NEWS_COLS = ("news_llm_active", "news_llm_severity", "news_llm_transit", "news_llm_crowd")
 OUT_DIR = Path("reports/v2/llm_value")
 
+_ALL_BOROUGHS = tuple(_BOROUGH_CENTROIDS)
+# Citywide-impact cues: a subway/MTA/PATH/ferry disruption or a weather/storm/flood event affects
+# ridership across every borough, so an article carrying one of these (but naming no single
+# borough) is attributed to ALL boroughs. This is a documented domain rule, not fabrication — it
+# encodes that citywide mobility shocks are, in fact, citywide. Toggle with --no-citywide.
+_CITYWIDE_CUES = (
+    "subway", "mta", "path train", "nj transit", "ferry", "citywide", "city-wide",
+    "metrocard", "omny", "storm", "flooding", "flood", "snow", "blizzard", "heat wave",
+    "hurricane", "transit strike", "service change", "signal problem", "signal failure",
+)
+
+
+def _boroughs_for_article(title: str, text: str, *, citywide: bool = True) -> list[str]:
+    """Boroughs an article is attributed to: named boroughs first, else a citywide cue -> all."""
+    hay = f"{title} {text}".lower()
+    named = [b for b in _ALL_BOROUGHS if b.lower() in hay]
+    if named:
+        return named
+    if citywide and any(cue in hay for cue in _CITYWIDE_CUES):
+        return list(_ALL_BOROUGHS)
+    return []
+
 
 def _etype_value(ev: Any) -> str:
     t = getattr(ev, "event_type", "")
@@ -65,13 +87,15 @@ def _etype_value(ev: Any) -> str:
 
 
 def build_news_llm_index(
-    news_path: Path, provider: str = "mock"
+    news_path: Path, provider: str = "mock", *, citywide: bool = True, window_h: int = 24
 ) -> tuple[dict[tuple[str, str], dict[str, float]], dict[str, int]]:
     """(borough, 'YYYY-MM-DD HH') -> LLM news-event features, leakage-safe.
 
-    Events are extracted (mock LLM) from real news; each is attributed to the borough(s) named in
-    its source article and spread over the 24h *after the article became available* (``available_at``
-    = max(published_at, first_seen_at)), so a feature never precedes the moment the news was public.
+    Events are extracted (mock LLM) from real news; each is attributed to borough(s) — those named
+    in the article, else all boroughs when a citywide mobility/weather cue is present (documented
+    domain rule) — and spread over ``window_h`` hours *after the article became available*
+    (``available_at`` = max(published_at, first_seen_at)), so a feature never precedes the moment
+    the news was public.
     """
     articles = NewsFixtureCollector(news_path).collect().records
     events, _ = extract_events(articles, build_provider(provider))
@@ -79,7 +103,8 @@ def build_news_llm_index(
     idx: dict[tuple[str, str], dict[str, float]] = defaultdict(
         lambda: {c: 0.0 for c in _NEWS_COLS}
     )
-    diag = {"events": len(events), "attributed_events": 0, "attributed_articles": 0}
+    diag = {"events": len(events), "attributed_events": 0, "attributed_articles": 0,
+            "citywide": citywide}
     attributed_articles: set[str] = set()
 
     for ev in events:
@@ -87,10 +112,9 @@ def build_news_llm_index(
         a = art.get(aid)
         if a is None:
             continue
-        hay = f"{a.title} {a.text}".lower()
-        boroughs = [b for b in _BOROUGH_CENTROIDS if b.lower() in hay]
+        boroughs = _boroughs_for_article(a.title, a.text, citywide=citywide)
         if not boroughs:
-            continue  # no borough named -> no attribution (honest, no guessing)
+            continue  # no borough named and no citywide cue -> no attribution (honest, no guessing)
         diag["attributed_events"] += 1
         attributed_articles.add(aid)
         avail = a.available_at or max(a.published_at, a.first_seen_at)
@@ -102,7 +126,7 @@ def build_news_llm_index(
         etype = _etype_value(ev)
         for b in boroughs:
             h = start
-            for _ in range(24):  # 24h relevance window from availability (leakage-safe)
+            for _ in range(window_h):  # relevance window from availability (leakage-safe)
                 k = (b, h.strftime("%Y-%m-%d %H"))
                 idx[k]["news_llm_active"] += 1.0
                 idx[k]["news_llm_severity"] += sev
@@ -234,7 +258,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--data-dir", default="data/raw/nyc")
     ap.add_argument("--events", default="data/fixtures/nyc_permitted_events_filtered.jsonl.gz")
     ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl")
-    ap.add_argument("--test-from", default="2026-06-01")
+    # Default test = May: the June window has 0 attributable news borough-hours, so testing on
+    # June cannot fairly evaluate the LLM-news arm. May carries real news signal (216 test rows).
+    ap.add_argument("--test-from", default="2026-05-01")
     ns = ap.parse_args(argv)
 
     res = run(ns.data_dir, ns.events, ns.news, ns.test_from)

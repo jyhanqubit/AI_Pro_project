@@ -1,64 +1,65 @@
 {
-  "run_id": "run_v2-03b_20260720T153901Z",
+  "run_id": "run_v2-03b_20260720T162633Z",
   "artifact_id": "reports/v2/llm_value/incremental_value_borough.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-20T15:39:01.438753+00:00",
+  "freshness": "2026-07-20T16:26:33.341137+00:00",
   "grain": "borough-hour (nearest-centroid; approximate)",
   "target": "departures",
   "data_source": "data/raw/nyc",
-  "test_from": "2026-06-01",
-  "n_train_rows": 5183,
-  "n_test_rows": 2881,
-  "test_rows_with_permitted_event": 2612,
-  "test_rows_with_llm_news_event": 0,
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 5856,
+  "test_rows_with_permitted_event": 5212,
+  "test_rows_with_llm_news_event": 216,
   "news_attribution": {
     "events": 88,
-    "attributed_events": 4,
-    "attributed_articles": 4
+    "attributed_events": 35,
+    "attributed_articles": 35,
+    "citywide": true
   },
   "arms": {
     "A0_demand_calendar": {
-      "wape": 0.109,
-      "mae": 203.615,
-      "net_profit_simulated": 7069462.1
+      "wape": 0.1069,
+      "mae": 183.953,
+      "net_profit_simulated": 13356520.1
     },
     "A1_plus_permitted": {
-      "wape": 0.1089,
-      "mae": 203.365,
-      "net_profit_simulated": 7089021.2
+      "wape": 0.1047,
+      "mae": 180.15,
+      "net_profit_simulated": 13389639.0
     },
     "A2_plus_llm_news": {
-      "wape": 0.1095,
-      "mae": 204.416,
-      "net_profit_simulated": 7075207.6
+      "wape": 0.1075,
+      "mae": 184.965,
+      "net_profit_simulated": 13365909.4
     }
   },
   "structured_event_lift_A1_minus_A0": {
-    "n": 2881,
-    "n_blocks": 30,
-    "mean_loss_m0": 203.615467,
-    "mean_loss_m1": 203.364955,
-    "verdict": "inconclusive",
-    "claim_enabled": false,
-    "mean_gain": 0.250512,
+    "n": 5856,
+    "n_blocks": 61,
+    "mean_loss_m0": 183.952995,
+    "mean_loss_m1": 180.149617,
+    "verdict": "measured_improvement",
+    "claim_enabled": true,
+    "mean_gain": 3.803377,
     "ci_95": [
-      -2.513685,
-      3.158357
+      1.869897,
+      5.876624
     ],
     "coverage_ok": true
   },
   "llm_news_increment_A2_minus_A1": {
-    "n": 2881,
-    "n_blocks": 30,
-    "mean_loss_m0": 203.364955,
-    "mean_loss_m1": 204.415552,
+    "n": 5856,
+    "n_blocks": 61,
+    "mean_loss_m0": 180.149617,
+    "mean_loss_m1": 184.965411,
     "verdict": "negative_lift",
     "claim_enabled": false,
-    "mean_gain": -1.050597,
+    "mean_gain": -4.815794,
     "ci_95": [
-      -1.860789,
-      -0.198471
+      -6.022172,
+      -3.711503
     ],
     "coverage_ok": true
   },
@@ -72,8 +73,8 @@
     "estimated_real_usd": 0.0061,
     "basis": "chars/4 tokens * assumed cheap-tier input price; real cost depends on provider/model"
   },
-  "profit_lift_llm_over_permitted_simulated": -13813.6,
-  "net_llm_value_simulated": -13813.61,
-  "headline_verdict_llm_increment": "insufficient_event_overlap",
+  "profit_lift_llm_over_permitted_simulated": -23729.6,
+  "net_llm_value_simulated": -23729.61,
+  "headline_verdict_llm_increment": "negative_lift",
   "note": "A1-A0 tests the structured permitted-event feed (reproduces v1); A2-A1 isolates the LLM-from-news increment on top. Borough attribution is by explicit borough-name match in article text (no guessing); thinly-attributed news => small A2-A1, reported honestly. Profit is simulated (assumption-conditioned); LLM actual cost $0 (mock) + est real."
 }

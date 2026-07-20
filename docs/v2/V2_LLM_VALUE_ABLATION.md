@@ -12,13 +12,15 @@ its own cost? This requires cleanly separating three feature arms and reporting 
 > full 3-arm + CI + profit + cost framework — a valid, honest outcome, not fabricated positive.
 > Full result + unblock path: `reports/v2/llm_value/`.
 >
-> **Borough re-measurement (NYC, `make v2-llm-value-borough`).** To rule out geography/grain as
-> the cause, re-ran at borough×hour on **13.9M real NYC trips** with arms A0 / A1 (+permitted
-> structured feed) / A2 (+LLM news). Result: **A2−A1 = `insufficient_event_overlap`** (only 4/371
-> news articles attribute to a borough, 0 in the test window; net LLM value −$13,814). Both grains
-> agree: the LLM-**from-news** layer has no measurable value on the available real news — the
-> bottleneck is **news sparsity/attribution**, not geography or grain. v1's measured event lift
-> came from the *structured permitted-events feed*, not the LLM. Artifact:
+> **Borough re-measurement (NYC) — the FAIR test (`make v2-llm-value-borough`).** Fixed the inputs:
+> 5-month training (Jan–Apr, ~19.9M NYC trips), citywide news attribution (4→35 articles), and
+> test on **May** (June's test window had 0 attributable news; May carries 216 news rows). Arms
+> A0 / A1 (+permitted structured feed) / A2 (+LLM news). **Result:** A1−A0 =
+> **measured_improvement** (WAPE 0.1069→0.1047, CI [1.87, 5.88], +$33k) — structured events help;
+> A2−A1 = **negative_lift** (WAPE 0.1047→0.1075, CI [−6.02, −3.71], **net LLM value −$23,730**) —
+> the LLM-from-news layer, even given a fair test, *degrades* the forecast and costs money.
+> **V2 answer (this data): structured event feed = worth money; LLM-from-news = net-negative.**
+> Caveat: the borough event effect is small (~0.002 WAPE) and sample-sensitive. Artifact:
 > `reports/v2/llm_value/incremental_value_borough.json`.
 
 ## Three arms (identical cutoffs/splits)

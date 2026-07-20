@@ -70,18 +70,18 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   2026 news (371 articles). **Result:** all arms identical, ΔWAPE=0 CI[0,0], event coverage 0.3%
   → **`insufficient_event_overlap`** (`blocked_data`); LLM actual $0 (mock), est real $0.0061,
   **net LLM value −$0.01**. Tests: `pytest tests/unit/test_v2_llm_value.py` → 6 passed.
-- **Borough re-measurement (NYC):** `ml/forecasting/llm_value_borough.py` (`make v2-llm-value-borough`)
-  streamed **13.9M real NYC trips** to borough×hour with arms A0 / A1 (+permitted structured feed) /
-  A2 (+LLM news). **A2−A1 = `insufficient_event_overlap`** (4/371 news articles borough-attributed,
-  0 in test window; net LLM value −$13,814). A1−A0 inconclusive (2-month training, underpowered vs
-  v1). Tests: `tests/unit/test_v2_llm_value_borough.py` → 3 passed. Artifact:
-  `reports/v2/llm_value/incremental_value_borough.json`.
-- **Honest finding / carry-forward:** the required framework (arms separated, CI, cost) is in
-  place; the LLM-**from-news** value is **not measurable at either H3 (JC) or borough (NYC) grain**.
-  The bottleneck is **news sparsity/attribution** (4/371), not geography or grain — v1's measured
-  event lift came from the *structured permitted-events feed*, not the LLM. Unblock path: denser,
-  geo-tagged, mobility-relevant news overlapping the trip window (GDELT re-collection currently
-  rate-limited in this sandbox).
+- **Borough re-measurement (NYC), the FAIR test:** `ml/forecasting/llm_value_borough.py`
+  (`make v2-llm-value-borough`) streamed **19.9M real NYC trips** to borough×hour with 5-month
+  training (Jan–Apr), citywide news attribution (4→35 articles), testing **May** (June's window
+  had 0 attributable news; May has 216 news rows). Arms A0 / A1 (+permitted) / A2 (+LLM news):
+  **A1−A0 = measured_improvement** (WAPE 0.1069→0.1047, CI [1.87, 5.88], +$33k — structured events
+  help, reproduces v1 robustly); **A2−A1 = negative_lift** (WAPE 0.1047→0.1075, CI [−6.02, −3.71],
+  **net LLM value −$23,730**). Tests: `tests/unit/test_v2_llm_value_borough.py` → 4 passed.
+- **Honest V2 answer (this data):** the **structured permitted-event feed is worth money**; the
+  **LLM-from-news layer is net-negative** — even with a fair test (real news in the test window,
+  5-mo training, broadened attribution) it degrades the forecast and costs money. Caveat: borough
+  event effect is small (~0.002 WAPE) and sample-sensitive; a finer grain with geo-precise events
+  would be a stronger test (blocked by news geo-sparsity; GDELT re-collection rate-limited here).
 
 ## V2-04 — Multi-period MPC Decisioning
 - **Status:** PLANNED

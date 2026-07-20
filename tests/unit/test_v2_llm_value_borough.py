@@ -57,6 +57,26 @@ def test_article_without_borough_is_not_attributed(tmp_path):
     assert len(idx) == 0  # no borough named -> no fabricated attribution
 
 
+def test_citywide_cue_attributes_all_boroughs(tmp_path):
+    # A citywide subway disruption naming no single borough -> all 5 boroughs (documented rule).
+    news = _write_news(tmp_path, [{
+        "article_id": "n4",
+        "title": "MTA subway signal failure disrupts service across the city",
+        "text": "A signal failure caused citywide subway delays; no single area was spared.",
+        "source": "test",
+        "published_at": "2026-06-10T08:00:00-04:00",
+        "first_seen_at": "2026-06-10T08:00:00-04:00",
+        "url_hash": "h4",
+    }])
+    idx_on, diag_on = build_news_llm_index(news, citywide=True)
+    boroughs = {k[0] for k in idx_on}
+    assert boroughs == {"Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"}
+    # With the rule off, no borough is named -> nothing attributed.
+    idx_off, diag_off = build_news_llm_index(news, citywide=False)
+    assert diag_off["attributed_articles"] == 0
+    assert diag_on["attributed_articles"] == 1
+
+
 def test_news_feature_columns_present(tmp_path):
     news = _write_news(tmp_path, [{
         "article_id": "n3",

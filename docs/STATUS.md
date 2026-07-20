@@ -37,11 +37,13 @@ lift and whether that lift converts to profit net of LLM cost.
   (`blocked_data`); LLM actual $0 (mock)/est real $0.0061, **net LLM value −$0.01**. Rigorously
   confirms v1's gap; framework (arms/CI/cost) in place. 6 tests. Artifact:
   `reports/v2/llm_value/incremental_value.json`. Unblock path documented in the report.
-  **Borough re-measurement** (`make v2-llm-value-borough`, 13.9M real NYC trips, borough×hour):
-  A0/A1(+permitted)/A2(+LLM-news) — A2−A1 `insufficient_event_overlap` (4/371 news borough-attributed,
-  0 in test window; net LLM value −$13,814). **Both grains agree**: LLM-from-news has no measurable
-  value; bottleneck is news sparsity/attribution, NOT geography/grain. v1's measured lift came from
-  the structured permitted-events feed, not the LLM. 3 more tests. Artifact: `incremental_value_borough.json`.
+  **Borough re-measurement — FAIR test** (`make v2-llm-value-borough`, 19.9M real NYC trips,
+  borough×hour, 5-mo train Jan–Apr, test May with 216 news rows, citywide attribution 4→35):
+  **A1−A0 (permitted, structured) = measured_improvement** (WAPE 0.1069→0.1047, CI [1.87,5.88],
+  +$33k — reproduces v1 robustly); **A2−A1 (LLM-news) = negative_lift** (WAPE 0.1047→0.1075,
+  CI [−6.02,−3.71], **net LLM value −$23,730**). **V2 answer (this data): structured event feed
+  is worth money; LLM-from-news is net-negative** even given a fair test. Caveat: borough event
+  effect small (~0.002 WAPE) & sample-sensitive. 4 tests. Artifact: `incremental_value_borough.json`.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
