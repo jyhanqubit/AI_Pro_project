@@ -1,0 +1,73 @@
+"""V2-03 borough news-attribution tests.
+
+The new piece in the borough re-measurement is ``build_news_llm_index``: attribute LLM-extracted
+news events to boroughs by explicit name match, leakage-safe (features never precede the article's
+``available_at``). These tests use a tiny synthetic news JSONL — no download, no network.
+"""
+
+from __future__ import annotations
+
+import json
+
+from ml.forecasting.llm_value_borough import _NEWS_COLS, build_news_llm_index
+
+
+def _write_news(tmp_path, rows):
+    p = tmp_path / "news.jsonl"
+    p.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+    return p
+
+
+def test_borough_attribution_and_leakage(tmp_path):
+    # A transit-disruption article naming Manhattan, available 2026-06-10 08:00 ET.
+    news = _write_news(tmp_path, [{
+        "article_id": "n1",
+        "title": "Subway signal failure snarls Manhattan commute",
+        "text": "A signal failure disrupted subway service across Manhattan on Wednesday morning.",
+        "source": "test",
+        "published_at": "2026-06-10T08:00:00-04:00",
+        "first_seen_at": "2026-06-10T08:00:00-04:00",
+        "url_hash": "h1",
+    }])
+    idx, diag = build_news_llm_index(news)
+    assert diag["attributed_articles"] == 1
+    # Attributed to Manhattan.
+    man_keys = [k for k in idx if k[0] == "Manhattan"]
+    assert man_keys, "expected Manhattan borough-hour features"
+    # Leakage-safety: no feature hour precedes availability (2026-06-10 08).
+    assert min(k[1] for k in man_keys) >= "2026-06-10 08"
+    # 24h relevance window from availability.
+    assert max(k[1] for k in man_keys) <= "2026-06-11 08"
+    # Transit flag set on the availability hour.
+    assert idx[("Manhattan", "2026-06-10 08")]["news_llm_transit"] == 1.0
+
+
+def test_article_without_borough_is_not_attributed(tmp_path):
+    news = _write_news(tmp_path, [{
+        "article_id": "n2",
+        "title": "Statewide weather advisory issued",
+        "text": "Rain expected across the region with no specific location named.",
+        "source": "test",
+        "published_at": "2026-06-10T08:00:00-04:00",
+        "first_seen_at": "2026-06-10T08:00:00-04:00",
+        "url_hash": "h2",
+    }])
+    idx, diag = build_news_llm_index(news)
+    assert diag["attributed_articles"] == 0
+    assert len(idx) == 0  # no borough named -> no fabricated attribution
+
+
+def test_news_feature_columns_present(tmp_path):
+    news = _write_news(tmp_path, [{
+        "article_id": "n3",
+        "title": "Parade draws huge crowds in Brooklyn",
+        "text": "A large public gathering and parade filled the streets of Brooklyn.",
+        "source": "test",
+        "published_at": "2026-05-01T10:00:00-04:00",
+        "first_seen_at": "2026-05-01T10:00:00-04:00",
+        "url_hash": "h3",
+    }])
+    idx, _ = build_news_llm_index(news)
+    bk = next(k for k in idx if k[0] == "Brooklyn")
+    for c in _NEWS_COLS:
+        assert c in idx[bk]

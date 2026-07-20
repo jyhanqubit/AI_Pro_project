@@ -70,11 +70,18 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   2026 news (371 articles). **Result:** all arms identical, ΔWAPE=0 CI[0,0], event coverage 0.3%
   → **`insufficient_event_overlap`** (`blocked_data`); LLM actual $0 (mock), est real $0.0061,
   **net LLM value −$0.01**. Tests: `pytest tests/unit/test_v2_llm_value.py` → 6 passed.
+- **Borough re-measurement (NYC):** `ml/forecasting/llm_value_borough.py` (`make v2-llm-value-borough`)
+  streamed **13.9M real NYC trips** to borough×hour with arms A0 / A1 (+permitted structured feed) /
+  A2 (+LLM news). **A2−A1 = `insufficient_event_overlap`** (4/371 news articles borough-attributed,
+  0 in test window; net LLM value −$13,814). A1−A0 inconclusive (2-month training, underpowered vs
+  v1). Tests: `tests/unit/test_v2_llm_value_borough.py` → 3 passed. Artifact:
+  `reports/v2/llm_value/incremental_value_borough.json`.
 - **Honest finding / carry-forward:** the required framework (arms separated, CI, cost) is in
-  place; the LLM value is **not measurable** on this slice because real geo-matched overlapping
-  event volume is negligible (NYC-wide news barely maps to JC zones). Same gap v1 flagged, now
-  rigorous. Unblock path (documented in the report): same-geography/period trips+news at
-  sufficient event density.
+  place; the LLM-**from-news** value is **not measurable at either H3 (JC) or borough (NYC) grain**.
+  The bottleneck is **news sparsity/attribution** (4/371), not geography or grain — v1's measured
+  event lift came from the *structured permitted-events feed*, not the LLM. Unblock path: denser,
+  geo-tagged, mobility-relevant news overlapping the trip window (GDELT re-collection currently
+  rate-limited in this sandbox).
 
 ## V2-04 — Multi-period MPC Decisioning
 - **Status:** PLANNED

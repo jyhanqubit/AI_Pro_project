@@ -40,9 +40,41 @@ This is the **same gap v1 flagged** (`insufficient_event_overlap`), now shown ri
 full 3-arm + block-bootstrap-CI + profit + cost framework. It is a valid, honest V2 outcome —
 not fabricated into a positive.
 
+## Borough re-measurement on NYC data (`incremental_value_borough.json`, `make v2-llm-value-borough`)
+
+To rule out "wrong geography/grain" as the cause, we re-ran at **borough × hour** on **NYC-wide**
+trips (matched to the NYC news). Streamed **13.9M real NYC trips** (Apr–Jun 2026) → borough-hour;
+train Apr–May, test June. Three arms, same model, features only differ:
+
+```text
+A0 demand+calendar   A1 +permitted-events (structured feed)   A2 +LLM-news events
+```
+
+| Arm | WAPE | Net (simulated) |
+|---|---|---|
+| A0 demand+calendar | 0.1090 | 7,069,462 |
+| A1 +permitted (structured) | 0.1089 | 7,089,021 |
+| A2 +LLM-news | 0.1095 | 7,075,208 |
+
+- **A2 − A1 (LLM-from-news increment): `insufficient_event_overlap`** — only **4 of 371** news
+  articles attribute to a borough, and **0** land in the June test window (`test_rows_with_llm_news
+  = 0`). The sparse news features slightly *hurt* (negative_lift CI below 0); **net LLM value
+  −$13,814**.
+- **A1 − A0 (structured feed): inconclusive** here (CI includes 0) — this 2-month-training re-run
+  is underpowered vs v1's measured positive (which used Jan–May training in
+  `reports/borough_event_lift.json`). The V2-03 focus is the LLM increment, not re-litigating v1.
+
+### Conclusion (both grains agree)
+
+The LLM-**from-news** layer has **no measurable value at either H3 (JC) or borough (NYC) grain**.
+The bottleneck is **not** geography or grain — it is **news sparsity / thin borough attribution**
+(4/371 articles). v1's measured event lift came from the *structured permitted-events feed*, not
+the LLM. On the available real news, the LLM adds cost without measurable benefit — reported
+honestly, not fabricated.
+
 ## Path to unblock a real positive measurement
 
-Trip + news of the **same geography and period at sufficient event density** — e.g. NYC-wide
-trips + NYC news (memory-bounded grain), or JC-specific event collection whose events geo-map to
-JC H3 zones and overlap the trip window. The harness will then measure a real lift (or a real
-null) with the CI + net-of-cost already in place.
+Denser, mobility-relevant, geo-tagged news overlapping the trip window (e.g. a GDELT re-collection
+with borough/transit queries — currently rate-limited in this sandbox, per `HANDOFF.md`), or an
+event feed with reliable location tags. The full harness (3 arms, CI, profit, LLM cost) is in
+place and will measure a real lift the moment such news exists.

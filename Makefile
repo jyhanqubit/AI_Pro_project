@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-ledger v2-llm-value
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-ledger v2-llm-value v2-llm-value-borough
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -133,3 +133,6 @@ v2-ledger:  ## V2-02: profit/regret ledger over the V2-01 forecast (needs promot
 
 v2-llm-value:  ## V2-03: No-Event/Rule-Event/LLM-Event ablation + CI + profit + LLM cost (needs data/raw/citibike_2026 + news)
 	python -m ml.forecasting.llm_value
+
+v2-llm-value-borough:  ## V2-03: borough-grain LLM value on NYC trips (structured vs LLM-news, needs data/raw/nyc + news + events)
+	python -m ml.forecasting.llm_value_borough

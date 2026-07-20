@@ -11,6 +11,15 @@ its own cost? This requires cleanly separating three feature arms and reporting 
 > estimated real $0.0061; **net LLM value −$0.01**. This rigorously confirms v1's gap with the
 > full 3-arm + CI + profit + cost framework — a valid, honest outcome, not fabricated positive.
 > Full result + unblock path: `reports/v2/llm_value/`.
+>
+> **Borough re-measurement (NYC, `make v2-llm-value-borough`).** To rule out geography/grain as
+> the cause, re-ran at borough×hour on **13.9M real NYC trips** with arms A0 / A1 (+permitted
+> structured feed) / A2 (+LLM news). Result: **A2−A1 = `insufficient_event_overlap`** (only 4/371
+> news articles attribute to a borough, 0 in the test window; net LLM value −$13,814). Both grains
+> agree: the LLM-**from-news** layer has no measurable value on the available real news — the
+> bottleneck is **news sparsity/attribution**, not geography or grain. v1's measured event lift
+> came from the *structured permitted-events feed*, not the LLM. Artifact:
+> `reports/v2/llm_value/incremental_value_borough.json`.
 
 ## Three arms (identical cutoffs/splits)
 
