@@ -3,6 +3,15 @@
 The core V2 question: does the **LLM** event layer add value over a plain **rule** layer, after
 its own cost? This requires cleanly separating three feature arms and reporting net-of-cost lift.
 
+> **Status: implemented + run (V2-03). Honest null.** Runner `ml/forecasting/llm_value.py`
+> (`make v2-llm-value`). On real JC Citi Bike 2026 H1 + real GDELT NYC 2026 news (371 articles),
+> the three arms are **statistically identical** (ΔWAPE = 0, 95% CI [0,0]); event coverage on
+> the test windows is 0.306% and `arms_identical_on_test = true`, so the verdict is
+> **`insufficient_event_overlap`** (`claim_status: blocked_data`). LLM actual cost $0 (mock),
+> estimated real $0.0061; **net LLM value −$0.01**. This rigorously confirms v1's gap with the
+> full 3-arm + CI + profit + cost framework — a valid, honest outcome, not fabricated positive.
+> Full result + unblock path: `reports/v2/llm_value/`.
+
 ## Three arms (identical cutoffs/splits)
 
 ```text

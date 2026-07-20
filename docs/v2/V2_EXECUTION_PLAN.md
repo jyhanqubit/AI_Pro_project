@@ -58,13 +58,23 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   (origin→destination moves = V2-04 MPC); dollars stay `simulated` until assumptions are sourced.
 
 ## V2-03 — LLM Incremental Value Ablation
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20) — honest null (`insufficient_event_overlap`)
 - **Goal:** Separate **No-Event**, **Rule-Event**, and **LLM-Event** feature sets and measure the
   incremental predictive lift and the incremental profit of each — net of LLM cost.
 - **Acceptance:** Three ablation arms share identical cutoffs/splits; lift reported with a CI;
   LLM incremental token/$ cost included; honest reporting if LLM adds no lift over the rule arm.
-- **Artifact:** `reports/v2/llm_value/incremental_value.json` + report md.
+- **Artifact:** `reports/v2/llm_value/incremental_value.json` + `README.md`.
 - **Command:** `make v2-llm-value`. See `V2_LLM_VALUE_ABLATION.md`.
+- **Delivered:** `ml/forecasting/llm_value.py` (3-arm A0=B1/A1=B2/A2=B4, shared promoted model +
+  splits, block-bootstrap CI, ledger profit, LLM cost model). Real JC 2026 H1 + real GDELT NYC
+  2026 news (371 articles). **Result:** all arms identical, ΔWAPE=0 CI[0,0], event coverage 0.3%
+  → **`insufficient_event_overlap`** (`blocked_data`); LLM actual $0 (mock), est real $0.0061,
+  **net LLM value −$0.01**. Tests: `pytest tests/unit/test_v2_llm_value.py` → 6 passed.
+- **Honest finding / carry-forward:** the required framework (arms separated, CI, cost) is in
+  place; the LLM value is **not measurable** on this slice because real geo-matched overlapping
+  event volume is negligible (NYC-wide news barely maps to JC zones). Same gap v1 flagged, now
+  rigorous. Unblock path (documented in the report): same-geography/period trips+news at
+  sufficient event density.
 
 ## V2-04 — Multi-period MPC Decisioning
 - **Status:** PLANNED

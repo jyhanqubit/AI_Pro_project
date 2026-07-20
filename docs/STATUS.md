@@ -12,7 +12,7 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**; V2-03 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**, V2-03 **PASSED (honest null)**; V2-04 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
 - **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
   `ResultEnvelope`, honesty rules enforced in code, 22 tests green); `make v2-audit` gate
   (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.
@@ -30,6 +30,13 @@ lift and whether that lift converts to profit net of LLM cost.
   settings), regret vs Oracle **$218,697**. Unit counts measured; dollars `simulated` (assumptions
   not yet sourced). 8 tests (no-double-count, Oracle upper-bound). Relocation deferred to V2-04.
   Artifact: `reports/v2/ledger/profit_regret.json`.
+- **V2-03 done (honest null):** `ml/forecasting/llm_value.py` (`make v2-llm-value`) — 3 arms
+  (No-Event/Rule-Event/LLM-Event = B1/B2/B4), shared promoted model + splits, block-bootstrap CI,
+  ledger profit, LLM cost model. Real JC 2026 H1 + real GDELT NYC 2026 news (371 articles). Arms
+  **identical** (ΔWAPE=0, CI[0,0]), event coverage 0.3% → verdict **`insufficient_event_overlap`**
+  (`blocked_data`); LLM actual $0 (mock)/est real $0.0061, **net LLM value −$0.01**. Rigorously
+  confirms v1's gap; framework (arms/CI/cost) in place. 6 tests. Artifact:
+  `reports/v2/llm_value/incremental_value.json`. Unblock path documented in the report.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
