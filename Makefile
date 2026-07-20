@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -121,3 +121,6 @@ api-lan:  ## Serve the API on all interfaces for phone/LAN viewing (offline, sam
 
 web-lan:  ## Serve the UI on the LAN. Usage: make web-lan LAN_IP=192.168.0.10
 	cd apps/web && NEXT_PUBLIC_API_BASE=http://$(LAN_IP):8000 npx next dev -H 0.0.0.0
+
+v2-audit:  ## V2-00: domain-drift gate + result-envelope contract check (offline, CI-safe)
+	python -m scripts.v2_audit

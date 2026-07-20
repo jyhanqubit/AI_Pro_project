@@ -10,13 +10,17 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
 ---
 
 ## V2-00 — Audit & Domain Correction
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Reconcile repo against V2 addendum; confirm domain is Citi Bike / NYC everywhere;
   inventory which v1 artifacts are re-usable vs must be re-measured; define the result envelope.
 - **Acceptance:** No Seoul/ParcelFlow/parcel references in active code/docs; `claim_status`
   envelope defined in `contracts/v2/`; stale-number audit lists every doc figure and its source.
 - **Artifact:** `reports/v2/final/v2_audit.md` (audit table) + envelope contract committed.
-- **Command:** `make v2-audit` _(target to be added when it runs a real check)_.
+- **Command:** `make v2-audit` → exit 0 (2 gates PASS). Envelope tests: `pytest tests/unit/test_v2_envelope.py` → 22 passed.
+- **Delivered:** `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value + `ResultEnvelope`);
+  `scripts/v2_audit.py`; `reports/v2/final/v2_audit.md`. Findings: domain clean (0 drift);
+  recorded JC-vs-NYC nuance; flagged test-count inconsistency (114/199/200/204 across docs) and
+  legacy `v2-*` phase-number collision.
 
 ## V2-01 — Measured Model Productization & H3 Multi-Holdout
 - **Status:** PLANNED

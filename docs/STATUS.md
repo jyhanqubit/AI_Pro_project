@@ -12,7 +12,12 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 … V2-09, all `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00 **PASSED**; V2-01 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
+  `ResultEnvelope`, honesty rules enforced in code, 22 tests green); `make v2-audit` gate
+  (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.
+  Findings: 0 domain drift; JC-vs-NYC data nuance recorded; test-count inconsistency and legacy
+  `v2-*` phase-number collision flagged for cleanup.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
