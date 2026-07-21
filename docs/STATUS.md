@@ -140,12 +140,18 @@ lift and whether that lift converts to profit net of LLM cost.
   right), harm removed (−7.82%→−2.04%), but still **`NO_MEANINGFUL_EFFECT`** (CI [−7.26,+1.44], WAPE
   0.0883→0.0906). Reason: autoregressive lags (dep_lag_1/24/168, roll_mean_24) already encode an
   ongoing event's demand → the news signal is **redundant**. 3 more unit tests.
-- **V2-03 overall (negative result, fully understood):** five attempts — improve extraction / graph /
-  permit-schema reconstruction / importance-weight / signed direction — all neutral-to-negative.
-  Three-level why: (a) **sparsity** (~19 events can't teach magnitude), (b) **sign heterogeneity**
-  (fixed by a signed LLM effect, 77% correct), (c) **redundancy** (demand-history lags already capture
-  ongoing-event shocks). News would only help at the sudden onset of an unanticipated shock before the
-  lags react — rare + limited by coarse timing/availability gate. Not just observed — explained.
+- **V2-03 (post-processing correction)** (`ml/forecasting/llm_postprocess_value.py`): apply news as
+  an output correction `pred+Σα_ch·signal_ch` with per-mechanism (n-dim) factors calibrated on train
+  residuals, applied to test. **`MEANINGFUL_NEGATIVE` −21.36%** (WAPE 0.0883→0.0899). Fitted factors
+  absurd/wrong-signed (α[gather]=−470, α[transit]=−478) → the sparse calibration **overfits** and fails
+  on test. The sparsity problem just moves from the model to the post-processing step.
+- **V2-03 overall (negative result, fully understood):** six attempts — improve extraction / graph /
+  permit-schema reconstruction / importance-weight / signed direction / post-processing — all
+  neutral-to-negative. Three-level why: (a) **sparsity** (~19 events can't teach a magnitude/factor
+  anywhere — model coefficient OR post-proc calibration), (b) **sign heterogeneity** (fixed by a signed
+  LLM effect, 77% correct), (c) **redundancy** (demand-history lags already capture ongoing-event
+  shocks). News would only help at the sudden onset of an unanticipated shock before the lags react —
+  rare + limited by coarse timing/availability gate. Not just observed — explained.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 

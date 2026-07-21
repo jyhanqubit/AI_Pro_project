@@ -208,11 +208,39 @@ demand history** for ongoing events. News could only add value at the *sudden on
 unanticipated shock (before the lags catch up) — rare, and blunted here by coarse timing + the
 availability gate.
 
+### Post-processing correction with per-mechanism factors — also negative (`llm_postprocess_value.py`)
+
+Practitioners often correct a forecast *after* the model rather than as an input. So instead of a
+feature, apply `pred_corrected = pred_base + Σ_channel α_channel · signal_channel`, with a **separate
+factor per mechanism** (n-dimensional context: weather / gather / transit / safety) **calibrated on
+the train residuals and applied out-of-sample to test**.
+
+| calibrated factor (fit on train) | value |
+|---|---|
+| α[weather] | +20.3 |
+| α[gather] | **−470.6** |
+| α[transit] | **−477.8** |
+| α[safety] | +155.9 |
+
+| | WAPE | verdict |
+|---|---|---|
+| A1 base | 0.0883 | — |
+| A1 post-processed | 0.0899 | `MEANINGFUL_NEGATIVE` −21.36%, CI [−102.6, −4.95] |
+
+**Also negative — and the fitted factors show why.** The magnitudes are **absurd** (−470, −477) and
+`gather`/`transit` have the **wrong sign** (a positive surge signal multiplied into a huge *negative*
+correction). That is textbook **overfitting the calibration**: least-squares fit large coefficients
+to the handful of dev event-cells (746, dominated by a few events) that fit dev noise and fail on
+test's *different* events. The sparsity problem simply moved from "the tree can't learn a coefficient"
+to "the post-processing calibration can't either". A fixed (unfitted) factor equals the signed-feature
+arm — neutral. Either way, ~19 events cannot pin down a stable event→demand factor.
+
 ### Overall V2-03 finding (consistent across every attempt)
 
-Five attempts — improve extraction, add graph propagation, reconstruct into permit schema, reweight
-the permit feed by news importance, and a **signed** LLM demand direction — are **all
-neutral-to-negative.** The story tightened at each step:
+Six attempts — improve extraction, add graph propagation, reconstruct into permit schema, reweight
+the permit feed by news importance, a **signed** LLM demand direction, and a **post-processing**
+correction with per-mechanism factors — are **all neutral-to-negative.** The story tightened at each
+step:
 
 1. Raw / improved news feature → neutral-to-negative (coarse, sparse).
 2. Permit-schema reconstruction → negative (sparse + confident = confident noise).
@@ -220,6 +248,8 @@ neutral-to-negative.** The story tightened at each step:
 4. **Signed** demand direction → the LLM's sign is **77% correct**, harm removed, but **still no
    improvement** — because the autoregressive demand history already encodes the effect of an ongoing
    event; the news signal is **redundant** with the lags.
+5. **Post-processing** correction (per-mechanism factors, calibrated on train) → negative; the fitted
+   factors are absurd/wrong-signed (−470) — the sparse calibration **overfits** and fails on test.
 
 **Final honest conclusion:** LLM-from-news does not improve demand forecasting on this data, and we
 now understand *why* at three levels — (a) **sparsity** (~19 events can't teach a magnitude), (b)
