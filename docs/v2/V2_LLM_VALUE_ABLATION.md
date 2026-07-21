@@ -436,6 +436,9 @@ loss is finite-sample representation efficiency. The practical lesson is a featu
 the aggregate count is the better *encoding*, and finer LLM structure only pays off with enough
 per-type event density (or a finer spatial grain) to estimate each slice — which this data lacks.
 
+> **Synthesis:** the "where and why LLM features matter" summary is in
+> [`V2_WHY_LLM_FEATURES.md`](V2_WHY_LLM_FEATURES.md).
+
 ### Insight — where the LLM adds value, and how to attribute the WAPE lift
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
