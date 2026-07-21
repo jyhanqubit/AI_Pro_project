@@ -147,7 +147,7 @@ def _paired(y_test, pa, pb, blocks) -> dict[str, Any]:
 
 
 def run(data_dir: str, events_path: str, news_path: str, test_from: str,
-        target: str = PRIMARY_TARGET) -> dict[str, Any]:
+        target: str = PRIMARY_TARGET, provider: str = "mock", citywide: bool = True) -> dict[str, Any]:
     test_start = datetime.fromisoformat(test_from).replace(tzinfo=_NY)
     paths = sorted(Path(data_dir).glob("*.zip"))
     if not paths:
@@ -158,7 +158,7 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         raise SystemExit("no feature rows")
 
     permitted = build_event_index(Path(events_path))
-    news_idx, news_diag = build_news_llm_index(Path(news_path))
+    news_idx, news_diag = build_news_llm_index(Path(news_path), provider=provider, citywide=citywide)
     print(f"news events={news_diag['events']} attributed={news_diag['attributed_events']} "
           f"(articles {news_diag['attributed_articles']})")
 
@@ -229,6 +229,7 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         "freshness": datetime.now(UTC).isoformat(),
         "grain": "borough-hour (nearest-centroid; approximate)",
         "target": target,
+        "extraction_provider": provider,
         "data_source": data_dir,
         "test_from": test_from,
         "n_train_rows": int(len(dev_pos)),
@@ -261,9 +262,14 @@ def main(argv: list[str] | None = None) -> int:
     # Default test = May: the June window has 0 attributable news borough-hours, so testing on
     # June cannot fairly evaluate the LLM-news arm. May carries real news signal (216 test rows).
     ap.add_argument("--test-from", default="2026-05-01")
+    ap.add_argument("--provider", choices=("mock", "anthropic", "openai"), default="mock",
+                    help="event extractor: mock (offline keyword) or a real LLM (needs API key)")
+    ap.add_argument("--no-citywide", action="store_true",
+                    help="disable the citywide news-attribution rule (borough-name match only)")
     ns = ap.parse_args(argv)
 
-    res = run(ns.data_dir, ns.events, ns.news, ns.test_from)
+    res = run(ns.data_dir, ns.events, ns.news, ns.test_from,
+              provider=ns.provider, citywide=not ns.no_citywide)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "incremental_value_borough.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 
