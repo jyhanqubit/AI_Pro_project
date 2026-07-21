@@ -78,3 +78,31 @@ GraphRAG here (the graph edge was built from that same borough geocoding). A gen
 comparison would need method-independent ground truth (NYC's official `event_borough` tags, which
 use a different event-id scheme that doesn't join to the graph's hashed ids) or a text-retrieval
 task where plain RAG is competitive. Recorded in the artifact's `caveats`.
+
+## Neutral counterpart — text lookup (`neutral_retrieval_benchmark.json`)
+
+The structural benchmark above is honest but *asymmetric*: because the gold answer **is** the
+graph's edges, the graph cannot lose. To close the loop we also ran the mirror-image test — one
+where plain retrieval is genuinely competitive — so the pair is unrigged in **both** directions.
+
+- **Task**: text lookup — given a hand-written paraphrase (e.g. *"the fatal fall at a Madison
+  Square Garden show"*), name the event it refers to. 12 queries (`copilot_lookup_queries.jsonl`).
+- **Method-independent gold**: each query's gold event id was picked from the event's own content,
+  **not** from any retriever's mechanism — neither method gets a home-field advantage.
+- **Two real methods, same gold**: `flat_text` ranks events by Jaccard token overlap (query vs
+  event title); `graph_boosted` adds a small `0.05 × normalized graph degree` term — the common
+  "prefer well-connected nodes" GraphRAG heuristic.
+
+| Method | top-1 accuracy | MRR |
+|---|---|---|
+| **flat_text** (token overlap) | **0.833** | **0.838** |
+| graph_boosted (+ degree) | 0.750 | 0.776 |
+
+**graph − flat (top1) = −0.083.** On a text-native task the graph structure gives **no lift** —
+the degree boost actually *distracts* (a frequently-connected event isn't the one a description
+names). This is the honest counterpart to the structural result:
+
+> **The graph helps relational / per-zone queries, not text lookup. Match the tool to the query
+> type.** Neither benchmark alone is a fair "GraphRAG vs RAG" verdict; together they bound it —
+> graph wins where the answer is a graph edge, plain text wins (slightly) where the answer is in
+> the text. `claim_status: offline_benchmark`.

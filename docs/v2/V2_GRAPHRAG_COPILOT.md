@@ -46,6 +46,21 @@ against a fixed offline question set.
 > Read it as "the Event→Zone edge is what makes per-zone queries answerable at all." A neutral test
 > needs method-independent labels or a text-retrieval task (recorded in the artifact `caveats`).
 > Artifact: `reports/v2/copilot/graphrag_benchmark.json`.
+>
+> **Neutral counterpart — text lookup (`ml/copilot/neutral_retrieval.py`).** The structural test
+> can't lose for the graph, so we ran its mirror: a text-native lookup (paraphrase → which event?)
+> with **method-independent gold** (`copilot_lookup_queries.jsonl`, 12 Q) where plain retrieval is
+> genuinely competitive. `flat_text` (Jaccard token overlap) vs `graph_boosted` (+0.05×degree):
+>
+> | method | top-1 | MRR |
+> |---|---|---|
+> | **flat_text** | **0.833** | **0.838** |
+> | graph_boosted | 0.750 | 0.776 |
+>
+> **graph − flat = −0.083:** on text the graph gives **no lift** (degree boost distracts). Together
+> the two benchmarks bound the honest verdict — **graph wins relational/per-zone queries, plain text
+> wins text lookup; match the tool to the query type.** Artifact:
+> `reports/v2/copilot/neutral_retrieval_benchmark.json`.
 
 ## Architecture boundary
 

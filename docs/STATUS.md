@@ -29,6 +29,12 @@ lift and whether that lift converts to profit net of LLM cost.
   high BY CONSTRUCTION — not a fair GraphRAG-vs-RAG bakeoff; a borough-tag filter would tie. Read
   as 'the Event→Zone edge is what makes per-zone queries answerable'. Artifact + caveats:
   `reports/v2/copilot/graphrag_benchmark.json`.
+  **Neutral counterpart** (`ml/copilot/neutral_retrieval.py`): because the structural task can't let
+  the graph lose, we also ran the mirror — a text lookup (paraphrase→event, 12 Q with
+  method-independent gold). `flat_text` **0.833** top1 beats `graph_boosted` **0.750** (graph −0.083,
+  no lift; degree boost distracts). Together the pair bounds the honest verdict both ways: graph wins
+  relational/per-zone queries, plain text wins text lookup — match the tool to the query type.
+  Artifact: `reports/v2/copilot/neutral_retrieval_benchmark.json`.
 - **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
   (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety
   from `config/pricing_v2.py`. 576 seeded zone-hours: **0 guardrail violations**, safety zones

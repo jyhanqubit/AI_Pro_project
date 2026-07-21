@@ -111,3 +111,26 @@ def test_graphrag_benchmark_relevance_gate():
     # Honest: this task is graph-structural (gold = graph edges), so graph is high by construction.
     assert d["caveats"]  # circularity caveat is recorded
     assert d["graph_scale"]["events"] > 100  # real dense graph, not the 2-event demo
+
+
+def test_neutral_retrieval_graph_gives_no_lift_on_text_lookup():
+    # The fair counterpart to the structural benchmark: on a text-native lookup with
+    # method-independent gold, the graph must NOT beat plain text retrieval. If it did, the
+    # comparison would be rigged the other way. Honest expectation: graph <= flat (no lift).
+    import json
+    from pathlib import Path
+
+    from ml.copilot.neutral_retrieval import GRAPH, main
+
+    if not GRAPH.exists():
+        pytest.skip("event graph snapshot missing — run `make seed-graph` first")
+    assert main([]) == 0
+    d = json.loads(Path("reports/v2/copilot/neutral_retrieval_benchmark.json").read_text())
+    flat = d["results"]["flat_text"]
+    graph = d["results"]["graph_boosted"]
+    # Plain text retrieval is genuinely competitive on a text task (not a strawman floor).
+    assert flat["top1_accuracy"] > 0.5
+    # The graph degree boost gives NO lift here — this is the honest, unrigged finding.
+    assert graph["top1_accuracy"] <= flat["top1_accuracy"]
+    assert d["graph_minus_flat_top1"] <= 0.0
+    assert d["claim_status"] == "offline_benchmark"
