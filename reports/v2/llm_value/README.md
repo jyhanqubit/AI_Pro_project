@@ -98,6 +98,40 @@ The negative is therefore **not** a mock artifact: on this data, LLM-from-news h
 net business value** over the structured feed. Honest, and now free of the extraction-quality
 confound.
 
+### Why the LLM-news features hurt, in plain terms
+
+It is tempting to read the negative result as "the LLM extracted badly", but that is not what
+happened — the extraction was clean and correct. The problem is that a *news-derived* event
+feature is simply a much weaker signal than the official permitted-event schedule it is competing
+with, and here is what that looks like concretely (May 2026; reproduce with
+`python -m scripts.llm_news_coverage_diag 2026-05`):
+
+The permitted feed lights up **2,711** borough-hour cells across the test month — roughly nine in
+ten of the hours the model is scored on. The LLM-news features light up only **384**, about one in
+eight. So for the overwhelming majority of the forecast, the news columns are simply zero: they
+have nothing to say.
+
+Worse, of those 384 news cells, **319 (83%) fall in hours the permitted feed already covers**. The
+model has, in effect, already been told about those hours by A1, with far better precision. Once
+you subtract the overlap, the news layer contributes genuinely new information on just **65
+cells** — about two percent of the test window.
+
+And even that thin sliver is blunt. The permitted feed knows the exact borough and the exact
+start and end hour of each event. The news layer knows neither: a three-hour concert gets smeared
+flat across a 24-hour window from when the article was published, and a citywide story — a
+storm, a strike, a protest — is attributed to all five boroughs at once. In May, **48 of the 168
+news hours hit all five boroughs identically**, which means for those hours the feature is the
+same number everywhere and tells a demand model that varies *by borough* nothing useful at all.
+
+Put together: the news features are sparse (they are zero 87% of the time), redundant (83% of
+what little they do say is already in the permitted feed), temporally coarse (24-hour smears
+instead of exact windows), and spatially coarse (citywide flat values instead of per-borough).
+That is not information the model can use to sharpen a borough-hour forecast — it is four extra
+mostly-empty columns for a gradient-boosted model to latch onto in training and then fail to
+generalise from. The result is a small but consistent increase in test error. The honest
+conclusion is not "the LLM is bad" but "in a city with a dense, precise official event schedule,
+news-derived events are the inferior source, and stacking them on top adds noise, not lift."
+
 ### Caveat on the borough event effect
 
 The permitted-event effect is real but **small** (~0.002 WAPE) and sensitive to the sample: on a
