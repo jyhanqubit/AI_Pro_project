@@ -120,13 +120,18 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   `pytest tests/unit/test_v2_pricing.py` → 7 passed.
 
 ## V2-06 — GraphRAG Decision Copilot Benchmark
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Copilot that answers operator questions via GraphRAG + typed tools; benchmark its
   correctness and retrieval relevance.
 - **Acceptance:** Numeric answers rejected without a typed tool result; correctness and relevance
   scored against a fixed offline question set; every answer carries provenance.
 - **Artifact:** `reports/v2/copilot/correctness_benchmark.json` + report md.
 - **Command:** `make v2-copilot`. See `V2_GRAPHRAG_COPILOT.md`.
+- **Delivered:** typed tools (`ml/copilot/tools.py`) + router/Copilot (`copilot.py`) + benchmark
+  (`benchmark.py`). 15-Q fixed set: routing 1.0, correctness 1.0, refusal 1.0, grounded 1.0,
+  **ungrounded_numeric=0, hallucinated=0 (hard gates pass)**. Numbers come only from typed tools
+  reading committed V2 artifacts; router never produces numbers -> grounding guaranteed by design.
+  Tests: `pytest tests/unit/test_v2_copilot.py` -> 7 passed.
 
 ## V2-07 — Operator Cockpit & Rider Preview
 - **Status:** PLANNED
