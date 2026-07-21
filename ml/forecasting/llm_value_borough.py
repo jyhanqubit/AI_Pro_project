@@ -45,6 +45,7 @@ from ml.forecasting.borough_event_lift import (
     stream_borough_cells,
 )
 from ml.forecasting.llm_value import _llm_cost
+from ml.forecasting.llm_feature_value import llm_feature_value
 from ml.forecasting.metrics import mae, wape
 from ml.forecasting.predictive_lift import run_predictive_lift
 from ml.forecasting.splits import holdout_by_time
@@ -260,6 +261,11 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
     lift_permitted = _paired(y_test, preds["A0_demand_calendar"], preds["A1_plus_permitted"], blocks)
     lift_llm = _paired(y_test, preds["A1_plus_permitted"], preds["A2_plus_llm_news"], blocks)
 
+    # LLM Feature Value metric: relative WAPE reduction on the LLM-active subset + CI-backed decision.
+    llm_active_mask = df.loc[test_pos, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0
+    lfv = llm_feature_value(y_test, preds["A1_plus_permitted"], preds["A2_plus_llm_news"],
+                            llm_active_mask, blocks)
+
     news_test_rows = int((df.loc[test_pos, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0).sum())
     perm_test_rows = int((df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0).sum())
     cost = _llm_cost(Path(news_path))
@@ -289,6 +295,7 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         "arms": arms,
         "structured_event_lift_A1_minus_A0": lift_permitted,
         "llm_news_increment_A2_minus_A1": lift_llm,
+        "llm_feature_value_metric": lfv,
         "llm_arm_identical_to_A1": llm_identical,
         "llm_cost": cost,
         "profit_lift_llm_over_permitted_simulated": profit_lift_llm,
@@ -335,6 +342,10 @@ def main(argv: list[str] | None = None) -> int:
     print(f"A2-A1 LLM increment  : {ll['verdict']}  mean_gain={ll['mean_gain']:.4f} CI95={ll['ci_95']}")
     print(f"HEADLINE (LLM increment): {res['headline_verdict_llm_increment']}  "
           f"net LLM value(sim)={res['net_llm_value_simulated']}")
+    lfv = res["llm_feature_value_metric"]
+    print(f"LLM FEATURE VALUE metric : {lfv['decision']}  "
+          f"active_skill={lfv['llm_active_skill_pct']}%  CI95={lfv['active_error_gain_ci95']}  "
+          f"(n_active={lfv['n_llm_active_rows']})")
     print(f"report -> {OUT_DIR}/incremental_value_borough.json")
     return 0
 

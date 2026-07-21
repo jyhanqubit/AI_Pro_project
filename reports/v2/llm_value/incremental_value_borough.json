@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-03b_20260721T031041Z",
+  "run_id": "run_v2-03b_20260721T095833Z",
   "artifact_id": "reports/v2/llm_value/incremental_value_borough.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-21T03:10:41.420652+00:00",
+  "freshness": "2026-07-21T09:58:33.898099+00:00",
   "grain": "borough-hour (nearest-centroid; approximate)",
   "target": "departures",
   "extraction_provider": "claude-opus-4-8-insession",
@@ -63,6 +63,28 @@
       -1.562489
     ],
     "coverage_ok": true
+  },
+  "llm_feature_value_metric": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0552,
+    "llm_active_skill_pct": -5.52,
+    "global_skill_score": -0.0253,
+    "significant": true,
+    "active_error_gain_mean": -10.118748,
+    "active_error_gain_ci95": [
+      -17.512482,
+      -0.976072
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 336,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 5.52% on active zone-hours (CI excludes 0)."
   },
   "llm_arm_identical_to_A1": false,
   "llm_cost": {

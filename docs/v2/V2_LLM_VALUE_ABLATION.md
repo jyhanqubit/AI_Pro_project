@@ -34,6 +34,45 @@ its own cost? This requires cleanly separating three feature arms and reporting 
 > news events are sparse, temporally coarse, and redundant with the official schedule. The negative
 > is not an extraction-quality artifact.
 
+## The decision metric — LLM Feature Value (LFV)
+
+The paragraphs above report the A2−A1 comparison as prose + a CI. V2 also formalizes the question
+*"did the LLM features meaningfully improve forecast accuracy?"* into **one decision-grade metric**
+(`ml/forecasting/llm_feature_value.py`, emitted in the artifact as `llm_feature_value_metric`):
+
+```text
+skill = (WAPE_without_LLM − WAPE_with_LLM) / WAPE_without_LLM      # + = error reduced
+```
+
+- **Measured on the LLM-active subset**, not globally. LLM features are 0 on almost every zone-hour,
+  so a global skill is diluted toward 0 and hides the effect. The subset is defined by the feature
+  being *on* (never by the outcome), so it cannot cherry-pick favorable rows — this is the CLAUDE.md
+  "event-window WAPE" principle applied to the LLM-active window.
+- **Decision needs BOTH effect size and significance:** `MEANINGFUL_*` only when `|skill| ≥ 1%`
+  (pre-declared `rel_threshold`) **and** the day-block bootstrap CI on the paired per-row abs-error
+  gain excludes 0. Otherwise `NO_MEANINGFUL_EFFECT`; `< 100` active zone-hours ⇒ `INSUFFICIENT_SUPPORT`
+  (`blocked_data`, no verdict faked). Same leakage-safe block bootstrap as the A2−A1 test.
+
+| decision | meaning |
+|---|---|
+| `MEANINGFUL_POSITIVE` | LLM features cut error on active zone-hours, CI-significant |
+| `MEANINGFUL_NEGATIVE` | LLM features raised error on active zone-hours, CI-significant |
+| `NO_MEANINGFUL_EFFECT` | effect below threshold or CI covers 0 |
+| `INSUFFICIENT_SUPPORT` | too few active zone-hours to decide |
+
+> **Measured result (test May, Claude-extracted events, Jan–Apr train / 10,655 rows):**
+> **`MEANINGFUL_NEGATIVE`** — on the **336** LLM-active zone-hours the LLM features **raise** WAPE by
+> **5.52%** (skill −0.0552), bootstrap CI on the paired abs-error gain **[−17.51, −0.98] excludes 0**.
+> Note the *global* A2−A1 mean gain (−3.53) is significant too, but the metric's active-subset focus
+> makes the verdict sharper and undiluted (global skill only −2.5%). **So the quantified answer is:
+> adding the LLM news features does NOT improve demand-forecast accuracy — it measurably degrades it
+> where the features fire.** Consistent with the negative net LLM value (−$17,789). Artifact field:
+> `incremental_value_borough.json#llm_feature_value_metric`.
+
+The core is a pure function, unit-tested on synthetic positive/negative/null/insufficient cases
+(`tests/unit/test_llm_feature_value.py`), so the decision logic is verifiable without the trip
+pipeline.
+
 ## Three arms (identical cutoffs/splits)
 
 ```text

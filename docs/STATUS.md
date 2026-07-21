@@ -100,6 +100,14 @@ lift and whether that lift converts to profit net of LLM cost.
   (0.0908→0.0883); **A2−A1 still negative_lift** (0.0883→0.0905, CI [−5.32,−1.56], net LLM value
   −$17,789). LLM-from-news is net-negative **even with a real high-quality extraction** (news
   sparse/coarse/redundant vs the structured feed) — not a mock artifact. 6 tests.
+- **V2-03 LLM Feature Value metric** (`ml/forecasting/llm_feature_value.py`): formalizes "did the LLM
+  features meaningfully improve accuracy?" into one decision. Score = relative WAPE reduction on the
+  **LLM-active subset** (not diluted globally) + day-block bootstrap CI; `MEANINGFUL_*` only when
+  |skill|≥1% AND CI excludes 0, else `NO_MEANINGFUL_EFFECT`/`INSUFFICIENT_SUPPORT` (no faked verdict).
+  Measured (test May, Jan–Apr train 10,655 rows, 336 active): **`MEANINGFUL_NEGATIVE`, active skill
+  −5.52%, CI [−17.51,−0.98]** → LLM features measurably degrade accuracy where they fire. Emitted in
+  the artifact as `llm_feature_value_metric`; pure fn with 6 synthetic unit tests
+  (`tests/unit/test_llm_feature_value.py`).
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
