@@ -53,7 +53,7 @@ Rules:
 | LLM-from-news incremental value | V2-03 | `reports/v2/llm_value/incremental_value_borough.json` | **measured (negative)** | Real Claude extraction (23 clean NYC events, 336 test rows), test May: A2−A1 WAPE 0.0883→0.0905, CI [−5.32,−1.56], **net LLM value −$17,789**. Net-negative even with high-quality LLM extraction — news redundant vs structured feed, not a mock artifact |
 | LLM incremental cost | V2-03 | `reports/v2/llm_value/incremental_value.json` | **measured** (mock $0) + **assumption** (est real) | actual $0 (mock); est real $0.0061/371 articles; net LLM value −$0.01 |
 | Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | **simulated** ($ assumption-conditioned; units measured) | Promoted forecast nets **+$103,271** vs seasonal-naive over 114,079 zone-hours; sign positive across all 9 cost settings; regret vs Oracle $218,697 |
-| MPC vs No-Action/Greedy/MILP | V2-04 | `reports/v2/mpc/policy_comparison.json` | pending | — |
+| MPC vs No-Action/Greedy/MILP | V2-04 | `reports/v2/mpc/policy_comparison.json` | **simulated** | Ledger cost (lower better): NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719. MPC best feasible, regret 21.6 (~3% of Oracle); all feasible |
 | Pricing sensitivity + guardrail audit | V2-05 | `reports/v2/pricing/` | pending | — |
 | Copilot correctness + relevance | V2-06 | `reports/v2/copilot/correctness_benchmark.json` | pending | — |
 | All UI metrics resolve to artifacts | V2-07 | UI ↔ `reports/v2/**` | pending | — |

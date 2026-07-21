@@ -12,7 +12,14 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**, V2-03 **PASSED (honest null)**; V2-04 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**, V2-03 **PASSED (measured negative)**, V2-04 **PASSED**; V2-05 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **V2-04 done:** multi-period MPC `optimization/mpc.py` + `mpc_run.py` (`make v2-mpc`). Four
+  mandatory policies + Oracle on a seeded commute scenario, V2-02 ledger objective. Ledger cost
+  (lower better): NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719. **MPC is the
+  best feasible policy** (regret 21.6 vs Oracle, ~3%), halves shortage+overflow vs single-period;
+  Greedy net-harmful (reposition > imbalance relieved). MPC forecast-only (no leakage); Oracle
+  offline bound (regret ≥ 0); all feasibility-checked. Dollars `simulated`. 7 tests. Artifact:
+  `reports/v2/mpc/policy_comparison.json`.
 - **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
   `ResultEnvelope`, honesty rules enforced in code, 22 tests green); `make v2-audit` gate
   (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.

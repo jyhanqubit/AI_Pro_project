@@ -90,13 +90,19 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   higher-frequency events would be a stronger test (not available in this news corpus).
 
 ## V2-04 — Multi-period MPC Decisioning
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Compare the four mandatory policies over a multi-period horizon on the ledger objective.
 - **Acceptance:** `No Action`, `Greedy`, `Single-period MILP`, `MPC` all run on the same
   instances; every plan feasibility-checked; infeasibility reported explicitly; MPC uses the
   forecast horizon, not future truth.
-- **Artifact:** `reports/v2/mpc/policy_comparison.json` + report md.
+- **Artifact:** `reports/v2/mpc/policy_comparison.json` + `README.md`.
 - **Command:** `make v2-mpc`. See `V2_MPC_DECISIONING.md`.
+- **Delivered:** `optimization/mpc.py` (receding-horizon simulator reusing greedy/MILP solvers) +
+  `mpc_run.py`. Result (8 zones, 72h, seeded scenario, ledger cost — lower better): No Action
+  1126.7 / Greedy 1154.7 / MILP 1086.9 / **MPC 740.3** / Oracle 718.7. **MPC best feasible**
+  (regret 21.6 vs Oracle, ~3%); halves shortage+overflow vs single-period; Greedy net-harmful
+  here. MPC uses forecast only (no leakage); Oracle = offline bound (regret ≥ 0); all feasible.
+  Dollars `simulated`. Tests: `pytest tests/unit/test_v2_mpc.py` → 7 passed.
 
 ## V2-05 — Dynamic Pricing & Experiment Dry-run
 - **Status:** PLANNED

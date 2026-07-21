@@ -3,6 +3,16 @@
 Compares the four **mandatory** rebalancing policies on the ledger objective over a multi-period
 horizon. Extends `../OPTIMIZATION.md`.
 
+> **Status: implemented + run (V2-04).** Simulator `optimization/mpc.py`, runner
+> `optimization/mpc_run.py` (`make v2-mpc`). Receding-horizon loop reusing the tested greedy/MILP
+> per-period solvers. Result (8 zones, 72h, seeded commute scenario, ledger objective — lower cost
+> better): No Action 1126.7 · Greedy 1154.7 · single-period MILP 1086.9 · **MPC 740.3** · Oracle
+> 718.7. **MPC is the best feasible policy** (regret vs Oracle just 21.6 — within 3%), roughly
+> halving shortage+overflow vs single-period MILP; Greedy is net-harmful here (reposition spend >
+> imbalance relieved). All feasibility-checked (0 infeasible); Oracle bounds all (regret ≥ 0).
+> Dollar figures are `simulated` (policy comparison over a documented scenario). 7 tests. Full
+> result: `reports/v2/mpc/`.
+
 ## Mandatory policies
 
 ```text
