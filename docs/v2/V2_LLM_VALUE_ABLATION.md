@@ -407,6 +407,35 @@ need a finer spatial grain (per-H3-zone, where a parade route localizes) — blo
 permits are borough-tagged (no coordinates). This is exhaustive for the demand side; further demand
 experiments would be fishing.
 
+### "How can more information reduce accuracy?" — train vs test diagnostic (`llm_overfit_diagnostic.py`)
+
+The intuition is correct: for an ideal learner, more features can never hurt. The train-vs-test
+breakdown shows what actually happens (and corrected our first hypothesis — it is **not** classic
+overfitting):
+
+| arm | #feat | TRAIN WAPE | TEST WAPE |
+|---|---|---|---|
+| A0 demand+calendar | 32 | 0.0631 | 0.0908 |
+| A1 crude aggregate count | 36 | **0.0485** | **0.0883** |
+| A1 typed (6 buckets) | 40 | 0.0533 | 0.0899 |
+
+Two readings:
+1. **More information genuinely helps** — A1 crude beats A0 on **both** train (0.0485<0.0631) and test
+   (0.0883<0.0908). Adding the permit signal improves fit *and* generalization, exactly as intuition
+   says.
+2. **Typed is worse than crude on both train AND test** — so it is not overfitting (that would be
+   better train, worse test). It is **representation dilution**: the six per-type buckets carry the
+   *same* information as the aggregate count (their sum ≈ the count), but each bucket is ≈0 in most
+   active cells. A capacity-limited greedy boosted tree (fixed leaves/iterations, early stopping)
+   exploits **one dense high-signal feature** better than six sparse ones — splits on sparse columns
+   are low-value and waste the budget, so even the training fit degrades.
+
+**So "more information" never reduced accuracy — the *same* information in a sparser encoding did.**
+An infinite-data / infinite-capacity model would tie (the typed set contains the count as a sum); the
+loss is finite-sample representation efficiency. The practical lesson is a feature-engineering one:
+the aggregate count is the better *encoding*, and finer LLM structure only pays off with enough
+per-type event density (or a finer spatial grain) to estimate each slice — which this data lacks.
+
 ### Insight — where the LLM adds value, and how to attribute the WAPE lift
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
