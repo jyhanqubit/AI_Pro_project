@@ -271,7 +271,7 @@ step:
 
 6. **Horizon sweep** → event value does not grow with lead time; the null is not a nowcasting artifact.
 
-**Final honest conclusion:** LLM-from-news does not improve demand forecasting on this data, and we
+**Conclusion:** LLM-from-news does not improve demand forecasting on this data, and we
 now understand *why* at three levels — (a) **sparsity** (~19 events can't teach a magnitude/factor,
 whether a model coefficient or a post-processing calibration), (b) **sign heterogeneity** (fixed by a
 signed LLM effect, which is 77% right), and (c) **redundancy** with the autoregressive demand history
@@ -369,7 +369,7 @@ This closes the loop with the ablations: violate the conditions (real news) → 
 *demand* contribution is to have the LLM structure a genuinely forward-looking source (event
 calendars / schedules / permits) into the A1 slot — not to squeeze it from retrospective news.
 
-### Where the LLM's value actually is (this is not a dead project)
+### Insight — where the LLM adds value, and how to attribute the WAPE lift
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
 LLM/event contributions are **measured positives** in V2:
@@ -384,10 +384,25 @@ LLM/event contributions are **measured positives** in V2:
    This is where the addendum always placed the LLM ("event structuring, tool routing, explanation;
    the LLM does not directly compute demand").
 
-So the honest V2 verdict is not "the LLM is useless" — it is: **the LLM's verified value is in
+So the V2 verdict is not "the LLM is useless" — it is: **the LLM's verified value is in
 structuring/routing/explanation and in powering the event layer, not in extracting extra demand
-accuracy from sparse retrospective news.** That is a legitimate, portfolio-defensible net-value
-finding — exactly the kind of honest verification V2 exists to produce.
+accuracy from sparse retrospective news.**
+
+**Attribution guardrail (for the portfolio).** The measured WAPE lift belongs to the **structured
+event feed**, not to the LLM. The repo already states this correctly — the headline lift
+(`borough_event_lift.json`, WAPE −1.65% / V2 A1−A0 +2.69%) is labeled *event-feature* lift and comes
+from the NYC permit feed (no LLM), and the B0–B4 ablation shows **B3 (+LLM event features) = B1** (no
+lift). So any claim of the form "LLM features improved WAPE" is **not supported** and should read:
+
+> *Structured event features improved WAPE (measured); LLM-from-news added no incremental forecast
+> lift (verified across 7 approaches). The LLM's measured value is in GraphRAG grounding / routing /
+> explanation (answer correctness 40%→100%, hallucinations 10/10→0), not in demand accuracy.*
+
+The remaining unrealized demand niche for the LLM is a source that is **unstructured *and*
+forward-looking** — event previews / press releases / venue announcements / community notices — which
+the LLM would structure into permit-quality records for the A1 slot. Retrospective GDELT news is not
+that source (2/23 forward-looking), so this niche is recorded as untested (`blocked_data`), not
+claimed.
 
 ## Three arms (identical cutoffs/splits)
 

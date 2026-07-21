@@ -15,6 +15,15 @@ read as a measured claim until its owning phase runs.
   fell outside the June evaluation window, so LLM event lift measured 0. V2-03 depends on
   sufficient real event overlap; if collection stays blocked, the LLM-vs-rule result may remain
   `blocked_data` and must be reported as such, not faked.
+- **WAPE-lift attribution (do not overclaim the LLM):** the measured forecast lift belongs to the
+  **structured event feed** (NYC permits), not the LLM. V2-03 verified across seven approaches that
+  LLM-from-news adds **no incremental WAPE lift** (root cause: news fails the four conditions —
+  dense, precise-time, precise-location, forward-looking; only 2/23 events are forward-looking). Do
+  not claim "LLM features improved WAPE." Correct wording: *structured event features improved WAPE
+  (measured); the LLM's measured value is in GraphRAG grounding / routing / explanation, not demand
+  accuracy.* An unstructured-and-forward-looking source (event previews / announcements) is the
+  LLM's unrealized demand niche — untested here (`blocked_data`), not claimed. See
+  `V2_LLM_VALUE_ABLATION.md`.
 - **External collection (`blocked_external`):** GDELT bulk collection was rate-limited (429) from
   the shared sandbox IP. Live/bulk news collection may stay blocked here; runs on a personal IP.
 - **No real users (`simulated`):** recommendation, pricing, and experiment outcomes are
