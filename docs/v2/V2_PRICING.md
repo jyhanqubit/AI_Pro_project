@@ -3,6 +3,15 @@
 Bounded incentive/pricing policy with hard guardrails, plus an **offline** experiment dry-run.
 No real users exist, so pricing outcomes are `simulated` — never a causal business result.
 
+> **Status: implemented + run (V2-05).** Policy `ml/pricing/pricing_v2_eval.py`, runner
+> `ml/pricing/pricing_v2_run.py` (`make v2-pricing`). Demand response uses the versioned
+> assumption-set elasticity; objective is the V2-02 ledger; bounds/safety rules from
+> `config/pricing_v2.py`. Result (576 seeded zone-hours): **0 guardrail violations**, safety zones
+> kept at base fare, budget respected (0/40), and a **negative control** confirms the audit catches
+> a planted out-of-bounds surge. Sensitivity grid over elasticity × surge-bound, and an **A/A
+> switchback dry-run** with effect ≈ 0 / CI covering 0 (design validity, not a treatment effect).
+> All `simulated`. 7 tests. Artifacts: `reports/v2/pricing/{guardrail_audit,sensitivity}.json`.
+
 ## Policy
 
 - Prices/incentives are bounded: `price ∈ [p_min, p_max]`, incentive `∈ [0, i_max]`.

@@ -54,7 +54,7 @@ Rules:
 | LLM incremental cost | V2-03 | `reports/v2/llm_value/incremental_value.json` | **measured** (mock $0) + **assumption** (est real) | actual $0 (mock); est real $0.0061/371 articles; net LLM value −$0.01 |
 | Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | **simulated** ($ assumption-conditioned; units measured) | Promoted forecast nets **+$103,271** vs seasonal-naive over 114,079 zone-hours; sign positive across all 9 cost settings; regret vs Oracle $218,697 |
 | MPC vs No-Action/Greedy/MILP | V2-04 | `reports/v2/mpc/policy_comparison.json` | **simulated** | Ledger cost (lower better): NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719. MPC best feasible, regret 21.6 (~3% of Oracle); all feasible |
-| Pricing sensitivity + guardrail audit | V2-05 | `reports/v2/pricing/` | pending | — |
+| Pricing sensitivity + guardrail audit | V2-05 | `reports/v2/pricing/{guardrail_audit,sensitivity}.json` | **simulated** | 576 zone-hours: 0 guardrail violations, safety base-fare, budget respected, negative control passes; A/A CI covers 0 (design valid). Shadow quotes only |
 | Copilot correctness + relevance | V2-06 | `reports/v2/copilot/correctness_benchmark.json` | pending | — |
 | All UI metrics resolve to artifacts | V2-07 | UI ↔ `reports/v2/**` | pending | — |
 

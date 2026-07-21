@@ -105,13 +105,19 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   Dollars `simulated`. Tests: `pytest tests/unit/test_v2_mpc.py` → 7 passed.
 
 ## V2-05 — Dynamic Pricing & Experiment Dry-run
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (2026-07-20)
 - **Goal:** Bounded incentive/pricing policy with guardrails + an offline experiment dry-run.
 - **Acceptance:** Price bounds enforced; elasticity from the versioned assumption set; guardrail
   audit (no price outside bounds, no negative-margin action); experiment labeled `simulated`
   (no real users → no causal lift claim).
 - **Artifact:** `reports/v2/pricing/sensitivity.json` + `reports/v2/pricing/guardrail_audit.json`.
 - **Command:** `make v2-pricing`. See `V2_PRICING.md`.
+- **Delivered:** `ml/pricing/pricing_v2_eval.py` (bounded policy + guardrail audit, elasticity from
+  assumptions, ledger objective) + `pricing_v2_run.py`. 576 seeded zone-hours: **0 guardrail
+  violations**, safety zones base-fare, budget 0/40 respected, **negative control** catches a
+  planted out-of-bounds surge; sensitivity grid (elasticity × surge-bound); **A/A switchback**
+  effect ≈ 0, CI covers 0 (design valid). All `simulated`. Tests:
+  `pytest tests/unit/test_v2_pricing.py` → 7 passed.
 
 ## V2-06 — GraphRAG Decision Copilot Benchmark
 - **Status:** PLANNED

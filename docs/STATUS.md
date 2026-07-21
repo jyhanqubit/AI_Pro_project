@@ -12,7 +12,14 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00 **PASSED**, V2-01 **PASSED**, V2-02 **PASSED**, V2-03 **PASSED (measured negative)**, V2-04 **PASSED**; V2-05 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00…V2-05 **PASSED**; V2-06 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
+  (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety
+  from `config/pricing_v2.py`. 576 seeded zone-hours: **0 guardrail violations**, safety zones
+  base-fare, credit budget 0/40 respected, **negative control** catches a planted out-of-bounds
+  surge; sensitivity grid (elasticity × surge-bound); **A/A switchback** effect ≈ 0 / CI covers 0
+  (design valid). All `simulated` (shadow quotes, no rider charged, no causal claim). 7 tests.
+  Artifacts: `reports/v2/pricing/{guardrail_audit,sensitivity}.json`.
 - **V2-04 done:** multi-period MPC `optimization/mpc.py` + `mpc_run.py` (`make v2-mpc`). Four
   mandatory policies + Oracle on a seeded commute scenario, V2-02 ledger objective. Ledger cost
   (lower better): NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719. **MPC is the
