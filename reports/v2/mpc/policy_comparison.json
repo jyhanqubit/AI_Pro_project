@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-04_20260721T032720Z",
+  "run_id": "run_v2-04_20260721T034058Z",
   "artifact_id": "reports/v2/mpc/policy_comparison.json",
   "mode": "research",
   "claim_status": "simulated",
-  "freshness": "2026-07-21T03:27:20.540251+00:00",
+  "freshness": "2026-07-21T03:40:58.357039+00:00",
   "objective": "V2-02 ledger (shortage externality + overflow penalty + relocation), lower total_cost better",
   "assumption_set_version": "v2-assumptions-1",
   "scenario": {

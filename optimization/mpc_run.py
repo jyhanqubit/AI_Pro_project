@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -28,6 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--horizon", type=int, default=6, help="MPC look-ahead hours")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--vehicle-capacity", type=int, default=18)
+    ap.add_argument("--timing", action="store_true", help="also print per-policy wall-clock")
     ns = ap.parse_args(argv)
     stamp = datetime.now(UTC)
 
@@ -35,11 +37,13 @@ def main(argv: list[str] | None = None) -> int:
     zones = default_network(ns.zones)
     fc, realized = demand_series(zones, ns.hours, seed=ns.seed)
 
-    results = {
-        p: simulate(p, zones, fc, realized, A, horizon=ns.horizon,
-                    vehicle_capacity=ns.vehicle_capacity)
-        for p in POLICIES
-    }
+    results = {}
+    timing: dict[str, float] = {}
+    for p in POLICIES:
+        t0 = time.perf_counter()
+        results[p] = simulate(p, zones, fc, realized, A, horizon=ns.horizon,
+                              vehicle_capacity=ns.vehicle_capacity)
+        timing[p] = time.perf_counter() - t0
     oracle_net = results["oracle"].net
 
     by_policy = {}
@@ -95,6 +99,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  {p:10s} {b['shortage_units']:8.0f} {b['overflow_units']:8.0f} {b['moved_units']:7.0f} "
               f"{b['total_cost']:11.1f} {b['regret_vs_oracle']:9.1f} {b['feasible']}")
     print(f"\nranking (best->worst cost): {report['ranking_by_total_cost']}")
+    if ns.timing:
+        print(f"\n  {'policy':10s} {'wall(s)':>9s} {'ms/hour':>9s}")
+        for p in POLICIES:
+            print(f"  {p:10s} {timing[p]:9.3f} {1000 * timing[p] / ns.hours:9.2f}")
+        print(f"  MPC / single-period MILP compute ratio: {timing['mpc'] / timing['milp']:.2f}x "
+              f"(look-ahead is encoded in the target, not a larger joint solve)")
     print(f"report -> {OUT_DIR}/policy_comparison.json")
     return 0
 

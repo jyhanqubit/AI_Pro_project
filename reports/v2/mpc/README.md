@@ -27,3 +27,26 @@ are **simulated** (policy comparison over a documented demand scenario), not mea
   reposition spend outweighs the imbalance it relieves, so it costs slightly more than doing
   nothing. An honest reminder that "any rebalancing" is not automatically good.
 - Every policy is feasibility-checked each period (0 infeasible periods); Oracle bounds them all.
+
+## Computational cost (reproduce: `make v2-mpc` → `python -m optimization.mpc_run --timing`)
+
+| Policy | wall (72h) | ms/hour | per-hour complexity | solve |
+|---|---|---|---|---|
+| No Action | ~0.001s | ~0.01 | O(N) | none |
+| Greedy | ~0.01s | ~0.2 | O(N²·V) arithmetic | none |
+| Single-period MILP | ~0.8s | ~11 | MILP(N² int vars) | HiGHS ×1 |
+| **MPC (this design)** | ~0.7s | ~10 | MILP(N²) + O(N·H) cumsum | HiGHS ×1 |
+| "Classical" joint-horizon MPC | — | ~H× larger | MILP(H·N² vars) | HiGHS ×1 (H× bigger) |
+
+**Key point — MPC here costs the same as single-period MILP (≈0.7–0.9×), not H× more.** The
+look-ahead is encoded in the *target* (a cheap `O(N·H)` cumulative sum of the forecast), then the
+same-size per-period MILP places the moves. So the 34% cost reduction (1127→740) comes at
+essentially **zero extra compute** vs the myopic MILP. The usual "MPC is expensive" penalty
+(`H×` more variables) applies only to *classical* joint-horizon MPC that optimises `u_t…u_{t+H-1}`
+together; this design trades a little theoretical optimality for that saving and still lands within
+3% of Oracle.
+
+Operationally the decision is made once per hour and takes ~10 ms — a ~360,000× real-time margin —
+so solve time is **not** the binding constraint; forecast quality is. At real scale (hundreds of
+stations) the MILP's `N²` integer variables dominate; standard mitigations: sparsify to nearby
+pairs (`N²→N·k`), warm-start, aggregate to H3 zones, keep `H` small.
