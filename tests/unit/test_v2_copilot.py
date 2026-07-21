@@ -95,8 +95,10 @@ def test_graphrag_benchmark_relevance_gate():
     import json
     from pathlib import Path
 
-    from ml.copilot.graphrag_benchmark import main
+    from ml.copilot.graphrag_scale import GRAPH, main
 
+    if not GRAPH.exists():
+        pytest.skip("event graph snapshot missing — run `make seed-graph` first")
     assert main([]) == 0  # 0 only when the GraphRAG answerer has 0 hallucinations + full refusal
     d = json.loads(Path("reports/v2/copilot/graphrag_benchmark.json").read_text())
     a = d["answerers"]
@@ -107,4 +109,5 @@ def test_graphrag_benchmark_relevance_gate():
     assert a["graphrag_grounding_relevance"]["citation_f1"] == 1.0
     # Relevance is the differentiator: grounding-only is less correct than grounding+relevance.
     assert a["grounding_only"]["correct_ratio"] < a["graphrag_grounding_relevance"]["correct_ratio"]
+    assert d["graph_scale"]["events"] > 100  # real dense graph, not the 2-event demo
     assert d["graphrag_hard_gates_pass"] is True

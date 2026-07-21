@@ -145,4 +145,4 @@ v2-pricing:  ## V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run (
 
 v2-copilot:  ## V2-06: Copilot benchmark — typed-tool numeric grounding + GraphRAG event-graph relevance (offline)
 	python -m ml.copilot.benchmark
-	python -m ml.copilot.graphrag_benchmark
+	python -m ml.copilot.graphrag_scale

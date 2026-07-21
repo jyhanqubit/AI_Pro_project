@@ -48,22 +48,27 @@ demonstrated difference between the keyword stand-in and the real model.
 ## GraphRAG event-graph half (`graphrag_benchmark.json`)
 
 The section above is the **typed-tool numeric** half. This is the **GraphRAG retrieval** half —
-addendum evidence #6 "GraphRAG correctness AND relevance". It retrieves the event-graph context
-(Article→Event→H3Zone) at the demo replay cutoff (`services.api.graphrag`), then scores three
-answerers on 10 explanation questions ("why did this zone change?", incl. out-of-scope ones):
+addendum evidence #6 "GraphRAG correctness AND relevance" — run on the **real dense event graph**
+(`make seed-graph` -> `data/processed/graph/event_graph.json`: **2,895 events** (news + NYC
+permitted), 6 borough-centroid H3 zones, 2,808 `AFFECTS` edges). NOT the 2-event demo fixture.
+
+Task (as-of cutoff 2026-06-30): "which {event_type} events affect zone Z?" — 21 questions (15
+answerable + 6 out-of-scope), gold derived from the graph edges (so it scales to any cutoff).
 
 | Answerer | correct | citation F1 | out-of-scope refusal | hallucinated |
 |---|---|---|---|---|
-| raw LLM (no retrieval) | 0/10 | 0.00 | 0/4 | 10 |
-| grounding-only | 4/10 | 0.69 | 0/4 | 0 |
-| **GraphRAG (grounding + relevance)** | **10/10** | **1.00** | **4/4** | **0** |
+| raw LLM (no retrieval) | 0/21 | 0.00 | 0/6 | 21 |
+| grounding-only | 1/21 | 0.40 | 0/6 | 0 |
+| **GraphRAG (grounding + relevance)** | **21/21** | **1.00** | **6/6** | **0** |
 
-- **No retrieval → invents events** (10/10 hallucinated). Retrieval is what stops fabrication.
-- **Grounding-only → stops fabrication (0) but cites real-but-irrelevant events** and never refuses
-  out-of-scope (4/10 correct). This is the failure the product's citation filter does NOT catch.
-- **GraphRAG (grounding + relevance)** cites only relevant events and refuses out-of-scope
-  (10/10, 4/4, F1 1.0). **The relevance step is exactly what graph retrieval buys.**
+- **No retrieval → invents events** (21/21 hallucinated). Retrieval stops fabrication.
+- **Grounding-only → 1/21.** Citing every event that affects the zone is almost always wrong once a
+  zone has hundreds of events — so grounding *without relevance* collapses at scale. This is the key
+  point: relevance matters MORE as the graph grows, not less.
+- **GraphRAG (grounding + relevance)** filters retrieved zone events to the asked type and refuses
+  empty types (21/21, 6/6, F1 1.0).
 
-Small demo state (2 events) → this pins the metric design + the relevance gain, not a production
-accuracy number. Together the two halves cover both parts of evidence #6: numeric answers are
-tool-grounded (typed-tool half) and graph explanations are retrieval-grounded + relevant (this half).
+Answerer strategies (A/B/C) are deterministic behaviors demonstrating the metric on the full graph;
+gold comes from graph structure. Together the two halves cover both parts of evidence #6: numeric
+answers are tool-grounded (typed-tool half) and graph explanations are retrieval-grounded + relevant
+(this half), now at real scale (2,895 events, not 2).
