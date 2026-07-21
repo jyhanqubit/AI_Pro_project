@@ -615,8 +615,44 @@ export interface RevenueResponse {
   note: string;
 }
 
+// ---- V2-07: artifact-backed cockpit metrics ---------------------------------
+export type ClaimStatus =
+  | "measured"
+  | "offline_benchmark"
+  | "simulated"
+  | "pending_live_label"
+  | "assumption"
+  | "blocked_data"
+  | "blocked_external"
+  | "demo_fixture"
+  | "research";
+
+export interface ResultEnvelope {
+  value: number | string | boolean | null;
+  run_id: string;
+  artifact_id: string | null;
+  mode: OperatingMode;
+  claim_status: ClaimStatus;
+  freshness: string;
+}
+
+export interface CockpitMetric {
+  key: string;
+  label: string;
+  unit: string | null;
+  text: string;
+  envelope: ResultEnvelope;
+}
+
+export interface CockpitMetricsResponse {
+  mode: OperatingMode;
+  metrics: CockpitMetric[];
+}
+
 export const api = {
   health: () => req<{ status: string; mode: OperatingMode }>("/v1/health"),
+  cockpitMetrics: (mode: OperatingMode = "historical_replay") =>
+    req<CockpitMetricsResponse>(`/v2/cockpit/metrics?mode=${mode}`),
   replayState: () => req<ReplayState>("/v1/replay/state"),
   setCutoff: (cutoff: string) =>
     req<ReplayState>("/v1/replay/set-cutoff", {

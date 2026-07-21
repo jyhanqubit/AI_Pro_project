@@ -147,7 +147,11 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   product surfaces (envelope-enforced); a missing artifact surfaces as a blocked envelope
   (`value=None`), never a fake number. 4 tests re-read each value from its artifact to guarantee no
   hard-coding (`tests/unit/test_v2_cockpit_metrics.py`).
-- **Remaining:** cockpit + rider Next.js views consuming the endpoint; `docs/screenshots/`.
+- **Cockpit UI delivered:** `apps/web/app/cockpit/page.tsx` (+ `/cockpit` nav tab, typed client
+  `api.cockpitMetrics`) renders each metric from `GET /v2/cockpit/metrics` with its **claim_status
+  badge** (측정됨/시뮬레이션/…) and **artifact + run_id provenance**; no hard-coded numbers; a blocked
+  metric shows "artifact 없음", never a fake value; `ModeBadge` marks the surface mode.
+- **Remaining:** rider-facing preview polish + `docs/screenshots/` (needs a browser run).
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels
