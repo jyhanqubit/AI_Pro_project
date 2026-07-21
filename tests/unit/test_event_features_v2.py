@@ -13,6 +13,7 @@ from ml.forecasting.event_features_v2 import (
     build_direct_index,
     build_graph_index,
     build_permitized_index,
+    build_signed_demand_index,
     scoped_boroughs,
 )
 
@@ -117,3 +118,28 @@ def test_permitized_retrospective_review_self_excludes_by_leakage():
     assert diag["leakage_dropped"] == 1
     assert diag["attributed_events"] == 0
     assert len(idx) == 0
+
+
+def test_signed_demand_signal_carries_the_llm_direction():
+    # Blizzard (demand_effect < 0) -> negative signal; festival (>0) -> positive. The model gets the
+    # sign from the LLM, not from the data.
+    art = {"a": _art("a", "2026-01-24T06:00"), "b": _art("b", "2026-05-15T06:00")}
+    storm = {"article_id": "a", "event_type": "WEATHER_SHOCK", "severity": 0.9, "demand_effect": -0.9,
+             "boroughs": ["Manhattan"], "event_start_at": "2026-01-24T08:00:00-05:00",
+             "event_end_at": "2026-01-24T12:00:00-05:00"}
+    fest = {"article_id": "b", "event_type": "PUBLIC_GATHERING", "severity": 0.6, "demand_effect": 0.5,
+            "boroughs": ["Brooklyn"], "event_start_at": "2026-05-15T12:00:00-04:00",
+            "event_end_at": "2026-05-15T16:00:00-04:00"}
+    idx, diag = build_signed_demand_index([storm, fest], art)
+    assert diag["attributed_events"] == 2
+    assert idx[("Manhattan", "2026-01-24 08")]["news_demand_signal"] < 0   # storm suppresses
+    assert idx[("Brooklyn", "2026-05-15 12")]["news_demand_signal"] > 0    # festival surges
+
+
+def test_signed_signal_leakage_gated():
+    art = {"a": _art("a", "2026-05-08T15:28")}
+    ev = {"article_id": "a", "event_type": "LARGE_VENUE_EVENT", "severity": 0.4, "demand_effect": 0.4,
+          "boroughs": ["Brooklyn"], "event_start_at": "2026-05-07T20:00:00-04:00",
+          "event_end_at": "2026-05-07T23:00:00-04:00"}
+    idx, diag = build_signed_demand_index([ev], art)
+    assert diag["leakage_dropped"] == 1 and len(idx) == 0

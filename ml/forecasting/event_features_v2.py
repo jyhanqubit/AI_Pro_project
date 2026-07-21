@@ -167,6 +167,44 @@ def build_permitized_index(events, articles, cfg: EventFeatureCfg | None = None)
     return idx, diag
 
 
+SIGNED_COLS = ("news_demand_signal",)
+
+
+def build_signed_demand_index(events, articles, cfg: EventFeatureCfg | None = None):
+    """{(borough, 'YYYY-MM-DD HH') -> {SIGNED_COLS}} — a SIGNED demand-shift signal from the LLM.
+
+    Unlike the (unsigned) salience/importance features, this uses the LLM's ``demand_effect``
+    (in [-1,+1]: blizzard ≈ -0.9 suppression, festival/transit-substitution ≈ +0.5 surge). The
+    feature is ``demand_effect * severity * time_decay`` (signed), anchored to the precise event
+    interval and availability-gated. The model gets the DIRECTION from the LLM instead of having to
+    learn the sign from a handful of events; where signs superpose we sum them (net effect).
+    """
+    cfg = cfg or EventFeatureCfg()
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in SIGNED_COLS})
+    diag = {"events": 0, "attributed_events": 0, "leakage_dropped": 0}
+    for e in events:
+        diag["events"] += 1
+        a = articles.get(e["article_id"])
+        etype = e.get("event_type", "")
+        bs = scoped_boroughs(etype, e.get("boroughs", []))
+        if a is None or not bs or not e.get("event_start_at") or "demand_effect" not in e:
+            continue
+        avail = (a.available_at or max(a.published_at, a.first_seen_at)).astimezone(_NY)
+        start = datetime.fromisoformat(e["event_start_at"]).astimezone(_NY)
+        end = datetime.fromisoformat(e.get("event_end_at") or e["event_start_at"]).astimezone(_NY)
+        sev = float(e.get("severity", 0.5))
+        eff = float(e["demand_effect"])   # signed direction/magnitude from the LLM
+        hours = list(_interval_hours(start, end, avail, cfg))
+        if not hours:
+            diag["leakage_dropped"] += 1
+            continue
+        diag["attributed_events"] += 1
+        for b in bs:
+            for hk, w in hours:
+                idx[(b, hk)]["news_demand_signal"] += eff * sev * w   # signed; superpose overlaps
+    return idx, diag
+
+
 def build_graph_index(events, articles, cfg: EventFeatureCfg | None = None):
     """{(borough, 'YYYY-MM-DD HH') -> {GRAPH_COLS}} — neighbor spillover via centroid distance decay.
 
