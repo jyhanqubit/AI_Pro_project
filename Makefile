@@ -143,5 +143,6 @@ v2-mpc:  ## V2-04: multi-period policy comparison No-Action/Greedy/MILP/MPC + Or
 v2-pricing:  ## V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run (offline, SIMULATED)
 	python -m ml.pricing.pricing_v2_run
 
-v2-copilot:  ## V2-06: GraphRAG typed-tool Copilot correctness/refusal benchmark (offline)
+v2-copilot:  ## V2-06: Copilot benchmark — typed-tool numeric grounding + GraphRAG event-graph relevance (offline)
 	python -m ml.copilot.benchmark
+	python -m ml.copilot.graphrag_benchmark

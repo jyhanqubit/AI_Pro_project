@@ -43,3 +43,27 @@ model routed the questions directly, like the V2-03 extraction; decisions commit
 preventing *confidently-wrong, grounded* answers — answering the wrong question, or answering one
 that should be refused — is precisely where the real LLM adds value. That is the honest,
 demonstrated difference between the keyword stand-in and the real model.
+
+
+## GraphRAG event-graph half (`graphrag_benchmark.json`)
+
+The section above is the **typed-tool numeric** half. This is the **GraphRAG retrieval** half —
+addendum evidence #6 "GraphRAG correctness AND relevance". It retrieves the event-graph context
+(Article→Event→H3Zone) at the demo replay cutoff (`services.api.graphrag`), then scores three
+answerers on 10 explanation questions ("why did this zone change?", incl. out-of-scope ones):
+
+| Answerer | correct | citation F1 | out-of-scope refusal | hallucinated |
+|---|---|---|---|---|
+| raw LLM (no retrieval) | 0/10 | 0.00 | 0/4 | 10 |
+| grounding-only | 4/10 | 0.69 | 0/4 | 0 |
+| **GraphRAG (grounding + relevance)** | **10/10** | **1.00** | **4/4** | **0** |
+
+- **No retrieval → invents events** (10/10 hallucinated). Retrieval is what stops fabrication.
+- **Grounding-only → stops fabrication (0) but cites real-but-irrelevant events** and never refuses
+  out-of-scope (4/10 correct). This is the failure the product's citation filter does NOT catch.
+- **GraphRAG (grounding + relevance)** cites only relevant events and refuses out-of-scope
+  (10/10, 4/4, F1 1.0). **The relevance step is exactly what graph retrieval buys.**
+
+Small demo state (2 events) → this pins the metric design + the relevance gain, not a production
+accuracy number. Together the two halves cover both parts of evidence #6: numeric answers are
+tool-grounded (typed-tool half) and graph explanations are retrieval-grounded + relevant (this half).

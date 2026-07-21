@@ -25,7 +25,15 @@ against a fixed offline question set.
 > real-but-wrong-question numbers (`wape`→next-month, `profit`→marketing, `money`→next-quarter),
 > hallucinating 3 answers and failing the gate; the real LLM understands intent and refuses (0).
 > This is exactly where the LLM adds value. 8 tests. Artifact:
-> `reports/v2/copilot/correctness_benchmark.json`. (Complements `scripts/graphrag_eval.py`.)
+> `reports/v2/copilot/correctness_benchmark.json`. (Complements `scripts/graphrag_eval.py`.) 
+>
+> **GraphRAG retrieval half (evidence #6 completed).** `ml/copilot/graphrag_benchmark.py`
+> (also run by `make v2-copilot`) exercises the real event-graph retrieval (`services.api.graphrag`,
+> Article→Event→H3Zone at the replay cutoff) on 10 explanation questions. Three answerers: no-retrieval
+> (hallucinates 10/10), grounding-only (0 hallucinated but cites irrelevant, correct 4/10, refuse 0/4),
+> **GraphRAG grounding+relevance (correct 10/10, refuse 4/4, citation F1 1.0)**. The relevance step is
+> what graph retrieval buys. Artifact: `reports/v2/copilot/graphrag_benchmark.json`. So V2-06 now has
+> BOTH halves: numeric answers = typed-tool-grounded; graph explanations = retrieval-grounded + relevant.
 
 ## Architecture boundary
 

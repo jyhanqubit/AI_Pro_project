@@ -1,0 +1,43 @@
+{
+  "run_id": "run_v2-06graph_20260721T072704Z",
+  "artifact_id": "reports/v2/copilot/graphrag_benchmark.json",
+  "mode": "demo_fixture",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-07-21T07:27:04.152226+00:00",
+  "retrieval": "event graph (Article->Event->H3Zone) at the demo replay cutoff",
+  "grounding_source": "services.api.graphrag (product citation extraction + context validation)",
+  "n_questions": 10,
+  "ground_truth": "2 events (PATH transit + Newport concert), JC-area, both +demand; Midtown/Brooklyn/3rd-event/per-station questions have no relevant event",
+  "answerers": {
+    "raw_llm_no_retrieval": {
+      "answer_correct": "0/10",
+      "correct_ratio": 0.0,
+      "citation_f1": 0.0,
+      "out_of_scope_refusal": "0/4",
+      "refusal_ratio": 0.0,
+      "hallucinated_answers": 10,
+      "ungrounded_id_leaks": 10
+    },
+    "grounding_only": {
+      "answer_correct": "4/10",
+      "correct_ratio": 0.4,
+      "citation_f1": 0.692,
+      "out_of_scope_refusal": "0/4",
+      "refusal_ratio": 0.0,
+      "hallucinated_answers": 0,
+      "ungrounded_id_leaks": 0
+    },
+    "graphrag_grounding_relevance": {
+      "answer_correct": "10/10",
+      "correct_ratio": 1.0,
+      "citation_f1": 1.0,
+      "out_of_scope_refusal": "4/4",
+      "refusal_ratio": 1.0,
+      "hallucinated_answers": 0,
+      "ungrounded_id_leaks": 0
+    }
+  },
+  "graphrag_hard_gates_pass": true,
+  "finding": "No-retrieval invents events (hallucinated 10/10). Grounding-only stops fabrication (0 hallucinated) but still cites real-but-irrelevant events and never refuses out-of-scope (correct 4/10). GraphRAG grounding+relevance is correct 10/10, refuses 4/4 out-of-scope, citation F1 1.0 \u2014 the relevance step is what graph retrieval buys.",
+  "note": "Small demo state (2 events): pins metric design + relevance gain, not a production number."
+}

@@ -88,3 +88,23 @@ def test_router_comparison_llm_beats_keyword_on_decoys():
     assert cmp["claude"]["hallucinated_answers"] == 0
     assert cmp["claude"]["hard_gates_pass"] is True
     assert cmp["claude"]["routing_accuracy"] > cmp["keyword"]["routing_accuracy"]
+
+
+def test_graphrag_benchmark_relevance_gate():
+    # The GraphRAG (event-graph) half: grounding + relevance beats grounding-only and no-retrieval.
+    import json
+    from pathlib import Path
+
+    from ml.copilot.graphrag_benchmark import main
+
+    assert main([]) == 0  # 0 only when the GraphRAG answerer has 0 hallucinations + full refusal
+    d = json.loads(Path("reports/v2/copilot/graphrag_benchmark.json").read_text())
+    a = d["answerers"]
+    # No-retrieval invents events; GraphRAG does not and refuses out-of-scope.
+    assert a["raw_llm_no_retrieval"]["hallucinated_answers"] > 0
+    assert a["graphrag_grounding_relevance"]["hallucinated_answers"] == 0
+    assert a["graphrag_grounding_relevance"]["refusal_ratio"] == 1.0
+    assert a["graphrag_grounding_relevance"]["citation_f1"] == 1.0
+    # Relevance is the differentiator: grounding-only is less correct than grounding+relevance.
+    assert a["grounding_only"]["correct_ratio"] < a["graphrag_grounding_relevance"]["correct_ratio"]
+    assert d["graphrag_hard_gates_pass"] is True
