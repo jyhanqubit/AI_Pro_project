@@ -156,6 +156,15 @@ lift and whether that lift converts to profit net of LLM cost.
   degrade one axis): coarse-time −0.33%, citywide +0.53%, retro +1.01% — **each collapses** the full
   +2.69%. Proven cause = conjunction of **dense + precise-time + precise-location + forward-looking**;
   news fails all four; collecting more news fixes only density, not the structural axes.
+- **V2-03 news condition audit** (`ml/forecasting/news_condition_audit.py`): only 2/23 news events
+  forward-looking, 1/23 BOTH forward+precise (June, out of test) → the subset satisfying the permit
+  feed's conditions is ~empty; a 4-D encoding can't add info the source lacks (news is coincident/
+  retrospective by nature).
+- **V2-03 synthetic ceiling** (`ml/forecasting/llm_synthetic_ceiling.py`, **claim_status: simulated**):
+  disclosed injection of forward-looking precise dense event shocks into real demand → LLM
+  post-correction **+10.43% MEANINGFUL_POSITIVE** (feature +20.86%); at news-scale density INSUFFICIENT.
+  Proves the post-correction/method CAN exploit good events — the real-news null is a SOURCE problem,
+  not a method limitation. NOT a real-news claim; injected effects fully disclosed.
 - **V2-03 overall (negative result, fully understood — but NOT a dead project):** seven attempts
   (extraction/graph/permit-reconstruction/importance/signed/post-processing/horizon) all
   neutral-to-negative for LLM-from-news demand value; root cause = sparsity + sign heterogeneity

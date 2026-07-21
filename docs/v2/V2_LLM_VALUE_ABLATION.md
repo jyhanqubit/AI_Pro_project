@@ -344,6 +344,31 @@ come from **schedules / permits / announcements**, not from retrospective news. 
 LLM demand contribution is therefore to have the LLM structure a **forward-looking event source** into
 the A1 slot — which, when it exists (the permit feed), already delivers +2.69% / +$33k.
 
+### Synthetic ceiling — the post-correction DOES work when conditions are met (`llm_synthetic_ceiling.py`, `claim_status: simulated`)
+
+To prove the post-correction is *capable* (not to claim real-news value), a disclosed simulation:
+inject KNOWN forward-looking, precise, dense event shocks (surge ×1.3–1.7 / suppress ×0.5–0.8) into
+real demand; the "LLM" signal knows only sign + coarse magnitude; the correction factor α is fit on
+train and applied to test. **This is `simulated`/`research`, fully disclosed — NOT a real-news result
+and no business claim.**
+
+| synthetic source | WAPE base → +feature → +post-corr | feature vs base | post-correction vs base |
+|---|---|---|---|
+| **dense + forward + precise** (1372 event-cells) | 0.1106 → 0.1042 → 0.1081 | **+20.86% MEANINGFUL_POS** | **+10.43% MEANINGFUL_POS** (CI [17.6, 108.7]) |
+| sparse (news-scale, 157 cells) | 0.0953 → 0.0958 → 0.0956 | INSUFFICIENT_SUPPORT | INSUFFICIENT_SUPPORT |
+
+**Two honest conclusions:**
+1. **The LLM post-correction genuinely improves the forecast (+10.43%, CI excludes 0) — when the
+   event source is dense + precise + forward-looking.** So the real-news null is a **source** problem
+   (news fails the four conditions), *not* a pipeline/method limitation. The method is sound.
+2. **At news-scale density even *perfect* events give nothing** (INSUFFICIENT_SUPPORT) — reconfirming
+   density is necessary, from the mechanism side.
+
+This closes the loop with the ablations: violate the conditions (real news) → no value; satisfy them
+(this simulation, and the real permit feed at +2.69%) → value. The honest real-world path to an LLM
+*demand* contribution is to have the LLM structure a genuinely forward-looking source (event
+calendars / schedules / permits) into the A1 slot — not to squeeze it from retrospective news.
+
 ### Where the LLM's value actually is (this is not a dead project)
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
