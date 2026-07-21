@@ -279,6 +279,38 @@ signed LLM effect, which is 77% right), and (c) **redundancy** with the autoregr
 *unanticipated* shock before the lags react — rare, and limited here by coarse timing and the
 availability gate. This is a negative result understood, not merely observed.
 
+### Is it really sparsity? Density learning curve + quality ablation (`llm_density_curve.py`, `llm_quality_ablation.py`)
+
+"Sparsity" was asserted, not proven — and news differs from permits on three confounded axes
+(density, precision, forward timing). Two controlled ablations isolate the cause.
+
+**Density curve** — subsample the dense permit feed to news-scale counts, holding precision + timing
+at permit quality:
+
+| N permit events | permit A1−A0 |
+|---|---|
+| 20 / 50 / 100 | INSUFFICIENT / neutral / neutral |
+| 300 | **+2.03% MEANINGFUL_POSITIVE** |
+| 1000 / 3000 / 10000 | neutral (non-monotonic) |
+| 63,070 (all) | **+2.69% MEANINGFUL_POSITIVE** |
+
+Two facts: (1) at **news scale (≤100 events; news has ~19) there is no value** → density is
+*necessary*, and 19 is structurally in the dead zone. (2) the curve is **non-monotonic** (value at
+300, gone at 1000–10000 on a single random subsample, back at full) → raw count is *not sufficient*;
+**which** events you have matters — diluting with low-relevance permits washes out the count feature.
+So "just collect more news" would not reliably fix it: you need enough *demand-relevant* events, not
+just more rows.
+
+**Quality ablation** — hold density at FULL and degrade one axis to news-like (see the modes table
+in the artifact): `coarse_time` (flat over the day), `citywide` (all boroughs), `retro` (known only
+after onset). Whichever degradation collapses the +2.69% is a *necessary* quality axis — and exactly
+what news lacks. _(Result table filled from `reports/v2/llm_value/quality_ablation.json`.)_
+
+**So the cause is not a single lazy "sparsity" — it is a conjunction:** news is below the density
+threshold **and** coarse/retrospective on the axes that make the permit feed work. More news data
+would only help if it were also dense *and* precise *and* forward-looking — which retrospective
+borough-level GDELT news structurally is not.
+
 ### Where the LLM's value actually is (this is not a dead project)
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
