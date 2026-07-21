@@ -65,10 +65,19 @@ against a fixed offline question set.
 > **RAGAS cross-check (`ml/copilot/ragas_retrieval.py`).** Same neutral task, scored with the **real
 > `ragas` 0.4.3** non-LLM retrieval metrics (top-10, exact-id match) so the result rests on a standard
 > tool, not our Jaccard: `flat_text` context-precision **0.833** vs `graph_boosted` **0.771**
-> (−0.0625), recall tied — RAGAS agrees the graph gives no retrieval lift. RAGAS's generation-side
-> metrics (`faithfulness`, `answer_relevancy`) need an LLM judge and there is no key here, so they are
-> **`blocked_external`** in the artifact, never faked. Artifact:
+> (−0.0625), recall tied — RAGAS agrees the graph gives no retrieval lift. Artifact:
 > `reports/v2/copilot/ragas_retrieval_benchmark.json`.
+>
+> **RAGAS generation-side (`ml/copilot/ragas_generation.py`).** `faithfulness`/`answer_relevancy` need
+> an LLM judge; with no API key we **judge in-session** (as in V2-03/V2-06) and commit every verdict
+> to `data/fixtures/v2/copilot_ragas_judgments.jsonl`. Over the 10 answerable Q: **faithfulness 1.0**
+> (supported_claims/total, verified against each typed tool's retrieved context), **answer_relevancy
+> 0.985** (direct judgment, not the embedding proxy). Faithfulness is 1.0 *by design* (answers only
+> restate tool values) — the judging's value is catching mislabels, and it caught one: `llm_news_value`
+> was labeling a **simulated** dollar figure as `measured`; **fixed** to `simulated` (q08 was 3/4=0.75
+> before). A **drift guard** fails the run if a judged answer no longer matches the live Copilot;
+> self-judgment (same model family) is recorded as a caveat. Artifact:
+> `reports/v2/copilot/ragas_generation_benchmark.json`.
 
 ## Architecture boundary
 

@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06ragas_20260721T083145Z",
+  "run_id": "run_v2-06ragas_20260721T084144Z",
   "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-07-21T08:31:45.837784+00:00",
+  "freshness": "2026-07-21T08:41:44.213083+00:00",
   "tool": {
     "package": "ragas",
     "version": "0.4.3",
@@ -154,10 +154,10 @@
     }
   },
   "graph_minus_flat_context_precision": -0.0625,
-  "not_measured": {
-    "faithfulness": "blocked_external \u2014 needs an LLM judge; no API key in sandbox",
-    "answer_relevancy": "blocked_external \u2014 needs an LLM judge; also no generation step in this task",
-    "llm_context_precision": "blocked_external \u2014 needs an LLM judge"
+  "generation_side_metrics": {
+    "faithfulness": "measured in-session \u2014 see reports/v2/copilot/ragas_generation_benchmark.json (judge=claude-opus-4-8-insession; no API key for an automated ragas LLM judge, so judged in-session with verdicts committed as a fixture, as in V2-03/V2-06)",
+    "answer_relevancy": "measured in-session (direct relevance judgment, not the embedding proxy) \u2014 see ragas_generation_benchmark.json",
+    "automated_ragas_llm_judge": "blocked_external \u2014 ragas' own LLM-judge path needs an API key; not available here, so we judged in-session instead of faking it"
   },
-  "finding": "Real ragas non-LLM retrieval metrics agree with the top1/MRR result: graph_boosted does NOT beat flat_text on context precision (graph gives no retrieval lift on a text task). With one relevant doc per query these reduce to reciprocal rank / hit@k, so they are the standard IR result under a RAGAS name. Generation-side RAGAS (faithfulness / answer relevancy) is blocked_external here: no LLM key, and this retrieval task has no answer to judge."
+  "finding": "Real ragas non-LLM retrieval metrics agree with the top1/MRR result: graph_boosted does NOT beat flat_text on context precision (graph gives no retrieval lift on a text task). With one relevant doc per query these reduce to reciprocal rank / hit@k, so they are the standard IR result under a RAGAS name. Generation-side RAGAS (faithfulness / answer relevancy) is measured separately by in-session judging on the Copilot's own answers \u2014 see ragas_generation_benchmark.json \u2014 since there is no API key for ragas' automated LLM judge."
 }

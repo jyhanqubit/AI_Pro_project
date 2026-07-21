@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06neutral_20260721T083145Z",
+  "run_id": "run_v2-06neutral_20260721T084143Z",
   "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-07-21T08:31:45.480311+00:00",
+  "freshness": "2026-07-21T08:41:43.902450+00:00",
   "task": "text lookup: find the event a paraphrased description refers to",
   "why_neutral": "gold is a hand-authored query->event mapping independent of any retriever; the task is text-native so plain retrieval is genuinely competitive.",
   "corpus_events": 2895,

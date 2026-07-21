@@ -41,6 +41,14 @@ lift and whether that lift converts to profit net of LLM cost.
   (faithfulness/answer_relevancy) need an LLM judge → `blocked_external` (no key), never faked.
   Optional dep `pip install -e '.[ragas]'`; absent ⇒ runner writes blocked_external.
   Artifact: `reports/v2/copilot/ragas_retrieval_benchmark.json`.
+  **RAGAS generation-side** (`ml/copilot/ragas_generation.py`): faithfulness/answer_relevancy need an
+  LLM judge → judged **in-session** (no key; verdicts committed to
+  `data/fixtures/v2/copilot_ragas_judgments.jsonl`). 10 answered Q: **faithfulness 1.0**,
+  **answer_relevancy 0.985**. Faithfulness is 1.0 by design (answers only restate tool values); the
+  judging caught + fixed a real mislabel — `llm_news_value` stamped a simulated dollar figure as
+  `measured` (→ `simulated`; q08 was 3/4=0.75 before). Drift guard fails the run if a judged answer
+  drifts from the live Copilot; self-judgment recorded as caveat.
+  Artifact: `reports/v2/copilot/ragas_generation_benchmark.json`.
 - **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
   (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety
   from `config/pricing_v2.py`. 576 seeded zone-hours: **0 guardrail violations**, safety zones

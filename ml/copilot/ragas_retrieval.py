@@ -124,17 +124,22 @@ def main(argv=None) -> int:
         "graph_minus_flat_context_precision": round(
             graph["context_precision"] - flat["context_precision"], 4
         ),
-        "not_measured": {
-            "faithfulness": "blocked_external — needs an LLM judge; no API key in sandbox",
-            "answer_relevancy": "blocked_external — needs an LLM judge; also no generation step in this task",
-            "llm_context_precision": "blocked_external — needs an LLM judge",
+        "generation_side_metrics": {
+            "faithfulness": "measured in-session — see reports/v2/copilot/ragas_generation_benchmark.json "
+                            "(judge=claude-opus-4-8-insession; no API key for an automated ragas LLM judge, "
+                            "so judged in-session with verdicts committed as a fixture, as in V2-03/V2-06)",
+            "answer_relevancy": "measured in-session (direct relevance judgment, not the embedding proxy) — "
+                                "see ragas_generation_benchmark.json",
+            "automated_ragas_llm_judge": "blocked_external — ragas' own LLM-judge path needs an API key; "
+                                         "not available here, so we judged in-session instead of faking it",
         },
         "finding": (
             "Real ragas non-LLM retrieval metrics agree with the top1/MRR result: graph_boosted does "
             "NOT beat flat_text on context precision (graph gives no retrieval lift on a text task). "
             "With one relevant doc per query these reduce to reciprocal rank / hit@k, so they are the "
             "standard IR result under a RAGAS name. Generation-side RAGAS (faithfulness / answer "
-            "relevancy) is blocked_external here: no LLM key, and this retrieval task has no answer to "
+            "relevancy) is measured separately by in-session judging on the Copilot's own answers — "
+            "see ragas_generation_benchmark.json — since there is no API key for ragas' automated LLM "
             "judge."
         ),
     }
@@ -147,7 +152,7 @@ def main(argv=None) -> int:
     print(f"  {'graph_boosted':16s} {graph['context_precision']:>14} {graph['context_recall']:>11}")
     print(f"\ngraph − flat (ctx_precision): {report['graph_minus_flat_context_precision']:+}  "
           f"(<=0 => graph gives no retrieval lift; consistent with top1/MRR)")
-    print("faithfulness / answer_relevancy: blocked_external (no LLM key; no generation step)")
+    print("faithfulness / answer_relevancy: measured in-session -> ragas_generation_benchmark.json")
     print(f"report -> {OUT_DIR}/ragas_retrieval_benchmark.json")
     return 0
 

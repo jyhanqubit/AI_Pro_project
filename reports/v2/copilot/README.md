@@ -122,9 +122,33 @@ retrievers. `ml/copilot/ragas_retrieval.py`, top-10, exact-id match.
 retrieval lift** on a text task; the degree boost lowers precision. (With one relevant doc per query
 these RAGAS metrics reduce to reciprocal-rank / hit@k — the standard IR result under a RAGAS name.)
 
-**What RAGAS we could NOT measure — and did not fake:** RAGAS's distinctive generation-side metrics
-— `faithfulness`, `answer_relevancy`, LLM `context_precision` — require an **LLM judge**. There is
-no API key in this sandbox, and this retrieval task has no generated answer to judge, so those are
-recorded as **`blocked_external`** in the artifact's `not_measured` block, never as numbers. Ragas is
-an optional dependency (`pip install -e '.[ragas]'`); if absent, the runner writes
+Ragas is an optional dependency (`pip install -e '.[ragas]'`); if absent, the runner writes
 `claim_status: blocked_external` rather than inventing a score.
+
+## RAGAS generation-side — faithfulness & answer relevancy (`ragas_generation_benchmark.json`)
+
+RAGAS's distinctive metrics — `faithfulness`, `answer_relevancy` — need an **LLM judge**, and there
+is no API key here for ragas' automated judge. Instead of dropping them, we do what V2-03 (event
+extraction) and V2-06 (tool routing) already do: **the model judges in-session**, and every verdict
+is committed for audit in `data/fixtures/v2/copilot_ragas_judgments.jsonl`. `ml/copilot/ragas_generation.py`
+scores the Copilot's own answers to the 10 answerable questions:
+
+| Metric | Value | Definition |
+|---|---|---|
+| **faithfulness** | **1.0** | RAGAS: supported_claims / total_claims, each claim verified against the typed-tool retrieved context (value + cited artifact) |
+| **answer_relevancy** | **0.985** | direct relevance judgment (0–1) — *not* RAGAS's embedding-similarity proxy (no embedding model here), labeled as such |
+
+**faithfulness is 1.0 by design** — the Copilot only restates typed-tool values with their
+artifact-backed `claim_status`, so answers are structurally grounded. The value of judging is not
+confirming that; it is **catching mislabels** — and this pass caught a real one:
+
+> `llm_news_value` was stamping the **simulated** dollar figure (−$17,789) as `measured`, inheriting
+> the artifact's top-level WAPE `claim_status`. The WAPE increment is measured; the dollar
+> translation is simulated. **Fixed** the tool to `simulated`; q08 re-scored 1.0 (it was 3/4 = 0.75
+> before the fix). Regression test added.
+
+**Honesty guards & caveats:** a **drift guard** re-runs the live Copilot and fails the run if any
+judged answer no longer matches the code's output, so verdicts can't silently detach from the
+implementation. **Self-judgment limitation** (recorded in the artifact): judge and system are the
+same model family — no independent LLM is available — so verdicts are committed for external audit.
+The automated ragas LLM-judge path remains `blocked_external` (needs a key).

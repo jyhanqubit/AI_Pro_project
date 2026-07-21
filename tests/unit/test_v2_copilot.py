@@ -159,5 +159,33 @@ def test_ragas_retrieval_confirms_no_graph_lift():
     # Real ragas non-LLM context precision must agree: the graph gives no retrieval lift.
     assert graph["context_precision"] <= flat["context_precision"]
     assert d["graph_minus_flat_context_precision"] <= 0.0
-    # Generation-side RAGAS must be honestly marked blocked, never faked.
-    assert "blocked_external" in d["not_measured"]["faithfulness"]
+    # Generation-side RAGAS is measured in-session (not faked, not blocked-and-dropped).
+    assert "in-session" in d["generation_side_metrics"]["faithfulness"]
+
+
+def test_ragas_generation_judged_in_session_with_drift_guard():
+    # Generation-side RAGAS (faithfulness/answer_relevancy) judged in-session, verdicts committed.
+    import json
+    from pathlib import Path
+
+    from ml.copilot.ragas_generation import main
+
+    assert main([]) == 0  # main() raises SystemExit if any judged answer drifts from live Copilot
+    d = json.loads(Path("reports/v2/copilot/ragas_generation_benchmark.json").read_text())
+    assert d["judge"] == "claude-opus-4-8-insession"
+    assert d["n_answered"] == 10
+    # Faithfulness is high by design (typed-tool grounding); relevancy strong. Values must be real.
+    assert d["faithfulness"] == 1.0
+    assert 0.9 <= d["answer_relevancy"] <= 1.0
+    # The self-judgment limitation must be recorded, not hidden.
+    assert any("self-judgment" in c.lower() for c in d["caveats"])
+
+
+def test_llm_news_value_dollar_is_labeled_simulated_not_measured():
+    # Regression for the defect the RAGAS judging caught: the LLM-news DOLLAR figure is simulated
+    # (assumption-conditioned), not measured — only the underlying WAPE increment is measured.
+    from ml.copilot.tools import REGISTRY
+
+    r = REGISTRY["llm_news_value"]()
+    assert r.claim_status == "simulated"
+    assert "simulated" in r.text.lower()

@@ -87,11 +87,15 @@ def mpc_regret() -> ToolResult:
 def llm_news_value() -> ToolResult:
     d = _load(_R / "llm_value" / "incremental_value_borough.json")
     v = d["net_llm_value_simulated"]
+    # The WAPE increment is `measured` (artifact top-level claim_status), but THIS tool surfaces the
+    # DOLLAR translation, which is assumption-conditioned — so it is `simulated`, like profit_lift /
+    # mpc_regret. Do NOT inherit the artifact's top-level `measured`, which labels the WAPE result.
     return ToolResult("llm_news_value", round(v, 2), "USD (simulated)",
                       "reports/v2/llm_value/incremental_value_borough.json#net_llm_value_simulated",
-                      d.get("claim_status", "measured"),
-                      f"The LLM-from-news event layer's net value is ${v:,.0f} — negative; it does "
-                      f"not beat the structured event feed on this data.")
+                      "simulated",
+                      f"The LLM-from-news event layer's net value is ${v:,.0f} (simulated, "
+                      f"assumption-conditioned) — negative; the underlying WAPE increment is measured, "
+                      f"and it does not beat the structured event feed on this data.")
 
 
 def guardrail_violations() -> ToolResult:
