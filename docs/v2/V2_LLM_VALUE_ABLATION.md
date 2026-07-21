@@ -369,6 +369,25 @@ This closes the loop with the ablations: violate the conditions (real news) → 
 *demand* contribution is to have the LLM structure a genuinely forward-looking source (event
 calendars / schedules / permits) into the A1 slot — not to squeeze it from retrospective news.
 
+### LLM structuring the real permit feed — priors HURT, facts should be learned (`llm_permit_enrich_value.py`)
+
+The chosen path (A): the permit feed already satisfies the four conditions, so give the LLM its job —
+read each permit's free-text type/name and enrich the crude count. **Attempt 1 imposed the LLM's
+demand DIRECTION** (parade +0.4, film/production −0.3, market +0.2) as a signed feature:
+
+| arm | WAPE |
+|---|---|
+| A0 | 0.0908 |
+| A1 crude counts | **0.0883** (+2.69% vs A0) |
+| A1 + LLM signed enrichment | **0.0914** (−3.39% vs crude, MEANINGFUL_NEGATIVE) |
+
+**It hurt — worse than A0.** The lesson confirms the V2 contract's own rule ("the LLM does not
+directly compute demand"): the crude count works *because* it is agnostic — the tree **learns** each
+situation's demand response from data. Imposing an **unvalidated demand-direction prior** overrides
+that with a guess that, when wrong, actively misleads. The correct division of labor is **LLM
+structures FACTS (what type of event), the model learns the response** — pursued next by
+disaggregating the count into per-type buckets (no imposed sign).
+
 ### Insight — where the LLM adds value, and how to attribute the WAPE lift
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
