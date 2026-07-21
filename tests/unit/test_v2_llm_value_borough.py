@@ -77,6 +77,45 @@ def test_citywide_cue_attributes_all_boroughs(tmp_path):
     assert diag_on["attributed_articles"] == 1
 
 
+def test_precomputed_claude_events_index(tmp_path):
+    # Real-LLM path: events carry their own borough + type + severity; availability from the article.
+    import json
+
+    from ml.forecasting.llm_value_borough import build_news_llm_index_precomputed
+
+    news = _write_news(tmp_path, [{
+        "article_id": "x1", "title": "LIRR strike halts service", "text": "commuter rail shut down",
+        "source": "t", "published_at": "2026-05-16T06:00:00-04:00",
+        "first_seen_at": "2026-05-16T06:00:00-04:00", "url_hash": "h",
+    }])
+    ev = tmp_path / "claude_events.jsonl"
+    ev.write_text(json.dumps({
+        "article_id": "x1", "event_type": "TRANSIT_DISRUPTION",
+        "boroughs": ["Manhattan", "Queens"], "severity": 0.8, "evidence": "shut down",
+    }), encoding="utf-8")
+    idx, diag = build_news_llm_index_precomputed(news, ev)
+    assert diag["attributed_events"] == 1
+    assert {k[0] for k in idx} == {"Manhattan", "Queens"}
+    # Leakage: no feature before availability (2026-05-16 06); transit flag set.
+    assert min(k[1] for k in idx) >= "2026-05-16 06"
+    assert idx[("Manhattan", "2026-05-16 06")]["news_llm_transit"] == 1.0
+    assert idx[("Manhattan", "2026-05-16 06")]["news_llm_severity"] == 0.8
+
+
+def test_curated_claude_events_fixture_parses():
+    # The committed real-LLM extraction fixture is valid and every row has the required fields.
+    import json
+    from pathlib import Path
+
+    rows = [json.loads(l) for l in Path("data/fixtures/news_live/claude_events_2026h1.jsonl")
+            .read_text(encoding="utf-8").splitlines() if l.strip()]
+    assert len(rows) >= 20
+    for r in rows:
+        assert r["article_id"] and r["event_type"] and r["boroughs"]
+        assert 0.0 <= r["severity"] <= 1.0
+        assert r["extraction_model"] == "claude-opus-4-8-insession"
+
+
 def test_news_feature_columns_present(tmp_path):
     news = _write_news(tmp_path, [{
         "article_id": "n3",

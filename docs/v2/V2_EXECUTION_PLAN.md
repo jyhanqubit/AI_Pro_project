@@ -77,11 +77,17 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   **A1−A0 = measured_improvement** (WAPE 0.1069→0.1047, CI [1.87, 5.88], +$33k — structured events
   help, reproduces v1 robustly); **A2−A1 = negative_lift** (WAPE 0.1047→0.1075, CI [−6.02, −3.71],
   **net LLM value −$23,730**). Tests: `tests/unit/test_v2_llm_value_borough.py` → 4 passed.
+- **Real-LLM extraction (decisive):** to remove the mock-quality confound, claude-opus-4-8 (this
+  session) hand-extracted 23 clean, grounded NYC events from the 371 articles
+  (`data/fixtures/news_live/claude_events_2026h1.jsonl`; `--claude-events` path). Re-run (test May,
+  336 clean news rows): A1−A0 **measured_improvement** (0.0908→0.0883, CI [1.08,6.71]); A2−A1
+  **still negative_lift** (0.0883→0.0905, CI [−5.32,−1.56], net LLM value −$17,789).
 - **Honest V2 answer (this data):** the **structured permitted-event feed is worth money**; the
-  **LLM-from-news layer is net-negative** — even with a fair test (real news in the test window,
-  5-mo training, broadened attribution) it degrades the forecast and costs money. Caveat: borough
-  event effect is small (~0.002 WAPE) and sample-sensitive; a finer grain with geo-precise events
-  would be a stronger test (blocked by news geo-sparsity; GDELT re-collection rate-limited here).
+  **LLM-from-news layer is net-negative even with a real high-quality LLM extraction** — news
+  events are sparse, temporally coarse, and redundant with the dense official permitted schedule,
+  so they add variance not signal. The negative is NOT an extraction-quality artifact. Caveat:
+  borough event effect is small (~0.002 WAPE) & sample-sensitive; a finer grain with geo-precise,
+  higher-frequency events would be a stronger test (not available in this news corpus).
 
 ## V2-04 — Multi-period MPC Decisioning
 - **Status:** PLANNED

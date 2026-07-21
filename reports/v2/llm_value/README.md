@@ -74,6 +74,30 @@ A0 demand+calendar   A1 +permitted-events (structured feed)   A2 +LLM-news event
 **V2 mission answer (this data):** the *structured event feed* is worth money; the *LLM-from-news*
 layer is **net-negative**. Reported honestly — not tuned to a positive.
 
+### Real-LLM extraction (in-session Claude) — the decisive test
+
+The mock is a keyword matcher; its false positives ("Teens **storm** church" → WEATHER_SHOCK;
+Texas/Australia weather → NYC) drove the negative. So we replaced it with a **real LLM
+extraction**: claude-opus-4-8 read all 371 articles and produced a clean, grounded event set
+(`data/fixtures/news_live/claude_events_2026h1.jsonl`, 23 genuine NYC mobility events — LIRR
+strike, NYC flash floods, Brooklyn/NYC concerts & festivals, blizzard travel bans — rejecting the
+off-topic/false-positive items). Run: `make v2-llm-value-borough` with
+`--claude-events`. Test May now carries **336** real news-signal rows (mock: 0).
+
+| Arm (test May, Claude extraction, 14.5M NYC trips) | WAPE | verdict |
+|---|---|---|
+| A0 demand+calendar | 0.0908 | — |
+| A1 +permitted (structured) | **0.0883** | **measured_improvement** CI [1.08, 6.71] |
+| A2 +LLM-news (Claude) | 0.0905 | **negative_lift** CI [−5.32, −1.56], net LLM value **−$17,789** |
+
+**Decisive finding:** even with a real, high-quality LLM extraction (garbage filtered, 336 clean
+test rows), the LLM-news arm is **still net-negative** on top of the structured permitted feed.
+The LLM did its job (clean events), but news events are **sparse, temporally coarse, and largely
+redundant** with the dense official permitted-event schedule — so they add variance, not signal.
+The negative is therefore **not** a mock artifact: on this data, LLM-from-news has **no positive
+net business value** over the structured feed. Honest, and now free of the extraction-quality
+confound.
+
 ### Caveat on the borough event effect
 
 The permitted-event effect is real but **small** (~0.002 WAPE) and sensitive to the sample: on a

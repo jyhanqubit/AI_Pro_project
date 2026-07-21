@@ -139,6 +139,50 @@ def build_news_llm_index(
     return idx, diag
 
 
+def build_news_llm_index_precomputed(
+    news_path: Path, events_path: Path, *, window_h: int = 24
+) -> tuple[dict[tuple[str, str], dict[str, float]], dict[str, int]]:
+    """Build the borough-hour news index from a PRECOMPUTED events file (leakage-safe).
+
+    Used for real-LLM extraction: each event row carries its own ``boroughs`` + ``event_type`` +
+    ``severity``; availability comes from the source article's ``available_at`` in ``news_path``,
+    so features never precede the moment the news was public. This is how a competent LLM's output
+    (which filters non-NYC / false-positive events the keyword mock does not) enters the ablation.
+    """
+    articles = {a.article_id: a for a in NewsFixtureCollector(news_path).collect().records}
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in _NEWS_COLS})
+    diag = {"events": 0, "attributed_events": 0, "attributed_articles": 0, "precomputed": True}
+    seen: set[str] = set()
+    for line in Path(events_path).read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        e = json.loads(line)
+        diag["events"] += 1
+        a = articles.get(e["article_id"])
+        boroughs = [b for b in e.get("boroughs", []) if b in _BOROUGH_CENTROIDS]
+        if a is None or not boroughs:
+            continue
+        diag["attributed_events"] += 1
+        seen.add(e["article_id"])
+        avail = (a.available_at or max(a.published_at, a.first_seen_at)).astimezone(_NY)
+        start = avail.replace(minute=0, second=0, microsecond=0)
+        sev = float(e.get("severity", 0.5))
+        etype = e.get("event_type", "")
+        for b in boroughs:
+            h = start
+            for _ in range(window_h):
+                k = (b, h.strftime("%Y-%m-%d %H"))
+                idx[k]["news_llm_active"] += 1.0
+                idx[k]["news_llm_severity"] += sev
+                if etype in ("TRANSIT_DISRUPTION", "ROAD_CLOSURE"):
+                    idx[k]["news_llm_transit"] = 1.0
+                if etype in ("LARGE_VENUE_EVENT", "PUBLIC_GATHERING"):
+                    idx[k]["news_llm_crowd"] = 1.0
+                h += timedelta(hours=1)
+    diag["attributed_articles"] = len(seen)
+    return idx, diag
+
+
 def _paired(y_test, pa, pb, blocks) -> dict[str, Any]:
     """Paired day-block bootstrap of WAPE-relevant absolute-error gain (loss(a)-loss(b))."""
     err_a = np.abs(y_test - pa).tolist()
@@ -147,7 +191,8 @@ def _paired(y_test, pa, pb, blocks) -> dict[str, Any]:
 
 
 def run(data_dir: str, events_path: str, news_path: str, test_from: str,
-        target: str = PRIMARY_TARGET, provider: str = "mock", citywide: bool = True) -> dict[str, Any]:
+        target: str = PRIMARY_TARGET, provider: str = "mock", citywide: bool = True,
+        claude_events: str | None = None) -> dict[str, Any]:
     test_start = datetime.fromisoformat(test_from).replace(tzinfo=_NY)
     paths = sorted(Path(data_dir).glob("*.zip"))
     if not paths:
@@ -158,7 +203,11 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         raise SystemExit("no feature rows")
 
     permitted = build_event_index(Path(events_path))
-    news_idx, news_diag = build_news_llm_index(Path(news_path), provider=provider, citywide=citywide)
+    if claude_events:
+        news_idx, news_diag = build_news_llm_index_precomputed(Path(news_path), Path(claude_events))
+        provider = "claude-opus-4-8-insession"
+    else:
+        news_idx, news_diag = build_news_llm_index(Path(news_path), provider=provider, citywide=citywide)
     print(f"news events={news_diag['events']} attributed={news_diag['attributed_events']} "
           f"(articles {news_diag['attributed_articles']})")
 
@@ -266,10 +315,13 @@ def main(argv: list[str] | None = None) -> int:
                     help="event extractor: mock (offline keyword) or a real LLM (needs API key)")
     ap.add_argument("--no-citywide", action="store_true",
                     help="disable the citywide news-attribution rule (borough-name match only)")
+    ap.add_argument("--claude-events", default=None,
+                    help="precomputed real-LLM events JSONL (e.g. claude_events_2026h1.jsonl); "
+                         "overrides --provider with in-session Claude extraction")
     ns = ap.parse_args(argv)
 
     res = run(ns.data_dir, ns.events, ns.news, ns.test_from,
-              provider=ns.provider, citywide=not ns.no_citywide)
+              provider=ns.provider, citywide=not ns.no_citywide, claude_events=ns.claude_events)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "incremental_value_borough.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 

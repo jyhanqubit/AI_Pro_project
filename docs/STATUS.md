@@ -43,7 +43,13 @@ lift and whether that lift converts to profit net of LLM cost.
   +$33k — reproduces v1 robustly); **A2−A1 (LLM-news) = negative_lift** (WAPE 0.1047→0.1075,
   CI [−6.02,−3.71], **net LLM value −$23,730**). **V2 answer (this data): structured event feed
   is worth money; LLM-from-news is net-negative** even given a fair test. Caveat: borough event
-  effect small (~0.002 WAPE) & sample-sensitive. 4 tests. Artifact: `incremental_value_borough.json`.
+  effect small (~0.002 WAPE) & sample-sensitive. Artifact: `incremental_value_borough.json`.
+  **Real-LLM extraction (decisive):** no API key in sandbox, so claude-opus-4-8 (this session)
+  hand-extracted 23 clean NYC events (`data/fixtures/news_live/claude_events_2026h1.jsonl`,
+  `--claude-events` path). Re-run test May, 336 clean news rows: A1−A0 measured_improvement
+  (0.0908→0.0883); **A2−A1 still negative_lift** (0.0883→0.0905, CI [−5.32,−1.56], net LLM value
+  −$17,789). LLM-from-news is net-negative **even with a real high-quality extraction** (news
+  sparse/coarse/redundant vs the structured feed) — not a mock artifact. 6 tests.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 

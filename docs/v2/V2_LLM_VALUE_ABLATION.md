@@ -22,6 +22,17 @@ its own cost? This requires cleanly separating three feature arms and reporting 
 > **V2 answer (this data): structured event feed = worth money; LLM-from-news = net-negative.**
 > Caveat: the borough event effect is small (~0.002 WAPE) and sample-sensitive. Artifact:
 > `reports/v2/llm_value/incremental_value_borough.json`.
+>
+> **Real-LLM extraction — decisive test.** To remove the "mock keyword extractor is bad" confound,
+> claude-opus-4-8 (this session) read all 371 articles and produced a clean, grounded NYC event set
+> (`data/fixtures/news_live/claude_events_2026h1.jsonl`, 23 events: LIRR strike, NYC flash floods,
+> concerts/festivals, blizzard travel bans — off-topic/false-positive items rejected). Re-run
+> (`make v2-llm-value-borough --claude-events ...`, test May, 336 clean news-signal rows): A1−A0
+> **measured_improvement** (WAPE 0.0908→0.0883, CI [1.08,6.71]); A2−A1 **still negative_lift**
+> (WAPE 0.0883→0.0905, CI [−5.32,−1.56], net LLM value −$17,789). **Even a real, high-quality LLM
+> extraction does not make news events net-positive** over the dense structured permitted feed —
+> news events are sparse, temporally coarse, and redundant with the official schedule. The negative
+> is not an extraction-quality artifact.
 
 ## Three arms (identical cutoffs/splits)
 
