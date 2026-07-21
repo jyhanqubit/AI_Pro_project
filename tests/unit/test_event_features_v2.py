@@ -12,6 +12,7 @@ from ml.forecasting.event_features_v2 import (
     EventFeatureCfg,
     build_direct_index,
     build_graph_index,
+    build_permitized_index,
     scoped_boroughs,
 )
 
@@ -91,3 +92,28 @@ def test_graph_feature_also_leakage_gated():
     gidx = build_graph_index(ev, {"a": _art("a", "2026-05-10T20:00")})
     assert ("Bronx", "2026-05-10 18") not in gidx           # before availability
     assert gidx[("Bronx", "2026-05-10 20")]["news_llm_neighbor"] > 0
+
+
+def test_permitized_spans_precise_interval_and_is_active_throughout():
+    # Precise start/end -> feature active (weight 1.0) across the whole event interval, not a peak.
+    ev = [{"article_id": "a", "event_type": "TRANSIT_DISRUPTION", "severity": 0.8,
+           "boroughs": ["Manhattan", "Queens"],
+           "event_start_at": "2026-05-16T04:00:00-04:00", "event_end_at": "2026-05-16T23:00:00-04:00"}]
+    idx, diag = build_permitized_index(ev, {"a": _art("a", "2026-05-16T04:00")})
+    assert diag["attributed_events"] == 1 and diag["leakage_dropped"] == 0
+    assert idx[("Manhattan", "2026-05-16 06")]["news_llm_active"] == 1.0
+    assert idx[("Queens", "2026-05-16 20")]["news_llm_active"] == 1.0
+    assert idx[("Manhattan", "2026-05-16 06")]["news_llm_transit"] == 1.0
+    assert ("Bronx", "2026-05-16 06") not in idx  # not an attributed borough
+
+
+def test_permitized_retrospective_review_self_excludes_by_leakage():
+    # A show at 20:00 reviewed/published the NEXT afternoon -> event entirely before availability ->
+    # the whole record drops out (leakage), which is the honest timing gap vs advance permits.
+    ev = [{"article_id": "a", "event_type": "LARGE_VENUE_EVENT", "severity": 0.4,
+           "boroughs": ["Brooklyn"],
+           "event_start_at": "2026-05-07T20:00:00-04:00", "event_end_at": "2026-05-07T23:00:00-04:00"}]
+    idx, diag = build_permitized_index(ev, {"a": _art("a", "2026-05-08T15:28")})
+    assert diag["leakage_dropped"] == 1
+    assert diag["attributed_events"] == 0
+    assert len(idx) == 0

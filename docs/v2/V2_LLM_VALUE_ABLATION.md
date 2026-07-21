@@ -103,6 +103,47 @@ direct-active / 222 graph-active zone-hours):
 
 Artifact: `reports/v2/llm_value/graph_contribution.json`.
 
+### "News → permit-DB" reconstruction — hypothesis REFUTED (`ml/forecasting/llm_permitize_value.py`)
+
+Hypothesis tested: the permit feed works because it is a precise structured DB (exact time + exact
+borough, known in advance); so if the LLM re-extracts news into that **same permit schema**, the
+structured version should help where raw news doesn't. I (in-session) rebuilt all 23 news events as
+permit-quality records — precise `event_start_at`/`event_end_at` + specific borough inferred from the
+article (`claude_events_permitized_2026h1.jsonl`) — availability-gated.
+
+| arm | WAPE |
+|---|---|
+| A1 (permit feed) | 0.0883 |
+| A2 news **raw** (coarse) | 0.0883 |
+| A2 news **permitized** (precise time + borough) | **0.0940** |
+
+| comparison | decision | active skill | CI95 |
+|---|---|---|---|
+| permitized − A1 | `MEANINGFUL_NEGATIVE` | **−6.31%** | [−25.2, −5.5] |
+| permitized − raw news | `MEANINGFUL_NEGATIVE` | **−6.30%** | [−22.7, −5.8] |
+
+**The hypothesis is refuted: giving news events permit-quality precision made the forecast *worse*,
+not better — worse even than vague raw news.** Two honest mechanisms:
+
+1. **Sparse + confident = confident noise.** Raw news features were vague and diffuse, so the tree
+   mostly ignored them (≈0 effect). Permitized features are sharp and confident (weight 1.0 across a
+   precise interval in a specific borough), so the tree *trusts* and adjusts on them — but the ~19
+   news events' true demand effect is heterogeneous and unlearnable from so few examples (a transit
+   strike may *raise* bike demand via substitution or *lower* it; a festival raises it locally), so
+   the confident feature injects a wrong, high-variance adjustment. Precision amplifies the harm.
+2. **The permit feed's value is density, not per-event structure.** A1 works because it carries
+   **63,070** events — enough for the model to learn a stable "permitted-event → demand" coefficient.
+   News supplies ~19. No amount of per-event precision fixes a sample that small.
+
+3. **Timing gap (reported, not hidden):** 4 of 23 events were `leakage_dropped` — retrospective
+   reviews whose show preceded publication, so they can't inform a forecast at all. Permits are filed
+   in advance; news is coincident-or-after.
+
+**Conclusion:** it is *not* the structure that the permit feed provides and news lacks — it is the
+**volume and consistency** of events. Restructuring sparse news into a permit schema cannot recover
+that, and here actively hurt. Honest negative result, not faked. Artifact:
+`reports/v2/llm_value/permitize_contribution.json`.
+
 ## Three arms (identical cutoffs/splits)
 
 ```text

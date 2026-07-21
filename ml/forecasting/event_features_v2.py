@@ -112,6 +112,61 @@ def build_direct_index(events, articles, cfg: EventFeatureCfg | None = None):
     return idx, diag
 
 
+def _interval_hours(start: datetime, end: datetime, avail: datetime, cfg: EventFeatureCfg):
+    """Yield (hour_key, weight) over [start, end] (weight 1.0) plus a half-life tail after end,
+    availability-gated. Used when the event carries a PRECISE start/end (permit-quality)."""
+    end = min(end, start + timedelta(hours=48))  # cap a long event
+    h = start.replace(minute=0, second=0, microsecond=0)
+    last = end.replace(minute=0, second=0, microsecond=0)
+    while h <= last:
+        if h >= avail:
+            yield h.strftime("%Y-%m-%d %H"), 1.0
+        h += timedelta(hours=1)
+    for off in range(1, cfg.span_h + 1):     # decaying tail after the event ends
+        ht = last + timedelta(hours=off)
+        if ht >= avail:
+            yield ht.strftime("%Y-%m-%d %H"), half_life_weight(off, cfg.half_life_h)
+
+
+def build_permitized_index(events, articles, cfg: EventFeatureCfg | None = None):
+    """{(borough, 'YYYY-MM-DD HH') -> {DIRECT_COLS}} from PERMIT-QUALITY news records.
+
+    Same schema as the direct arm, but anchored to the record's PRECISE ``event_start_at`` /
+    ``event_end_at`` (the LLM's reconstruction of the news event as a permit-DB entry) and the
+    record's SPECIFIC boroughs — not a type-prior peak hour or citywide smear. Still availability-
+    gated, so a retrospective review whose event precedes publication self-excludes (honest leakage).
+    """
+    cfg = cfg or EventFeatureCfg()
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in DIRECT_COLS})
+    diag = {"events": 0, "attributed_events": 0, "leakage_dropped": 0}
+    for e in events:
+        diag["events"] += 1
+        a = articles.get(e["article_id"])
+        etype = e.get("event_type", "")
+        bs = scoped_boroughs(etype, e.get("boroughs", []))
+        if a is None or not bs or not e.get("event_start_at"):
+            continue
+        avail = (a.available_at or max(a.published_at, a.first_seen_at)).astimezone(_NY)
+        start = datetime.fromisoformat(e["event_start_at"]).astimezone(_NY)
+        end = datetime.fromisoformat(e.get("event_end_at") or e["event_start_at"]).astimezone(_NY)
+        sev = float(e.get("severity", 0.5))
+        hours = list(_interval_hours(start, end, avail, cfg))
+        if not hours:
+            diag["leakage_dropped"] += 1   # event entirely before the news was public
+            continue
+        diag["attributed_events"] += 1
+        for b in bs:
+            for hk, w in hours:
+                cell = idx[(b, hk)]
+                cell["news_llm_active"] = max(cell["news_llm_active"], w)
+                cell["news_llm_severity"] = max(cell["news_llm_severity"], sev * w)
+                if etype in TRANSIT_TYPES:
+                    cell["news_llm_transit"] = 1.0
+                if etype in CROWD_TYPES:
+                    cell["news_llm_crowd"] = 1.0
+    return idx, diag
+
+
 def build_graph_index(events, articles, cfg: EventFeatureCfg | None = None):
     """{(borough, 'YYYY-MM-DD HH') -> {GRAPH_COLS}} — neighbor spillover via centroid distance decay.
 

@@ -117,6 +117,15 @@ lift and whether that lift converts to profit net of LLM cost.
   grain (only 5 coarse zones; structured feed already dense). Fair venue for the graph claim is
   H3-zone grain (existing `pipelines/features/graph_features.py`), not yet run. Honest null, not faked.
   6 pure-builder unit tests. Artifact: `reports/v2/llm_value/graph_contribution.json`.
+- **V2-03 "news→permit-DB" reconstruction** (`ml/forecasting/llm_permitize_value.py`, hypothesis
+  REFUTED): tested whether rebuilding news as permit-schema records (precise event_start/end +
+  specific borough, `claude_events_permitized_2026h1.jsonl`) recovers value. It **hurt**:
+  permitized−A1 = **`MEANINGFUL_NEGATIVE` −6.31%** (CI [−25.2,−5.5]), worse than raw news too
+  (WAPE 0.0940 vs 0.0883). **Structure is not the missing ingredient** — the permit feed works
+  because of event DENSITY (63,070 events → learnable coefficient); news gives ~19, and making those
+  sparse events sharp/confident injects confident noise (a strike may raise or lower bike demand;
+  unlearnable from so few). 4 events leakage-dropped (retrospective reviews post-date their event).
+  Honest negative, not faked. 8 pure-builder tests. Artifact: `permitize_contribution.json`.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
