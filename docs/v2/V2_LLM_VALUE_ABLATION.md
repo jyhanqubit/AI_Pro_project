@@ -185,14 +185,48 @@ precinct number, but no coordinates). Geocoding street/precinct text needs exter
 offline, and fabricating coordinates is not allowed. So the **borough-grain graph test above (null)
 is the finest fair test the real event data supports.** Recorded as `blocked_data`, not forced.
 
+### SIGNED LLM demand signal — direction from the LLM (`llm_signed_value.py`)
+
+The importance-weight failure was that it was *unsigned* (always amplify), so a blizzard pushed the
+forecast up. The fix: have the LLM emit a **signed** `demand_effect ∈ [−1,+1]` per event (blizzard
+−0.9, festival +0.5, LIRR shutdown **+0.6** via bike substitution) and build a signed feature
+`news_demand_signal = demand_effect × severity × decay`. The model gets the direction *from the LLM's
+reasoning* rather than learning it from ~19 sparse events (`claude_events_signed_2026h1.jsonl`).
+
+| | value |
+|---|---|
+| **LLM sign-correctness** (agrees with actual demand deviation vs same-hour-last-week, 191 cells) | **0.77** |
+| WAPE: A1 → +signed | 0.0883 → 0.0906 |
+| signed − A1 | **`NO_MEANINGFUL_EFFECT`** −2.04%, CI [−7.26, +1.44] |
+
+**This is the key result. The LLM's direction is genuinely correct (0.77 agreement) — fixing the
+sign turned the −7.82% *harm* into a −2.04% *neutral* — yet it still does not improve the forecast.**
+The reason is redundancy: when a blizzard is suppressing demand, the autoregressive features
+(`dep_lag_1`, `dep_lag_24`, `dep_roll_mean_24`) **already show demand is low** — the model *already
+sees* the effect. A signed news signal that says "demand is down now" is largely **redundant with the
+demand history** for ongoing events. News could only add value at the *sudden onset* of an
+unanticipated shock (before the lags catch up) — rare, and blunted here by coarse timing + the
+availability gate.
+
 ### Overall V2-03 finding (consistent across every attempt)
 
-Improve the extraction, add graph propagation, reconstruct into permit schema, or reweight the permit
-feed by news importance — **all four are neutral-to-negative.** The consistent, honest reason: the
-LLM-news layer has **too few events (~19–336 rows) with a heterogeneous, often wrong-signed relation
-to bike demand** to be learnable, while the permit feed works precisely because it is dense and
-consistent. On this data, LLM-from-news does not improve demand forecasting — and we now understand
-why (density + sign heterogeneity), not merely that it doesn't.
+Five attempts — improve extraction, add graph propagation, reconstruct into permit schema, reweight
+the permit feed by news importance, and a **signed** LLM demand direction — are **all
+neutral-to-negative.** The story tightened at each step:
+
+1. Raw / improved news feature → neutral-to-negative (coarse, sparse).
+2. Permit-schema reconstruction → negative (sparse + confident = confident noise).
+3. Unsigned importance weight → negative (blizzard amplified demand the *wrong way*).
+4. **Signed** demand direction → the LLM's sign is **77% correct**, harm removed, but **still no
+   improvement** — because the autoregressive demand history already encodes the effect of an ongoing
+   event; the news signal is **redundant** with the lags.
+
+**Final honest conclusion:** LLM-from-news does not improve demand forecasting on this data, and we
+now understand *why* at three levels — (a) **sparsity** (~19 events can't teach a magnitude), (b)
+**sign heterogeneity** (fixed by a signed LLM effect, which is 77% right), and (c) **redundancy**: for
+the ongoing events news reports, the demand-history lags already capture the shock. News would only
+help at the sudden onset of an *unanticipated* shock before the lags react — rare, and limited here by
+coarse timing and the availability gate. This is a negative result understood, not merely observed.
 
 ## Three arms (identical cutoffs/splits)
 

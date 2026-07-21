@@ -134,11 +134,18 @@ lift and whether that lift converts to profit net of LLM cost.
 - **V2-03 (b) H3-grain graph test = `blocked_data`**: fine H3 graph needs geocoded events; real
   permit/news events are borough-tagged only (no coordinates). Not fabricated; borough-grain graph
   null stands as the finest fair test.
-- **V2-03 overall (consistent honest finding):** improve extraction / add graph / reconstruct into
-  permit schema / reweight permit feed by news — all four neutral-to-negative. Reason: LLM-news has
-  too few events (~19–336 rows) with a heterogeneous, often wrong-signed relation to bike demand to be
-  learnable; the permit feed works because it is dense + consistent. LLM-from-news does not improve
-  demand forecasting on this data, and we now understand why (density + sign heterogeneity).
+- **V2-03 (signed LLM demand signal)** (`ml/forecasting/llm_signed_value.py`): LLM emits signed
+  `demand_effect∈[−1,+1]` (blizzard −0.9, festival +0.5, LIRR shutdown +0.6 via substitution) →
+  `news_demand_signal = demand_effect×severity×decay`. **LLM sign-correctness 0.77** (direction is
+  right), harm removed (−7.82%→−2.04%), but still **`NO_MEANINGFUL_EFFECT`** (CI [−7.26,+1.44], WAPE
+  0.0883→0.0906). Reason: autoregressive lags (dep_lag_1/24/168, roll_mean_24) already encode an
+  ongoing event's demand → the news signal is **redundant**. 3 more unit tests.
+- **V2-03 overall (negative result, fully understood):** five attempts — improve extraction / graph /
+  permit-schema reconstruction / importance-weight / signed direction — all neutral-to-negative.
+  Three-level why: (a) **sparsity** (~19 events can't teach magnitude), (b) **sign heterogeneity**
+  (fixed by a signed LLM effect, 77% correct), (c) **redundancy** (demand-history lags already capture
+  ongoing-event shocks). News would only help at the sudden onset of an unanticipated shock before the
+  lags react — rare + limited by coarse timing/availability gate. Not just observed — explained.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
