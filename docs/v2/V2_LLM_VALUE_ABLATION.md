@@ -384,9 +384,28 @@ demand DIRECTION** (parade +0.4, film/production −0.3, market +0.2) as a signe
 **It hurt — worse than A0.** The lesson confirms the V2 contract's own rule ("the LLM does not
 directly compute demand"): the crude count works *because* it is agnostic — the tree **learns** each
 situation's demand response from data. Imposing an **unvalidated demand-direction prior** overrides
-that with a guess that, when wrong, actively misleads. The correct division of labor is **LLM
-structures FACTS (what type of event), the model learns the response** — pursued next by
-disaggregating the count into per-type buckets (no imposed sign).
+that with a guess that, when wrong, actively misleads.
+
+**Attempt 2 fixed that** — LLM structures FACTS only (categorize `event_type` into 6 buckets:
+surge / gather / openstreet / market / production / civic), NO sign imposed, model learns each
+bucket's response:
+
+| arm | WAPE | vs crude |
+|---|---|---|
+| A1 crude counts | 0.0883 | — |
+| A1 + per-type buckets | 0.0899 | **−1.9% MEANINGFUL_NEGATIVE** |
+
+**Also negative.** Disaggregating one count into six sparser bucket-counts gives the model 6
+coefficients to fit on the same ~2,600 event-active cells → it overfits; the low-variance aggregate
+count already captures the usable "how much permit activity" signal. Any per-type demand differences
+are too small/noisy to recover at borough-hour grain with this many events.
+
+**Finding for path (A):** on this real forward-looking source, LLM *semantic structuring* beyond a
+simple aggregate count does not help — neither imposing direction (−3.39%) nor factual type-splitting
+(−1.9%). **The aggregate event count is the ceiling on this data/grain.** Finer LLM structure would
+need a finer spatial grain (per-H3-zone, where a parade route localizes) — blocked here because the
+permits are borough-tagged (no coordinates). This is exhaustive for the demand side; further demand
+experiments would be fishing.
 
 ### Insight — where the LLM adds value, and how to attribute the WAPE lift
 
