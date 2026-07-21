@@ -27,13 +27,25 @@ against a fixed offline question set.
 > This is exactly where the LLM adds value. 8 tests. Artifact:
 > `reports/v2/copilot/correctness_benchmark.json`. (Complements `scripts/graphrag_eval.py`.) 
 >
-> **GraphRAG retrieval half (evidence #6 completed).** `ml/copilot/graphrag_benchmark.py`
-> (also run by `make v2-copilot`) exercises the real event-graph retrieval (`services.api.graphrag`,
-> Article→Event→H3Zone at the replay cutoff) on 10 explanation questions. Three answerers: no-retrieval
-> (hallucinates 10/10), grounding-only (0 hallucinated but cites irrelevant, correct 4/10, refuse 0/4),
-> **GraphRAG grounding+relevance (correct 10/10, refuse 4/4, citation F1 1.0)**. The relevance step is
-> what graph retrieval buys. Artifact: `reports/v2/copilot/graphrag_benchmark.json`. So V2-06 now has
-> BOTH halves: numeric answers = typed-tool-grounded; graph explanations = retrieval-grounded + relevant.
+>
+> **GraphRAG retrieval half — on the real graph, with a FAIR baseline.** `ml/copilot/graphrag_scale.py`
+> (run by `make v2-copilot`) uses the real event graph (`make seed-graph`: **2,895 events / 6 zones /
+> 2,808 edges** — not the 2-event demo). Task: as-of a cutoff, name the {type} events affecting zone Z
+> (21 Q). Compared against a fair non-graph reference (top-3 type-matched by recency, zone-agnostic):
+>
+> | answerer | correct | F1 | refuse OOS | halluc |
+> |---|---|---|---|---|
+> | no-retrieval floor | 0/21 | 0.00 | 0/6 | 21 |
+> | flat retrieval (real baseline) | 6/21 | 0.01 | **6/6** | 0 |
+> | GraphRAG (Event→Zone edge) | 21/21 | 1.00 | 6/6 | 0 |
+>
+> The flat baseline is **not a strawman**: it grounds (0 halluc) and refuses all OOS (6/6) — it ties
+> GraphRAG there. It only loses the *answerable* part (0/15) because it is zone-agnostic. **Honest
+> limitation:** this task is graph-structural (gold = the graph's edges), so GraphRAG is high *by
+> construction* — it is NOT a fair "GraphRAG beats RAG" bakeoff (a borough-tag filter would tie).
+> Read it as "the Event→Zone edge is what makes per-zone queries answerable at all." A neutral test
+> needs method-independent labels or a text-retrieval task (recorded in the artifact `caveats`).
+> Artifact: `reports/v2/copilot/graphrag_benchmark.json`.
 
 ## Architecture boundary
 

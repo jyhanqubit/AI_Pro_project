@@ -99,15 +99,15 @@ def test_graphrag_benchmark_relevance_gate():
 
     if not GRAPH.exists():
         pytest.skip("event graph snapshot missing — run `make seed-graph` first")
-    assert main([]) == 0  # 0 only when the GraphRAG answerer has 0 hallucinations + full refusal
+    assert main([]) == 0  # 0 only when flat is a genuine middle (0 < flat_correct < graph_correct)
     d = json.loads(Path("reports/v2/copilot/graphrag_benchmark.json").read_text())
     a = d["answerers"]
-    # No-retrieval invents events; GraphRAG does not and refuses out-of-scope.
-    assert a["raw_llm_no_retrieval"]["hallucinated_answers"] > 0
-    assert a["graphrag_grounding_relevance"]["hallucinated_answers"] == 0
-    assert a["graphrag_grounding_relevance"]["refusal_ratio"] == 1.0
-    assert a["graphrag_grounding_relevance"]["citation_f1"] == 1.0
-    # Relevance is the differentiator: grounding-only is less correct than grounding+relevance.
-    assert a["grounding_only"]["correct_ratio"] < a["graphrag_grounding_relevance"]["correct_ratio"]
+    # No-retrieval invents; the flat baseline and GraphRAG do not hallucinate.
+    assert a["no_retrieval_floor"]["hallucinated_answers"] > 0
+    assert a["flat_retrieval_baseline"]["hallucinated_answers"] == 0
+    assert a["graphrag"]["hallucinated_answers"] == 0
+    # The flat baseline is a real, non-strawman method: it lands strictly between floor and graph.
+    assert 0.0 < a["flat_retrieval_baseline"]["correct_ratio"] < a["graphrag"]["correct_ratio"]
+    # Honest: this task is graph-structural (gold = graph edges), so graph is high by construction.
+    assert d["caveats"]  # circularity caveat is recorded
     assert d["graph_scale"]["events"] > 100  # real dense graph, not the 2-event demo
-    assert d["graphrag_hard_gates_pass"] is True

@@ -23,9 +23,11 @@ lift and whether that lift converts to profit net of LLM cost.
   `reports/v2/copilot/correctness_benchmark.json`.
   **GraphRAG half at scale** (`ml/copilot/graphrag_scale.py`): the 2-event figure was only the
   golden-path demo fixture — the real graph (`make seed-graph`) has **2,895 events / 6 zones /
-  2,808 edges**. On 21 as-of relevance questions: grounding+relevance **21/21, F1 1.0, refuse 6/6,
-  0 hallucinated**; grounding-only **1/21** (citing all zone events fails once a zone has hundreds);
-  no-retrieval hallucinates 21/21. Relevance matters MORE at scale. Artifact:
+  2,808 edges**. On 21 as-of questions, vs a FAIR flat-retrieval baseline (top-3 type-matched,
+  zone-agnostic): flat **6/21** (grounds, refuses all 6 OOS, 0 halluc — not a strawman) vs GraphRAG
+  **21/21**. **Honest caveat:** the task is graph-structural (gold = graph edges) so GraphRAG is
+  high BY CONSTRUCTION — not a fair GraphRAG-vs-RAG bakeoff; a borough-tag filter would tie. Read
+  as 'the Event→Zone edge is what makes per-zone queries answerable'. Artifact + caveats:
   `reports/v2/copilot/graphrag_benchmark.json`.
 - **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
   (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety

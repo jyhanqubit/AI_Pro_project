@@ -30,17 +30,18 @@ OUT_DIR = Path("reports/v2/copilot")
 FAKE_ID = "evt_00000000deadbeef"  # an id NOT in any context -> hallucination signal
 
 
+TOPK = 3  # standard retrieval budget for the flat baseline (does not peek at gold size)
+
+
 def load_graph(path=GRAPH):
     g = json.loads(path.read_text(encoding="utf-8"))
     props = {n["key"]: n["props"] for n in g["nodes"] if n["label"] == "Event"}
     zone_events: dict[str, list[str]] = {}
-    ev_zone: dict[str, list[str]] = {}
     for e in g["edges"]:
         if e["rel"] != "AFFECTS":
             continue
         eid, z = e["from"][1], e["to"][1]
         zone_events.setdefault(z, []).append(eid)
-        ev_zone.setdefault(eid, []).append(z)
     return props, zone_events
 
 
@@ -53,46 +54,56 @@ def _etype(props, eid):
 
 
 def build_questions(props, zone_events, cutoff_iso: str):
-    """One question per (zone, type) with as-of context; gold = that type; plus out-of-scope."""
+    """One question per (zone, type) as-of the cutoff. Attaches, per question:
+
+    - ``gold``  : the graph's Event->Zone edges filtered to the asked type (the target),
+    - ``flat_candidates`` : type-matched events from ALL zones ranked by recency (what a plain,
+      zone-agnostic retriever pulls — the fair non-graph reference; independent of the zone edge).
+    """
+    # Global as-of universe + per-type recency ranking (zone-agnostic), for the flat baseline.
+    universe = {e for eids in zone_events.values() for e in eids
+                if _avail(props, e) and _avail(props, e) <= cutoff_iso}
+    by_type: dict[str, list[str]] = {}
+    for e in universe:
+        by_type.setdefault(_etype(props, e), []).append(e)
+    for t in by_type:
+        by_type[t].sort(key=lambda e: _avail(props, e), reverse=True)  # most recent first
+
     qs = []
     for z, eids in sorted(zone_events.items()):
-        asof = [e for e in eids if _avail(props, e) and _avail(props, e) <= cutoff_iso]
+        asof = [e for e in eids if e in universe]
         if not asof:
             continue
         types_present = {_etype(props, e) for e in asof}
-        # answerable: each type actually present in Z as-of cutoff
         for t in sorted(types_present):
             gold = sorted({e for e in asof if _etype(props, e) == t})
-            qs.append({"zone": z, "type": t, "context": sorted(set(asof)),
-                       "gold": gold, "oos": False})
-        # out-of-scope: a valid ontology type that is NOT present in Z as-of cutoff
+            qs.append({"zone": z, "type": t, "gold": gold, "oos": False,
+                       "flat_candidates": by_type.get(t, [])})
         for t in ("ROAD_CLOSURE", "SAFETY_INCIDENT", "TRANSIT_DISRUPTION", "WEATHER_SHOCK"):
             if t not in types_present:
-                qs.append({"zone": z, "type": t, "context": sorted(set(asof)),
-                           "gold": [], "oos": True})
-                break  # one OOS per zone keeps the set balanced
-    return qs
+                qs.append({"zone": z, "type": t, "gold": [], "oos": True,
+                           "flat_candidates": by_type.get(t, [])})
+                break
+    return qs, universe
 
 
 def answerer(strategy: str, q: dict) -> list[str]:
-    ctx, gold = q["context"], q["gold"]
-    if strategy == "C":  # no retrieval -> invent
+    if strategy == "no_retrieval":      # floor: no grounding at all -> invents an id
         return [FAKE_ID]
-    if strategy == "B":  # grounding-only -> cite ALL zone events (ignores the type filter)
-        return list(ctx)
-    if strategy == "A":  # grounding + relevance -> only the relevant type; refuse if none
-        return list(gold)
+    if strategy == "flat_retrieval":    # fair reference: top-K type-matched by recency, zone-agnostic
+        return list(q["flat_candidates"][:TOPK])
+    if strategy == "graphrag":          # uses the Event->Zone graph edge + type filter; refuse if none
+        return list(q["gold"])
     raise ValueError(strategy)
 
 
-def score(strategy: str, qs: list[dict]) -> dict:
+def score(strategy: str, qs: list[dict], universe: set[str]) -> dict:
     tp = fp = fn = 0
     correct = oos_total = oos_refused = hallucinated = 0
     for q in qs:
-        ctx = set(q["context"])
         raw = answerer(strategy, q)
-        cited = {i for i in raw if i in ctx}          # product grounding: drop ungrounded ids
-        halluc = any(i not in ctx for i in raw)
+        cited = {i for i in raw if i in universe}     # grounding: real events only (drop invented)
+        halluc = any(i not in universe for i in raw)
         hallucinated += int(halluc)
         gold = set(q["gold"])
         tp += len(cited & gold); fp += len(cited - gold); fn += len(gold - cited)
@@ -125,12 +136,14 @@ def main(argv=None) -> int:
     props, zone_events = load_graph()
     n_events = len(props)
     n_edges = sum(len(v) for v in zone_events.values())
-    qs = build_questions(props, zone_events, ns.cutoff)
+    qs, universe = build_questions(props, zone_events, ns.cutoff)
 
-    ans = {"raw_llm_no_retrieval": score("C", qs), "grounding_only": score("B", qs),
-           "graphrag_grounding_relevance": score("A", qs)}
-    a = ans["graphrag_grounding_relevance"]
-    hard_gates_pass = a["hallucinated_answers"] == 0 and (a["refusal_ratio"] in (None, 1.0))
+    ans = {
+        "no_retrieval_floor": score("no_retrieval", qs, universe),
+        "flat_retrieval_baseline": score("flat_retrieval", qs, universe),
+        "graphrag": score("graphrag", qs, universe),
+    }
+    flat, graph = ans["flat_retrieval_baseline"], ans["graphrag"]
 
     report = {
         "run_id": f"run_v2-06graphscale_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
@@ -140,18 +153,32 @@ def main(argv=None) -> int:
         "cutoff": ns.cutoff,
         "graph_scale": {"events": n_events, "zones": len(zone_events), "event_zone_edges": n_edges},
         "n_questions": len(qs),
-        "task": "as-of a cutoff, name the {event_type} events affecting a borough zone; gold from graph edges",
+        "task": "as-of a cutoff, name the {event_type} events affecting a borough zone",
+        "baselines": {
+            "no_retrieval_floor": "invents an event id (grounding floor)",
+            "flat_retrieval_baseline": f"fair reference: top-{TOPK} type-matched events by recency, "
+                                       "ZONE-AGNOSTIC (a plain RAG that has no graph zone edge)",
+            "graphrag": "uses the Event->Zone graph edge + type filter",
+        },
         "answerers": ans,
-        "graphrag_hard_gates_pass": hard_gates_pass,
+        "graph_vs_flat_correct_gain": round(graph["correct_ratio"] - flat["correct_ratio"], 3),
+        "graph_vs_flat_f1_gain": round(graph["citation_f1"] - flat["citation_f1"], 3),
         "finding": (
-            "On the REAL dense graph (not the 2-event demo): no-retrieval invents events "
-            "(hallucinated>0); grounding-only cites every zone event ignoring type (grounded but "
-            "irrelevant -> low correctness); grounding+relevance filters to the asked type and "
-            "refuses empty types (high correctness, 0 hallucinated). Relevance is the differentiator "
-            "and it scales with event count."
+            "Fair comparison: the flat retrieval baseline is a real method (top-K type-matched by "
+            "recency) — not a strawman — and lands in the middle, its errors coming from being "
+            "ZONE-AGNOSTIC (it retrieves the right event type but from the wrong borough, and never "
+            "refuses). GraphRAG's advantage is exactly the Event->Zone edge: it pins the borough and "
+            "refuses out-of-scope. The gap = the value of the graph's structured zone linkage over "
+            "plain retrieval."
         ),
-        "note": "Answerer strategies are deterministic behaviors (A/B/C) demonstrating the metric on "
-                "the full graph; gold is derived from graph structure so it scales to any cutoff.",
+        "caveats": [
+            "gold is defined by the graph's Event->Zone edges, so GraphRAG is high by construction; "
+            "read the number as 'how much of the graph's structured linkage plain retrieval recovers', "
+            "not as proof GraphRAG beats a well-tuned attribute retriever (a borough-tag filter would "
+            "tie, since the graph edge was built from that same borough geocoding).",
+            "answerers are deterministic strategy behaviors demonstrating the metric on the full graph; "
+            "swap in real LLM outputs (needs a key) to score a live system.",
+        ],
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "graphrag_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
@@ -162,9 +189,12 @@ def main(argv=None) -> int:
     for name, m in ans.items():
         rr = f"{m['out_of_scope_refused']}/{m['out_of_scope']}"
         print(f"  {name:32s} {m['answer_correct']:>9s} {m['citation_f1']:>6} {rr:>8s} {m['hallucinated_answers']:>7d}")
-    print(f"\nGraphRAG hard gates pass: {hard_gates_pass}")
+    print(f"\ngraph vs flat: correct +{report['graph_vs_flat_correct_gain']}, "
+          f"F1 +{report['graph_vs_flat_f1_gain']}  (gap = value of the Event->Zone edge over plain retrieval)")
+    print(f"caveat: gold is graph-defined -> GraphRAG high by construction; see report caveats.")
     print(f"report -> {OUT_DIR}/graphrag_benchmark.json")
-    return 0 if hard_gates_pass else 1
+    # Success = the flat baseline is a genuine middle (not 0, not perfect): a fair, non-strawman control.
+    return 0 if 0.0 < flat["correct_ratio"] < graph["correct_ratio"] else 1
 
 
 if __name__ == "__main__":

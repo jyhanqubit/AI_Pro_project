@@ -48,27 +48,33 @@ demonstrated difference between the keyword stand-in and the real model.
 ## GraphRAG event-graph half (`graphrag_benchmark.json`)
 
 The section above is the **typed-tool numeric** half. This is the **GraphRAG retrieval** half —
-addendum evidence #6 "GraphRAG correctness AND relevance" — run on the **real dense event graph**
-(`make seed-graph` -> `data/processed/graph/event_graph.json`: **2,895 events** (news + NYC
-permitted), 6 borough-centroid H3 zones, 2,808 `AFFECTS` edges). NOT the 2-event demo fixture.
+addendum evidence #6 — on the **real dense event graph** (`make seed-graph`: **2,895 events**
+(news + NYC permitted), 6 borough-centroid H3 zones, 2,808 `AFFECTS` edges). NOT the 2-event demo.
 
-Task (as-of cutoff 2026-06-30): "which {event_type} events affect zone Z?" — 21 questions (15
-answerable + 6 out-of-scope), gold derived from the graph edges (so it scales to any cutoff).
+Task (as-of 2026-06-30): "which {event_type} events affect zone Z?" — 21 questions (15 answerable
++ 6 out-of-scope). Instead of strawman controls, we compare against a **fair, real baseline**:
 
 | Answerer | correct | citation F1 | out-of-scope refusal | hallucinated |
 |---|---|---|---|---|
-| raw LLM (no retrieval) | 0/21 | 0.00 | 0/6 | 21 |
-| grounding-only | 1/21 | 0.40 | 0/6 | 0 |
-| **GraphRAG (grounding + relevance)** | **21/21** | **1.00** | **6/6** | **0** |
+| no-retrieval (floor) | 0/21 | 0.00 | 0/6 | 21 |
+| **flat retrieval baseline** (top-3 type-matched by recency, zone-agnostic) | 6/21 | 0.01 | 6/6 | 0 |
+| **GraphRAG** (Event→Zone edge + type) | 21/21 | 1.00 | 6/6 | 0 |
 
-- **No retrieval → invents events** (21/21 hallucinated). Retrieval stops fabrication.
-- **Grounding-only → 1/21.** Citing every event that affects the zone is almost always wrong once a
-  zone has hundreds of events — so grounding *without relevance* collapses at scale. This is the key
-  point: relevance matters MORE as the graph grows, not less.
-- **GraphRAG (grounding + relevance)** filters retrieved zone events to the asked type and refuses
-  empty types (21/21, 6/6, F1 1.0).
+- The flat baseline is a **legitimate method**, not a strawman: it grounds (0 hallucinations) and
+  **correctly refuses all 6 out-of-scope** — it ties GraphRAG on grounding and refusal.
+- Its only failure is the **answerable** part (0/15): being **zone-agnostic**, it retrieves the
+  right event *type* but from the wrong borough, so it can't name the per-zone event set.
 
-Answerer strategies (A/B/C) are deterministic behaviors demonstrating the metric on the full graph;
-gold comes from graph structure. Together the two halves cover both parts of evidence #6: numeric
-answers are tool-grounded (typed-tool half) and graph explanations are retrieval-grounded + relevant
-(this half), now at real scale (2,895 events, not 2).
+### Honest limitation (why the answerable gap is so large)
+
+This task is **inherently graph-structural**: the gold answer IS the graph's Event→Zone edges, and
+the question asks for the exact per-borough event set. So **no zone-agnostic method can win the
+answerable part**, and GraphRAG scores high *by construction*. Read the result as:
+> "the graph's Event→Zone edge is what lets you answer per-zone queries at all; plain retrieval
+> matches it on grounding + refusal but cannot reconstruct the zone linkage."
+
+It is **not** a fair "GraphRAG beats RAG" bakeoff — a borough-tag attribute filter would tie
+GraphRAG here (the graph edge was built from that same borough geocoding). A genuinely neutral
+comparison would need method-independent ground truth (NYC's official `event_borough` tags, which
+use a different event-id scheme that doesn't join to the graph's hashed ids) or a text-retrieval
+task where plain RAG is competitive. Recorded in the artifact's `caveats`.
