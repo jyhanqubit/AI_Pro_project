@@ -144,6 +144,56 @@ not better — worse even than vague raw news.** Two honest mechanisms:
 that, and here actively hurt. Honest negative result, not faked. Artifact:
 `reports/v2/llm_value/permitize_contribution.json`.
 
+### (a) News as an IMPORTANCE WEIGHT on the dense permit feed — also negative (`llm_importance_weight_value.py`)
+
+Follow-up to the density finding: keep the dense permit signal (63,070 events) and let news only
+*modulate* it — the permit features amplified by a news-importance scalar, untouched where there is
+no news. The feature that enters the model:
+
+```
+news_salience[b,h] = news importance in the borough-hour (severity x half-life decay, gated); 0 if none
+ev_active_newswt   = ev_active * (1 + news_salience)
+ev_crowd_newswt    = ev_crowd  * (1 + news_salience)
+```
+
+Example values actually fed to the model (from the run):
+
+| borough-hour | ev_active | news_salience | ev_active_newswt |
+|---|---|---|---|
+| Manhattan 2026-01-24 19 | 63 | 0.90 | **119.70** |
+| Queens 2026-01-24 19 | 14 | 0.90 | 26.60 |
+| *(any borough-hour with no news)* | k | 0.00 | k×1.0 = k (unchanged) |
+
+| comparison | decision | active skill | CI95 |
+|---|---|---|---|
+| importance-weighted − A1 | `MEANINGFUL_NEGATIVE` | **−7.82%** | [−25.6, −5.9] (WAPE 0.0883→0.0925) |
+
+**Also negative — and the example row shows exactly why.** The largest-salience cells are *Winter
+Storm Fern* (2026-01-24, severity 0.9): the weight *amplifies* permit activity 63 → 119.7 because the
+storm is "newsworthy". But a blizzard **suppresses** bike demand — so "newsworthy" points the wrong
+way. News salience is a "something big is happening" signal whose *relationship to demand is
+heterogeneous and often opposite* (storms depress, festivals lift), and ~191 rows across mixed types
+is far too few to learn the sign per type. So even as a gentle multiplier, news injects a
+confident, wrong-signed adjustment.
+
+### (b) H3-grain graph contribution — blocked (no geocoded events)
+
+The fairest venue for the graph (fine H3 zones with neighbor propagation) **cannot be run on the real
+data**: `pipelines/features/graph_features.py` places events on H3 zones by `lat/lng`, but the real
+permit and news events are **borough-tagged only** (permits also carry a street *description* +
+precinct number, but no coordinates). Geocoding street/precinct text needs external data not present
+offline, and fabricating coordinates is not allowed. So the **borough-grain graph test above (null)
+is the finest fair test the real event data supports.** Recorded as `blocked_data`, not forced.
+
+### Overall V2-03 finding (consistent across every attempt)
+
+Improve the extraction, add graph propagation, reconstruct into permit schema, or reweight the permit
+feed by news importance — **all four are neutral-to-negative.** The consistent, honest reason: the
+LLM-news layer has **too few events (~19–336 rows) with a heterogeneous, often wrong-signed relation
+to bike demand** to be learnable, while the permit feed works precisely because it is dense and
+consistent. On this data, LLM-from-news does not improve demand forecasting — and we now understand
+why (density + sign heterogeneity), not merely that it doesn't.
+
 ## Three arms (identical cutoffs/splits)
 
 ```text

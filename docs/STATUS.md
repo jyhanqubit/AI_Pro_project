@@ -126,6 +126,19 @@ lift and whether that lift converts to profit net of LLM cost.
   sparse events sharp/confident injects confident noise (a strike may raise or lower bike demand;
   unlearnable from so few). 4 events leakage-dropped (retrospective reviews post-date their event).
   Honest negative, not faked. 8 pure-builder tests. Artifact: `permitize_contribution.json`.
+- **V2-03 (a) news-as-importance-weight** (`ml/forecasting/llm_importance_weight_value.py`): keep the
+  dense permit feed, let news only modulate it — `ev_active×(1+news_salience)`, unchanged where no
+  news. **Also negative: `MEANINGFUL_NEGATIVE` −7.82%** (CI [−25.6,−5.9], WAPE 0.0883→0.0925). Example
+  row shows why: Winter Storm Fern amplifies permit 63→119.7, but a blizzard *suppresses* bike demand
+  → wrong-signed. Artifact: `importance_weight_contribution.json`.
+- **V2-03 (b) H3-grain graph test = `blocked_data`**: fine H3 graph needs geocoded events; real
+  permit/news events are borough-tagged only (no coordinates). Not fabricated; borough-grain graph
+  null stands as the finest fair test.
+- **V2-03 overall (consistent honest finding):** improve extraction / add graph / reconstruct into
+  permit schema / reweight permit feed by news — all four neutral-to-negative. Reason: LLM-news has
+  too few events (~19–336 rows) with a heterogeneous, often wrong-signed relation to bike demand to be
+  learnable; the permit feed works because it is dense + consistent. LLM-from-news does not improve
+  demand forecasting on this data, and we now understand why (density + sign heterogeneity).
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 

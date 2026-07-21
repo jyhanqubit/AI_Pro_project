@@ -1,0 +1,118 @@
+{
+  "run_id": "run_v2-03impwt_20260721T105907Z",
+  "artifact_id": "reports/v2/llm_value/importance_weight_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T10:59:07.503764+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "feature_form": {
+    "news_salience": "news importance in the borough-hour (severity x half-life decay, availability-gated); 0 where no news",
+    "ev_active_newswt": "ev_active * (1 + news_salience)  -- permit activity amplified if newsworthy",
+    "ev_crowd_newswt": "ev_crowd * (1 + news_salience)",
+    "invariant": "no news => salience 0 => weight x1.0 => permit feature UNCHANGED (dense base intact)"
+  },
+  "example_feature_values": [
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 19",
+      "ev_active": 63.0,
+      "ev_crowd": 16.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 119.7
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 19",
+      "ev_active": 14.0,
+      "ev_crowd": 1.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 26.6
+    },
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 20",
+      "ev_active": 63.0,
+      "ev_crowd": 16.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 119.7
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 20",
+      "ev_active": 14.0,
+      "ev_crowd": 1.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 26.6
+    },
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 21",
+      "ev_active": 63.0,
+      "ev_crowd": 16.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 119.7
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 21",
+      "ev_active": 14.0,
+      "ev_crowd": 1.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 26.6
+    },
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 22",
+      "ev_active": 63.0,
+      "ev_crowd": 16.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 119.7
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 22",
+      "ev_active": 14.0,
+      "ev_crowd": 1.0,
+      "news_salience": 0.9,
+      "ev_active_newswt": 26.6
+    }
+  ],
+  "test_rows_news_active": 191,
+  "arms": {
+    "A1_plus_permitted": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A_news_importance_weighted": {
+      "wape": 0.0925,
+      "mae": 145.898
+    }
+  },
+  "importance_weight_value_vs_A1": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0782,
+    "llm_active_skill_pct": -7.82,
+    "global_skill_score": -0.0479,
+    "significant": true,
+    "active_error_gain_mean": -14.516776,
+    "active_error_gain_ci95": [
+      -25.574873,
+      -5.883797
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 191,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 7.82% on active zone-hours (CI excludes 0)."
+  },
+  "note": "News reweights the dense permit feed instead of standing alone; can only modulate permit borough-hours that co-occur with news, never corrupt the base signal."
+}
