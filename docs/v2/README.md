@@ -24,6 +24,7 @@ Read order: base contract `../../CLAUDE.md` → V2 addendum `../../CLAUDE_V2_APP
 | `V2_LLM_VALUE_ABLATION.md` | No-Event / Rule-Event / LLM-Event separation + incremental cost | V2-03 |
 | `V2_MPC_DECISIONING.md` | Mandatory policy comparison (No Action / Greedy / MILP / MPC) | V2-04 |
 | `V2_PRICING.md` | Bounded dynamic pricing + experiment dry-run + guardrail audit | V2-05 |
+| `V2_PRICING_EXPLAINED.md` | Plain-language primer: elasticity, surge, A/A experiment | V2-05 |
 | `V2_GRAPHRAG_COPILOT.md` | GraphRAG Decision Copilot correctness/relevance benchmark | V2-06 |
 | `V2_KNOWN_LIMITATIONS.md` | Honest V2 limitations, blocked data/external, research-only scope | V2-09 |
 
