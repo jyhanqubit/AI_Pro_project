@@ -108,6 +108,15 @@ lift and whether that lift converts to profit net of LLM cost.
   −5.52%, CI [−17.51,−0.98]** → LLM features measurably degrade accuracy where they fire. Emitted in
   the artifact as `llm_feature_value_metric`; pure fn with 6 synthetic unit tests
   (`tests/unit/test_llm_feature_value.py`).
+- **V2-03 feature improvement + graph contribution** (`ml/forecasting/event_features_v2.py` +
+  `llm_graph_value.py`): fixed the feature engineering (event-time anchor + half-life decay +
+  type-scoped boroughs, replacing the flat-24h-from-publish box) and added a graph neighbor-spillover
+  arm. Measured on real NYC demand (test May): **improved feature A2−A1 = `NO_MEANINGFUL_EFFECT`
+  −0.4%** (CI [−4.90,1.36]) — the harm is **removed** (was −5.52%), now neutral not positive.
+  **Graph A3−A2 = `NO_MEANINGFUL_EFFECT` −1.32%** (CI [−3.76,0.72]) — graph **not proven** at borough
+  grain (only 5 coarse zones; structured feed already dense). Fair venue for the graph claim is
+  H3-zone grain (existing `pipelines/features/graph_features.py`), not yet run. Honest null, not faked.
+  6 pure-builder unit tests. Artifact: `reports/v2/llm_value/graph_contribution.json`.
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 

@@ -73,6 +73,36 @@ The core is a pure function, unit-tested on synthetic positive/negative/null/ins
 (`tests/unit/test_llm_feature_value.py`), so the decision logic is verifiable without the trip
 pipeline.
 
+### Feature improvement + graph contribution (`make`-able: `ml/forecasting/llm_graph_value.py`)
+
+The −5.52% told us the *feature engineering* was the problem (flat 24h box anchored at publish time,
+citywide smear). The improved builder (`ml/forecasting/event_features_v2.py`) fixes it: anchor to the
+**event date + a type-specific peak hour**, shape with a **half-life decay** (peaked, not flat),
+**gate by availability** (leakage-safe), **scope boroughs by type** (venue/gathering/safety = named
+only; weather/transit/system may be citywide), bounded severity. A separate **graph** arm adds
+neighbor spillover via borough-centroid distance decay. Arms A0 → A1(permitted) → A2(improved direct,
+no graph) → A3(+graph); measured on real NYC demand (test May, 10,655-row train, 336→ split into 194
+direct-active / 222 graph-active zone-hours):
+
+| comparison | decision | active skill | CI95 |
+|---|---|---|---|
+| **improved LLM feature** (A2 − A1) | `NO_MEANINGFUL_EFFECT` | −0.4% | [−4.90, 1.36] |
+| **graph contribution** (A3 − A2) | `NO_MEANINGFUL_EFFECT` | −1.32% | [−3.76, 0.72] |
+
+**Honest reading:**
+- The improvement **removed the harm**: the LLM feature went from `MEANINGFUL_NEGATIVE −5.52%` (old
+  flat-box) to `NO_MEANINGFUL_EFFECT −0.4%` (CI now spans 0). Better feature engineering ⇒ no longer
+  degrades the forecast — but it is now **neutral, not positive**.
+- The **graph contribution is not proven** on this test: `NO_MEANINGFUL_EFFECT`, CI covers 0 (point
+  estimate slightly negative). We do **not** claim the graph helps here.
+- **Why borough grain handicaps the graph (a real caveat, not an excuse):** with only 5 boroughs the
+  spatial-spillover mechanism the graph adds is coarse (centroids 8–20 km apart), and the dense
+  structured permitted feed (A1, 2,600 active rows) already captures the real shocks. The graph's
+  neighbor-propagation value is designed for **fine H3-zone grain** (hundreds of adjacent hexes),
+  which is the fair venue for a graph-vs-no-graph claim. That test is not yet run.
+
+Artifact: `reports/v2/llm_value/graph_contribution.json`.
+
 ## Three arms (identical cutoffs/splits)
 
 ```text
