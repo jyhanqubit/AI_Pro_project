@@ -323,6 +323,27 @@ only addresses axis (1); news would still fail on (2)–(4), because coarse, aft
 what news structurally *is*.** That is the real answer — the null is over-determined by structural
 properties of news, and cannot be fixed by volume alone.
 
+### Can news even *satisfy* the four conditions? (`news_condition_audit.py`)
+
+A tempting next step: "encode a 4-D feature vector so news meets the four conditions." But the
+conditions are properties of the **source** (what information exists), not of the encoding — an
+extractor cannot invent an unstated hour or make a retrospective review forward-looking. Auditing the
+23 events against the two source-checkable axes:
+
+| condition | news events satisfying |
+|---|---|
+| forward-looking (published >3h before onset) | **2 / 23** |
+| precise single-borough | 12 / 23 |
+| **BOTH forward AND precise** | **1 / 23** (and it is June — outside the May test window) |
+
+The qualifying subset is **~empty (1/23)**, because 21/23 news items are **coincident-or-retrospective**
+(lead time ≤ 0 — news reports events *as/after* they happen; density is ~19 besides). A 4-D vector or
+reliability-weighted post-correction is sound *in principle*, but with a 1/23 reliable subset it
+reduces to nothing. This is not fixable by encoding or by more volume: forward-looking, precise events
+come from **schedules / permits / announcements**, not from retrospective news. The honest path to an
+LLM demand contribution is therefore to have the LLM structure a **forward-looking event source** into
+the A1 slot — which, when it exists (the permit feed), already delivers +2.69% / +$33k.
+
 ### Where the LLM's value actually is (this is not a dead project)
 
 The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
