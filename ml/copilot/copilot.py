@@ -57,8 +57,10 @@ def route(question: str) -> str | None:
     return None
 
 
-def answer(question: str) -> CopilotAnswer:
-    tool_name = route(question)
+def answer(question: str, route_fn=route) -> CopilotAnswer:
+    """Answer a question. ``route_fn`` selects the tool (or None to refuse); defaults to the
+    deterministic keyword router. Inject a different router (e.g. real-LLM routing) to compare."""
+    tool_name = route_fn(question)
     if tool_name is None:
         return CopilotAnswer(question, False, None, _REFUSAL, None, None, None,
                              refusal_reason="no_tool_match")

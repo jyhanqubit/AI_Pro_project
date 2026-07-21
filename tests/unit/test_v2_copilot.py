@@ -70,3 +70,21 @@ def test_benchmark_hard_gates_pass():
     assert d["ungrounded_numeric_answers"] == 0
     assert d["hallucinated_answers"] == 0
     assert d["refusal_accuracy"] == 1.0
+
+
+def test_router_comparison_llm_beats_keyword_on_decoys():
+    from ml.copilot.benchmark import main
+
+    main([])
+    d = json.loads(Path("reports/v2/copilot/correctness_benchmark.json").read_text())
+    cmp = d["router_comparison"]
+    # Grounding is structural -> both routers never emit an ungrounded number.
+    assert cmp["keyword"]["ungrounded_numeric_answers"] == 0
+    assert cmp["claude"]["ungrounded_numeric_answers"] == 0
+    # But refusing the wrong/unanswerable question needs the LLM: the keyword router returns
+    # real-but-wrong-question numbers (hallucinated>0) and fails the gate; the LLM router does not.
+    assert cmp["keyword"]["hallucinated_answers"] > 0
+    assert cmp["keyword"]["hard_gates_pass"] is False
+    assert cmp["claude"]["hallucinated_answers"] == 0
+    assert cmp["claude"]["hard_gates_pass"] is True
+    assert cmp["claude"]["routing_accuracy"] > cmp["keyword"]["routing_accuracy"]

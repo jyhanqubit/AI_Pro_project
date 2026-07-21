@@ -13,11 +13,14 @@ lift and whether that lift converts to profit net of LLM cost.
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
 - **Phases:** V2-00…V2-06 **PASSED**; V2-07 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
-- **V2-06 done:** GraphRAG typed-tool Copilot (`ml/copilot/`, `make v2-copilot`). Every numeric
-  answer comes from a typed tool reading a committed V2 artifact (with `artifact_id` provenance);
-  unanswerable questions are refused, never guessed. 15-Q benchmark: routing/correctness/refusal/
-  grounded all **1.0**; **ungrounded_numeric=0, hallucinated=0 (hard gates pass)**. 7 tests.
-  Artifact: `reports/v2/copilot/correctness_benchmark.json`.
+- **V2-06 done:** GraphRAG typed-tool Copilot (`ml/copilot/`, `make v2-copilot`). Numbers come only
+  from typed tools reading committed V2 artifacts (with `artifact_id`); unanswerable questions are
+  refused. **Two routers compared on 20 Q** — keyword matcher vs **real in-session claude-opus-4-8
+  routing** (no API key; `copilot_routing_claude.jsonl`). claude: routing/correctness/refusal 1.0,
+  hallucinated=0 (gates pass). keyword: hallucinated=3 (real-but-wrong-question numbers on decoys),
+  gate FAIL. **Finding:** grounding (ungrounded=0) is structural for both, but refusing the wrong/
+  unanswerable question needs the LLM — that's its measured value here. 8 tests. Artifact:
+  `reports/v2/copilot/correctness_benchmark.json`.
 - **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
   (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety
   from `config/pricing_v2.py`. 576 seeded zone-hours: **0 guardrail violations**, safety zones

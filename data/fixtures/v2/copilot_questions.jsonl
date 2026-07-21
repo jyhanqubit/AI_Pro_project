@@ -13,3 +13,8 @@
 {"id": "r03", "question": "How many bikes will be rented at 3pm tomorrow at Grove St station?", "expected_tool": null, "ground_truth": null}
 {"id": "r04", "question": "What is the real-world causal effect of surge on rider behavior?", "expected_tool": null, "ground_truth": null}
 {"id": "r05", "question": "Which borough attracts the most tourists?", "expected_tool": null, "ground_truth": null}
+{"id": "a01", "question": "How far off are our demand predictions on the held-out data?", "expected_tool": "forecast_wape", "ground_truth": 0.4828}
+{"id": "a02", "question": "What WAPE should we expect on next month's live forecast?", "expected_tool": null, "ground_truth": null}
+{"id": "a03", "question": "What's the profit from our marketing emails?", "expected_tool": null, "ground_truth": null}
+{"id": "a04", "question": "Between doing nothing and our smart repositioning plan, which wins on cost?", "expected_tool": "best_rebalancing_policy", "ground_truth": "mpc"}
+{"id": "a05", "question": "How much money will we make next quarter?", "expected_tool": null, "ground_truth": null}

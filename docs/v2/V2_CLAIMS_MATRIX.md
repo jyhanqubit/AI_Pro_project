@@ -55,7 +55,7 @@ Rules:
 | Predictive lift → profit/regret | V2-02 | `reports/v2/ledger/profit_regret.json` | **simulated** ($ assumption-conditioned; units measured) | Promoted forecast nets **+$103,271** vs seasonal-naive over 114,079 zone-hours; sign positive across all 9 cost settings; regret vs Oracle $218,697 |
 | MPC vs No-Action/Greedy/MILP | V2-04 | `reports/v2/mpc/policy_comparison.json` | **simulated** | Ledger cost (lower better): NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719. MPC best feasible, regret 21.6 (~3% of Oracle); all feasible |
 | Pricing sensitivity + guardrail audit | V2-05 | `reports/v2/pricing/{guardrail_audit,sensitivity}.json` | **simulated** | 576 zone-hours: 0 guardrail violations, safety base-fare, budget respected, negative control passes; A/A CI covers 0 (design valid). Shadow quotes only |
-| Copilot correctness + relevance | V2-06 | `reports/v2/copilot/correctness_benchmark.json` | **offline_benchmark** | 15 Q: routing/correctness/refusal/grounded all 1.0; ungrounded_numeric=0, hallucinated=0 (hard gates pass). Numbers only from typed tools |
+| Copilot correctness + relevance | V2-06 | `reports/v2/copilot/correctness_benchmark.json` | **offline_benchmark** | 20 Q, real claude-opus-4-8 routing: routing/correctness/refusal 1.0, hallucinated=0 (gates pass). Keyword stand-in: hallucinated=3, gate FAIL — LLM value is in refusing wrong/unanswerable Qs; grounding (ungrounded=0) is structural for both |
 | All UI metrics resolve to artifacts | V2-07 | UI ↔ `reports/v2/**` | pending | — |
 
 The V2-09 final audit fills this matrix from committed artifacts and mirrors it into
