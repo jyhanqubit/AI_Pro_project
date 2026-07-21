@@ -35,6 +35,12 @@ lift and whether that lift converts to profit net of LLM cost.
   no lift; degree boost distracts). Together the pair bounds the honest verdict both ways: graph wins
   relational/per-zone queries, plain text wins text lookup — match the tool to the query type.
   Artifact: `reports/v2/copilot/neutral_retrieval_benchmark.json`.
+  **RAGAS cross-check** (`ml/copilot/ragas_retrieval.py`, real ragas 0.4.3 non-LLM retrieval metrics,
+  top-10): ctx-precision flat_text **0.833** vs graph_boosted **0.771** (−0.0625), recall tied —
+  a standard tool agrees the graph gives no retrieval lift. RAGAS generation-side metrics
+  (faithfulness/answer_relevancy) need an LLM judge → `blocked_external` (no key), never faked.
+  Optional dep `pip install -e '.[ragas]'`; absent ⇒ runner writes blocked_external.
+  Artifact: `reports/v2/copilot/ragas_retrieval_benchmark.json`.
 - **V2-05 done:** bounded dynamic pricing `ml/pricing/pricing_v2_eval.py` + `pricing_v2_run.py`
   (`make v2-pricing`). Elasticity from the versioned assumption set, ledger objective, bounds/safety
   from `config/pricing_v2.py`. 576 seeded zone-hours: **0 guardrail violations**, safety zones

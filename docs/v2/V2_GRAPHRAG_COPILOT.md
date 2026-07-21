@@ -61,6 +61,14 @@ against a fixed offline question set.
 > the two benchmarks bound the honest verdict — **graph wins relational/per-zone queries, plain text
 > wins text lookup; match the tool to the query type.** Artifact:
 > `reports/v2/copilot/neutral_retrieval_benchmark.json`.
+>
+> **RAGAS cross-check (`ml/copilot/ragas_retrieval.py`).** Same neutral task, scored with the **real
+> `ragas` 0.4.3** non-LLM retrieval metrics (top-10, exact-id match) so the result rests on a standard
+> tool, not our Jaccard: `flat_text` context-precision **0.833** vs `graph_boosted` **0.771**
+> (−0.0625), recall tied — RAGAS agrees the graph gives no retrieval lift. RAGAS's generation-side
+> metrics (`faithfulness`, `answer_relevancy`) need an LLM judge and there is no key here, so they are
+> **`blocked_external`** in the artifact, never faked. Artifact:
+> `reports/v2/copilot/ragas_retrieval_benchmark.json`.
 
 ## Architecture boundary
 

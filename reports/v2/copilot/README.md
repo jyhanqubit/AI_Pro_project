@@ -106,3 +106,25 @@ names). This is the honest counterpart to the structural result:
 > type.** Neither benchmark alone is a fair "GraphRAG vs RAG" verdict; together they bound it —
 > graph wins where the answer is a graph edge, plain text wins (slightly) where the answer is in
 > the text. `claim_status: offline_benchmark`.
+
+## RAGAS cross-check (`ragas_retrieval_benchmark.json`)
+
+To confirm the neutral finding with a **standard, tool-backed metric** (not our own Jaccard), we
+also ran the **real `ragas` package (v0.4.3)** — its **non-LLM retrieval** metrics — on the same two
+retrievers. `ml/copilot/ragas_retrieval.py`, top-10, exact-id match.
+
+| Method | `NonLLMContextPrecisionWithReference` | `NonLLMContextRecall` |
+|---|---|---|
+| **flat_text** | **0.8333** | 0.8333 |
+| graph_boosted | 0.7708 | 0.8333 |
+
+**graph − flat context-precision = −0.0625.** RAGAS agrees with top-1/MRR: the graph gives **no
+retrieval lift** on a text task; the degree boost lowers precision. (With one relevant doc per query
+these RAGAS metrics reduce to reciprocal-rank / hit@k — the standard IR result under a RAGAS name.)
+
+**What RAGAS we could NOT measure — and did not fake:** RAGAS's distinctive generation-side metrics
+— `faithfulness`, `answer_relevancy`, LLM `context_precision` — require an **LLM judge**. There is
+no API key in this sandbox, and this retrieval task has no generated answer to judge, so those are
+recorded as **`blocked_external`** in the artifact's `not_measured` block, never as numbers. Ragas is
+an optional dependency (`pip install -e '.[ragas]'`); if absent, the runner writes
+`claim_status: blocked_external` rather than inventing a score.

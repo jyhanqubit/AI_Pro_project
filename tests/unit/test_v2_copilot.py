@@ -134,3 +134,30 @@ def test_neutral_retrieval_graph_gives_no_lift_on_text_lookup():
     assert graph["top1_accuracy"] <= flat["top1_accuracy"]
     assert d["graph_minus_flat_top1"] <= 0.0
     assert d["claim_status"] == "offline_benchmark"
+
+
+def test_ragas_retrieval_confirms_no_graph_lift():
+    # Cross-check the finding with the REAL ragas package (non-LLM retrieval metrics). Skips cleanly
+    # where ragas/rapidfuzz aren't installed (heavy optional dep) — same pattern as the recsys tests.
+    import json
+    from pathlib import Path
+
+    # NB: `import ragas` at top level is broken in this env (langchain drift); ragas_retrieval.main
+    # shims the unused module and degrades to blocked_external if the package is truly absent, so we
+    # branch on the artifact's claim_status rather than importorskip (which would false-skip here).
+    from ml.copilot.neutral_retrieval import GRAPH as NGRAPH
+    from ml.copilot.ragas_retrieval import main
+
+    if not NGRAPH.exists():
+        pytest.skip("event graph snapshot missing — run `make seed-graph` first")
+    assert main([]) == 0
+    d = json.loads(Path("reports/v2/copilot/ragas_retrieval_benchmark.json").read_text())
+    if d["claim_status"] == "blocked_external":
+        pytest.skip(f"ragas not importable: {d.get('reason')}")
+    flat = d["results"]["flat_text"]
+    graph = d["results"]["graph_boosted"]
+    # Real ragas non-LLM context precision must agree: the graph gives no retrieval lift.
+    assert graph["context_precision"] <= flat["context_precision"]
+    assert d["graph_minus_flat_context_precision"] <= 0.0
+    # Generation-side RAGAS must be honestly marked blocked, never faked.
+    assert "blocked_external" in d["not_measured"]["faithfulness"]

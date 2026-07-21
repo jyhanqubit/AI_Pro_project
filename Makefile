@@ -147,3 +147,4 @@ v2-copilot:  ## V2-06: Copilot benchmark — typed-tool numeric grounding + Grap
 	python -m ml.copilot.benchmark
 	python -m ml.copilot.graphrag_scale
 	python -m ml.copilot.neutral_retrieval
+	python -m ml.copilot.ragas_retrieval
