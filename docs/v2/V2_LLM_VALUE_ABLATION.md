@@ -235,6 +235,24 @@ test's *different* events. The sparsity problem simply moved from "the tree can'
 to "the post-processing calibration can't either". A fixed (unfitted) factor equals the signed-feature
 arm — neutral. Either way, ~19 events cannot pin down a stable event→demand factor.
 
+### Forecast-horizon sweep — the "redundancy" rescue also fails (`llm_horizon_value.py`)
+
+The redundancy explanation implied a way out: at a longer horizon the recent lags are unavailable, so
+forward-looking event knowledge should matter more. Tested by refitting with only horizon-legal
+features (lag_k usable iff k≥h; no rolling/momentum for h>1):
+
+| horizon | WAPE A0 → A1 → A2 | permit (A1−A0) | news (A2−A1) |
+|---|---|---|---|
+| 1h (nowcast) | 0.0908 → 0.0883 → 0.0906 | **+2.69% MEANINGFUL_POSITIVE** | −2.04% neutral |
+| 6h / 24h | 0.1826 → 0.1824 → 0.1808 | −0.0% neutral | −9.59% neutral |
+| 48h | 0.2187 → 0.2162 → 0.2145 | +1.09% neutral | −2.82% neutral |
+
+**Not supported.** Event value does *not* grow with horizon. Dropping the recent lags roughly
+*doubles* the baseline WAPE (0.09→0.18→0.22), which widens the noise and **weakens** the permit
+signal's significance (it is `MEANINGFUL_POSITIVE` only at nowcast) instead of strengthening it.
+News stays neutral-to-negative at every horizon. So the null is not a nowcasting artifact that longer
+horizons would fix.
+
 ### Overall V2-03 finding (consistent across every attempt)
 
 Six attempts — improve extraction, add graph propagation, reconstruct into permit schema, reweight
@@ -251,12 +269,35 @@ step:
 5. **Post-processing** correction (per-mechanism factors, calibrated on train) → negative; the fitted
    factors are absurd/wrong-signed (−470) — the sparse calibration **overfits** and fails on test.
 
+6. **Horizon sweep** → event value does not grow with lead time; the null is not a nowcasting artifact.
+
 **Final honest conclusion:** LLM-from-news does not improve demand forecasting on this data, and we
-now understand *why* at three levels — (a) **sparsity** (~19 events can't teach a magnitude), (b)
-**sign heterogeneity** (fixed by a signed LLM effect, which is 77% right), and (c) **redundancy**: for
-the ongoing events news reports, the demand-history lags already capture the shock. News would only
-help at the sudden onset of an *unanticipated* shock before the lags react — rare, and limited here by
-coarse timing and the availability gate. This is a negative result understood, not merely observed.
+now understand *why* at three levels — (a) **sparsity** (~19 events can't teach a magnitude/factor,
+whether a model coefficient or a post-processing calibration), (b) **sign heterogeneity** (fixed by a
+signed LLM effect, which is 77% right), and (c) **redundancy** with the autoregressive demand history
+(and it is not rescued at longer horizons). News would only help at the sudden onset of an
+*unanticipated* shock before the lags react — rare, and limited here by coarse timing and the
+availability gate. This is a negative result understood, not merely observed.
+
+### Where the LLM's value actually is (this is not a dead project)
+
+The demand-feature avenue for **news** is exhausted — but that was never the whole thesis. Two
+LLM/event contributions are **measured positives** in V2:
+
+1. **The structured event layer improves the forecast.** The permit feed adds
+   `MEANINGFUL_POSITIVE +2.69%` at nowcast (A1−A0) and **+$33k** in the ledger — the core
+   "event-aware forecasting" claim, measured. The pipeline is *event-source agnostic*: a
+   forward-looking, dense, geocoded LLM event stream would enter exactly the same A1 slot. NYC's
+   retrospective/sparse GDELT news simply is not that stream.
+2. **The LLM adds measured value in structuring, routing, and explanation** — V2-06: the real-LLM
+   Copilot router scores 1.0/1.0/1.0 vs a keyword baseline's 0.75, cutting hallucinated answers 3→0.
+   This is where the addendum always placed the LLM ("event structuring, tool routing, explanation;
+   the LLM does not directly compute demand").
+
+So the honest V2 verdict is not "the LLM is useless" — it is: **the LLM's verified value is in
+structuring/routing/explanation and in powering the event layer, not in extracting extra demand
+accuracy from sparse retrospective news.** That is a legitimate, portfolio-defensible net-value
+finding — exactly the kind of honest verification V2 exists to produce.
 
 ## Three arms (identical cutoffs/splits)
 

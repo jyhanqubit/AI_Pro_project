@@ -145,13 +145,20 @@ lift and whether that lift converts to profit net of LLM cost.
   residuals, applied to test. **`MEANINGFUL_NEGATIVE` −21.36%** (WAPE 0.0883→0.0899). Fitted factors
   absurd/wrong-signed (α[gather]=−470, α[transit]=−478) → the sparse calibration **overfits** and fails
   on test. The sparsity problem just moves from the model to the post-processing step.
-- **V2-03 overall (negative result, fully understood):** six attempts — improve extraction / graph /
-  permit-schema reconstruction / importance-weight / signed direction / post-processing — all
-  neutral-to-negative. Three-level why: (a) **sparsity** (~19 events can't teach a magnitude/factor
-  anywhere — model coefficient OR post-proc calibration), (b) **sign heterogeneity** (fixed by a signed
-  LLM effect, 77% correct), (c) **redundancy** (demand-history lags already capture ongoing-event
-  shocks). News would only help at the sudden onset of an unanticipated shock before the lags react —
-  rare + limited by coarse timing/availability gate. Not just observed — explained.
+- **V2-03 (horizon sweep)** (`ml/forecasting/llm_horizon_value.py`): tested whether event value grows
+  at operational lead times (drop recent lags). It does **not** — permit A1−A0 is MEANINGFUL_POSITIVE
+  **+2.69%** only at nowcast (h=1); neutral at h≥6 as baseline WAPE doubles (0.09→0.18→0.22, noisier).
+  News neutral-to-negative at every horizon. The null is not a nowcasting artifact.
+- **V2-03 overall (negative result, fully understood — but NOT a dead project):** seven attempts
+  (extraction/graph/permit-reconstruction/importance/signed/post-processing/horizon) all
+  neutral-to-negative for LLM-from-news demand value; root cause = sparsity + sign heterogeneity
+  (handled, 77% right) + redundancy with lags. **BUT the project's measured positives stand:** the
+  structured event layer improves the forecast (A1−A0 **+2.69%**, **+$33k** ledger — core thesis), and
+  the LLM has measured value in routing/grounding (V2-06 Copilot 1.0 vs keyword 0.75, halluc 3→0). The
+  honest V2 verdict: the LLM's verified value is in **structuring/routing/explanation + powering the
+  event layer**, not in squeezing demand accuracy from sparse retrospective news. Pipeline is
+  event-source-agnostic (a dense forward-looking geocoded LLM stream would enter the same A1 slot;
+  GDELT news is not that stream).
 - **Honesty:** every V2 result cell is `pending`; no v1 number is copied into a V2 claim. v1
   results below remain the current measured record until a V2 phase re-measures them.
 
