@@ -301,15 +301,27 @@ Two facts: (1) at **news scale (≤100 events; news has ~19) there is no value**
 So "just collect more news" would not reliably fix it: you need enough *demand-relevant* events, not
 just more rows.
 
-**Quality ablation** — hold density at FULL and degrade one axis to news-like (see the modes table
-in the artifact): `coarse_time` (flat over the day), `citywide` (all boroughs), `retro` (known only
-after onset). Whichever degradation collapses the +2.69% is a *necessary* quality axis — and exactly
-what news lacks. _(Result table filled from `reports/v2/llm_value/quality_ablation.json`.)_
+**Quality ablation** — hold density at FULL and degrade one axis to news-like:
 
-**So the cause is not a single lazy "sparsity" — it is a conjunction:** news is below the density
-threshold **and** coarse/retrospective on the axes that make the permit feed work. More news data
-would only help if it were also dense *and* precise *and* forward-looking — which retrospective
-borough-level GDELT news structurally is not.
+| mode | what's degraded | permit A1−A0 |
+|---|---|---|
+| **full** | nothing (control) | **+2.69% MEANINGFUL_POSITIVE** |
+| coarse_time | exact hour → flat over the day | **−0.33% collapses** |
+| citywide | exact borough → all boroughs | **+0.53% collapses** |
+| retro | advance → known only after onset | **+1.01% collapses** |
+
+**Every single quality degradation collapses the value to non-significant.** So precise time, precise
+location, and forward-looking timing are each *necessary* — remove any one and the permit feed stops
+helping.
+
+**The proven cause is a conjunction of four properties, not a lazy "sparsity":** the permit feed works
+because it is (1) **dense** (≥ a few hundred demand-relevant events), (2) **precisely timed** (exact
+hour), (3) **precisely located** (exact borough), and (4) **forward-looking** (known before the
+event). News fails on **all four**: ~19 events (below the density threshold), day-and-borough-level
+coarse (fails time + location), and retrospective (fails timing). Critically, **"collect more news"
+only addresses axis (1); news would still fail on (2)–(4), because coarse, after-the-fact reporting is
+what news structurally *is*.** That is the real answer — the null is over-determined by structural
+properties of news, and cannot be fixed by volume alone.
 
 ### Where the LLM's value actually is (this is not a dead project)
 

@@ -149,6 +149,13 @@ lift and whether that lift converts to profit net of LLM cost.
   at operational lead times (drop recent lags). It does **not** — permit A1−A0 is MEANINGFUL_POSITIVE
   **+2.69%** only at nowcast (h=1); neutral at h≥6 as baseline WAPE doubles (0.09→0.18→0.22, noisier).
   News neutral-to-negative at every horizon. The null is not a nowcasting artifact.
+- **V2-03 root-cause (density curve + quality ablation)** (`ml/forecasting/llm_density_curve.py`,
+  `llm_quality_ablation.py`): answers "is it just sparsity?" rigorously. **Density curve** (subsample
+  dense permits, hold precision+timing): dead at news-scale (≤100 events; news~19), +2.03% at N=300,
+  non-monotonic after → density necessary but not sufficient. **Quality ablation** (density FULL,
+  degrade one axis): coarse-time −0.33%, citywide +0.53%, retro +1.01% — **each collapses** the full
+  +2.69%. Proven cause = conjunction of **dense + precise-time + precise-location + forward-looking**;
+  news fails all four; collecting more news fixes only density, not the structural axes.
 - **V2-03 overall (negative result, fully understood — but NOT a dead project):** seven attempts
   (extraction/graph/permit-reconstruction/importance/signed/post-processing/horizon) all
   neutral-to-negative for LLM-from-news demand value; root cause = sparsity + sign heterogeneity
