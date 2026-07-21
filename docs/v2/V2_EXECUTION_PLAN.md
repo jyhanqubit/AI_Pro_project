@@ -134,12 +134,20 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   Tests: `pytest tests/unit/test_v2_copilot.py` -> 7 passed.
 
 ## V2-07 — Operator Cockpit & Rider Preview
-- **Status:** PLANNED
+- **Status:** IN PROGRESS — artifact-backed metrics surface delivered; UI wiring + rider preview next.
 - **Goal:** Product UI where **every metric points to an artifact** (`run_id`/`artifact_id`),
   plus a rider-facing preview.
 - **Acceptance:** No hard-coded UI metrics; each surfaced number resolves to a `reports/v2/**`
   artifact; demo heuristics only in `demo_fixture`; live/replay/research visually distinct.
-- **Artifact:** UI wired to artifact IDs; screenshot set under `docs/screenshots/`.
+- **Delivered:** `services/api/v2_metrics.py` (`cockpit_metrics()`) + endpoint
+  `GET /v2/cockpit/metrics` — every headline metric (holdout WAPE, served model, profit lift, best
+  policy, MPC regret, guardrail violations, LLM-news value) is read live from its committed
+  `reports/v2/**` artifact and wrapped in the `ResultEnvelope`
+  (`run_id`/`artifact_id`/`mode`/`claim_status`/`freshness`). `research` results are excluded from
+  product surfaces (envelope-enforced); a missing artifact surfaces as a blocked envelope
+  (`value=None`), never a fake number. 4 tests re-read each value from its artifact to guarantee no
+  hard-coding (`tests/unit/test_v2_cockpit_metrics.py`).
+- **Remaining:** cockpit + rider Next.js views consuming the endpoint; `docs/screenshots/`.
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels

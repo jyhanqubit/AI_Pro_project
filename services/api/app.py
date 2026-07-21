@@ -467,6 +467,18 @@ def create_app() -> FastAPI:
 
         return operator_timeline(engine)
 
+    @app.get("/v2/cockpit/metrics")
+    def cockpit_metrics_endpoint(mode: str = "historical_replay") -> dict:
+        """V2-07: every headline cockpit metric, each resolved live from a committed reports/v2/**
+        artifact and wrapped in the result envelope (run_id/artifact_id/claim_status/freshness).
+        No hard-coded numbers; a missing artifact surfaces as a blocked envelope, never a fake value.
+        """
+        from contracts.enums import OperatingMode
+
+        from .v2_metrics import cockpit_metrics
+
+        return {"mode": mode, "metrics": cockpit_metrics(OperatingMode(mode))}
+
     @app.post(
         "/v2/operator/rebalancing/allocate",
         responses={400: {"model": ErrorResponse}},
