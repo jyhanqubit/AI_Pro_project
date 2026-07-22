@@ -1,16 +1,16 @@
 # V2 Mission & Contract
 
-_Source: `CLAUDE_V2_APPEND_REVISED.md` (imported by `CLAUDE.md`). This doc is the human-readable
-expansion; the addendum is authoritative if they ever diverge._
+_출처: `CLAUDE_V2_APPEND_REVISED.md` (`CLAUDE.md`에서 import됨). 이 문서는 사람이 읽을 수 있도록 풀어 쓴
+버전이며, 둘이 어긋날 경우 addendum이 authoritative합니다._
 
 ## 1. Mission
 
-V2 is not a feature-expansion release. It is an **LLM net-business-value verification** release.
-The single question V2 must answer with evidence:
+V2는 기능 확장 릴리스가 아닙니다. **LLM net-business-value verification** 릴리스입니다.
+V2가 증거로 답해야 하는 단 하나의 질문:
 
-> Do LLM-extracted events produce measurable predictive lift over calendar/history and over a
-> plain rule baseline, and does that lift convert into operational profit after the LLM's own
-> incremental cost is subtracted?
+> LLM으로 추출한 event가 calendar/history 및 단순 rule baseline 대비 측정 가능한 predictive lift를
+> 만들어내는가, 그리고 그 lift가 LLM 자체의 incremental cost를 차감한 후 운영 profit으로
+> 전환되는가?
 
 Value chain:
 
@@ -31,8 +31,8 @@ ShockFlow AI · Citi Bike · New York City
 grain: Station / H3 Zone / Borough
 ```
 
-Do **not** introduce a Seoul / Gwanak / ParcelFlow / parcel-logistics contract. Domain stays
-Citi Bike / NYC. This is an explicit correction target for V2-00.
+Seoul / Gwanak / ParcelFlow / parcel-logistics contract를 **도입하지 마십시오**. Domain은
+Citi Bike / NYC로 유지됩니다. 이는 V2-00의 명시적 correction target입니다.
 
 ## 3. Source of truth (priority order)
 
@@ -44,10 +44,9 @@ Citi Bike / NYC. This is an explicit correction target for V2-00.
 5. old handoff
 ```
 
-Stale numbers are never copied verbatim. A number is quotable only if a current command, test,
-or versioned artifact produces it. This applies especially to v1 numbers (e.g. WAPE figures in
-`../V2_HANDOFF_REPORT.md`) — they describe v1 and must be re-measured before any V2 doc quotes
-them.
+Stale number는 절대 그대로 복사하지 않습니다. 어떤 숫자는 현재 command, test, 또는 versioned artifact가
+그것을 생성할 때만 인용 가능합니다. 이는 특히 v1 숫자에 적용됩니다(예: `../V2_HANDOFF_REPORT.md`의 WAPE
+수치) — 이들은 v1을 기술하므로 어떤 V2 문서가 인용하기 전에 반드시 re-measure되어야 합니다.
 
 ## 4. Required evidence (the 7 gates)
 
@@ -63,10 +62,10 @@ them.
 
 ## 5. Profit integrity
 
-- Separate **contribution margin** from **shortage externality**; never merge them.
-- Do not double-count lost margin with shortage cost.
-- Cost and elasticity live in a **versioned assumption set** (`config/v2/`), not inline constants.
-- The **Oracle** policy is an offline upper bound only — never presented as an achievable result.
+- **contribution margin**과 **shortage externality**를 분리하십시오. 절대 합치지 마십시오.
+- lost margin을 shortage cost와 double-count하지 마십시오.
+- Cost와 elasticity는 inline 상수가 아니라 **versioned assumption set**(`config/v2/`)에 둡니다.
+- **Oracle** policy는 offline upper bound일 뿐입니다 — 절대 달성 가능한 결과로 제시하지 마십시오.
 
 ## 6. Mandatory policies
 
@@ -78,26 +77,26 @@ RL / QAOA                                          (research-only — NOT a comp
 
 ## 7. LLM boundaries
 
-- LLM is used only for **event structuring, tool routing, and explanation**.
-- LLM does **not** compute demand, price, or profit numbers directly.
-- A numeric Copilot answer with **no typed tool result behind it is rejected**.
+- LLM은 **event structuring, tool routing, explanation**에만 사용됩니다.
+- LLM은 demand, price, profit 숫자를 직접 계산하지 **않습니다**.
+- 뒤에 typed tool result가 **없는** 숫자 Copilot 답변은 rejected됩니다.
 
 ## 8. Claims taxonomy
 
-Every API/UI result carries `run_id`, `artifact_id`, `mode`, `claim_status`, `freshness`.
-Allowed `claim_status` values:
+모든 API/UI 결과는 `run_id`, `artifact_id`, `mode`, `claim_status`, `freshness`를 담습니다.
+허용되는 `claim_status` 값:
 
 ```text
 measured · offline_benchmark · simulated · pending_live_label
 assumption · blocked_data · blocked_external · demo_fixture · research
 ```
 
-See `V2_CLAIMS_MATRIX.md` for the full envelope and the current (all-`pending`) matrix.
+전체 envelope와 현재(모두 `pending`인) matrix는 `V2_CLAIMS_MATRIX.md`를 참조하십시오.
 
 ## 9. Invariants carried over from the base contract
 
-Temporal correctness and `available_at <= forecast_cutoff` leakage rules; UTC storage +
-`America/New_York` local aggregation; no random split for temporal forecasting; mode separation
-(demo/replay/live/research); no fabricated metrics/news/citations; no causal claims from feature
-attribution; no quantum-advantage claims; simulator ≠ hardware; v0/v1 contracts stay
-backward-compatible unless a documented migration is part of a phase.
+Temporal correctness 및 `available_at <= forecast_cutoff` leakage 규칙; UTC 저장 +
+`America/New_York` local aggregation; temporal forecasting에 random split 금지; mode 분리
+(demo/replay/live/research); metric/news/citation 조작 금지; feature attribution으로부터 causal
+claim 금지; quantum-advantage claim 금지; simulator ≠ hardware; documented migration이 phase의
+일부가 아닌 한 v0/v1 contract는 backward-compatible로 유지.

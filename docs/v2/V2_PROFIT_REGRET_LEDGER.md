@@ -1,19 +1,19 @@
 # V2 Profit / Regret Ledger (V2-02)
 
-Translates forecast quality into money without inflating the story. Predictive lift is only
-useful if it survives conversion to operational profit.
+이야기를 부풀리지 않고 forecast 품질을 금액으로 변환한다. Predictive lift 는 운영 profit 으로
+변환되어 살아남아야만 유용하다.
 
-> **Status: implemented + run (V2-02).** Accounting `optimization/ledger.py` (pure functions),
+> **Status: implemented + run (V2-02).** 회계 `optimization/ledger.py` (pure functions),
 > runner `optimization/ledger_run.py` (`make v2-ledger`), typed contract `contracts/v2/ledger.py`.
-> First run (assumption set `v2-assumptions-1`, JC 2024, 114,079 zone-hour decisions): the V2-01
-> promoted forecast nets **+$103,271** vs the seasonal-naive status quo (sign positive across all
-> 9 cost settings), regret vs Oracle **$218,697**. Unit counts measured; dollars `simulated`
-> (assumptions `sourced: false`). Scope: single-period stocking; **relocation = 0** here
-> (origin→destination moves are V2-04). Full result: `reports/v2/ledger/`.
+> 첫 실행 (assumption set `v2-assumptions-1`, JC 2024, 114,079 zone-hour decisions): V2-01
+> promoted forecast 가 seasonal-naive 현상 유지 대비 **+$103,271** 순이익 (부호는 9개 cost
+> setting 전부에서 positive), regret vs Oracle **$218,697**. Unit counts 는 measured; dollars 는
+> `simulated` (assumptions `sourced: false`). Scope: single-period stocking; 여기서는
+> **relocation = 0** (origin→destination moves 는 V2-04). 전체 결과: `reports/v2/ledger/`.
 
 ## Accounting model
 
-Per zone-hour decision, the ledger accounts:
+zone-hour decision 당 ledger 는 다음을 회계한다:
 
 ```text
 contribution_margin   = realized_rentals * margin_per_rental        (revenue side)
@@ -27,16 +27,16 @@ regret = net(Oracle) - net(policy)
 
 ## Integrity rules (non-negotiable)
 
-1. **Separate** contribution margin from shortage externality — they are different ledgers, not
-   one number.
-2. **Do not double-count**: lost margin from a stockout is captured by `shortage_cost`
-   (externality) OR by reduced `contribution_margin`, never both.
-3. Costs and elasticity come from a **versioned assumption set** in `config/v2/` (e.g.
-   `config/v2/assumptions.yaml`), each figure labeled `claim_status: assumption`.
-4. **Oracle** = perfect-foresight offline upper bound. It is a ceiling for regret, never a
-   claimed achievable result.
-5. Every ledger figure carries the result envelope (`run_id`/`artifact_id`/`mode`/`claim_status`/
-   `freshness`).
+1. contribution margin 을 shortage externality 와 **분리** — 둘은 하나의 숫자가 아니라 별개의
+   ledger 다.
+2. **이중 계산 금지**: stockout 으로 인한 lost margin 은 `shortage_cost`
+   (externality) 또는 감소한 `contribution_margin` 으로 포착되며, 결코 둘 다는 아니다.
+3. Costs 와 elasticity 는 `config/v2/` 의 **버전 관리된 assumption set** 에서 온다 (예:
+   `config/v2/assumptions.yaml`), 각 수치는 `claim_status: assumption` 으로 라벨링.
+4. **Oracle** = perfect-foresight offline 상한. regret 의 천장이며, 달성 가능한
+   결과로 주장되지 않는다.
+5. 모든 ledger 수치는 result envelope (`run_id`/`artifact_id`/`mode`/`claim_status`/
+   `freshness`) 를 지닌다.
 
 ## Assumption set (versioned)
 
@@ -71,8 +71,8 @@ elasticity: null                 # assumption (used by V2-05 pricing)
 
 ## Acceptance
 
-- Margin and externality separated; no double-count (add a unit test asserting the two ledgers
-  never share the same event).
-- Assumptions loaded from the versioned set, not inline constants.
-- Oracle present and labeled as upper bound.
-- Regret computed against Oracle for every policy in `V2_MPC_DECISIONING.md`.
+- Margin 과 externality 분리; 이중 계산 없음 (두 ledger 가 결코 같은 event 를 공유하지 않음을
+  단언하는 unit test 추가).
+- Assumptions 는 inline 상수가 아니라 버전 관리된 set 에서 로드.
+- Oracle 이 존재하며 상한으로 라벨링됨.
+- `V2_MPC_DECISIONING.md` 의 모든 policy 에 대해 Oracle 대비 regret 계산.

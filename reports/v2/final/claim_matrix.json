@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-09_20260722T071139Z",
+  "run_id": "run_v2-09_20260722T072321Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-22T07:11:39.876965+00:00",
+  "freshness": "2026-07-22T07:23:21.858806+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,

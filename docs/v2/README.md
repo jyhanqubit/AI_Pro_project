@@ -1,16 +1,16 @@
 # ShockFlow AI — V2 Documentation Index
 
-V2 is the **LLM net-business-value verification** release. It does not add new domains or
-speculative features; it proves — with versioned artifacts — whether the LLM/event pipeline
-produces measurable predictive lift, and whether that lift converts into operational profit.
+V2는 **LLM net-business-value verification** 릴리스이다. 새로운 도메인이나 투기적 기능을
+추가하지 않는다; 대신 LLM/event 파이프라인이 측정 가능한 predictive lift를 만들어 내는지,
+그리고 그 lift가 운영 profit으로 전환되는지를 versioned artifact로 증명한다.
 
-> Status of every V2 doc in this folder: **PLAN / TEMPLATE**. No measured V2 numbers exist yet.
-> All result cells are marked `pending` until a real command or artifact produces them. Per the
-> operating contract, fabricated metrics are prohibited — do not fill result tables from stale
-> v1 numbers or estimates.
+> 이 폴더의 모든 V2 문서 상태: **PLAN / TEMPLATE**. 아직 measured V2 수치는 존재하지 않는다.
+> 모든 result 셀은 실제 command나 artifact가 값을 생성하기 전까지 `pending`으로 표시된다. 운영
+> 계약에 따라 fabricated metrics는 금지된다 — result 테이블을 오래된 v1 수치나 추정치로 채우지
+> 말 것.
 
 Read order: base contract `../../CLAUDE.md` → V2 addendum `../../CLAUDE_V2_APPEND_REVISED.md`
-→ `V2_MISSION.md` → `V2_EXECUTION_PLAN.md` → the per-area docs below.
+→ `V2_MISSION.md` → `V2_EXECUTION_PLAN.md` → 아래의 영역별 문서.
 
 ## Documents
 
@@ -28,7 +28,7 @@ Read order: base contract `../../CLAUDE.md` → V2 addendum `../../CLAUDE_V2_APP
 | `V2_GRAPHRAG_COPILOT.md` | GraphRAG Decision Copilot correctness/relevance benchmark | V2-06 |
 | `V2_KNOWN_LIMITATIONS.md` | Honest V2 limitations, blocked data/external, research-only scope | V2-09 |
 
-## Folder scaffolding created for V2
+## V2용으로 생성된 폴더 구조
 
 ```text
 docs/v2/                V2 planning docs (this folder)
@@ -44,9 +44,9 @@ reports/v2/copilot/     V2-06 Copilot correctness benchmark
 reports/v2/final/       V2-09 final claim matrix + run manifest
 ```
 
-## Completion rule (from the addendum)
+## Completion rule (addendum 기준)
 
-V2 is complete only when these artifacts exist and are real:
+V2는 다음 artifact들이 존재하고 real일 때에만 완료된다:
 
 ```text
 H3 holdout metrics

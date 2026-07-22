@@ -1,23 +1,23 @@
 # V2 Dynamic Pricing & Experiment Dry-run (V2-05)
 
-Bounded incentive/pricing policy with hard guardrails, plus an **offline** experiment dry-run.
-No real users exist, so pricing outcomes are `simulated` — never a causal business result.
+hard guardrail 을 갖춘 bounded incentive/pricing policy, 그리고 **offline** experiment dry-run.
+실사용자가 없으므로 pricing 결과는 `simulated` — 결코 causal business 결과가 아니다.
 
 > **Status: implemented + run (V2-05).** Policy `ml/pricing/pricing_v2_eval.py`, runner
-> `ml/pricing/pricing_v2_run.py` (`make v2-pricing`). Demand response uses the versioned
-> assumption-set elasticity; objective is the V2-02 ledger; bounds/safety rules from
-> `config/pricing_v2.py`. Result (576 seeded zone-hours): **0 guardrail violations**, safety zones
-> kept at base fare, budget respected (0/40), and a **negative control** confirms the audit catches
-> a planted out-of-bounds surge. Sensitivity grid over elasticity × surge-bound, and an **A/A
-> switchback dry-run** with effect ≈ 0 / CI covering 0 (design validity, not a treatment effect).
-> All `simulated`. 7 tests. Artifacts: `reports/v2/pricing/{guardrail_audit,sensitivity}.json`.
+> `ml/pricing/pricing_v2_run.py` (`make v2-pricing`). Demand response 는 버전 관리된
+> assumption-set elasticity 를 사용; objective 는 V2-02 ledger; bounds/safety 규칙은
+> `config/pricing_v2.py` 에서. 결과 (576 seeded zone-hours): **guardrail 위반 0**, safety zones
+> 는 base fare 유지, budget 준수 (0/40), **negative control** 이 심어둔 out-of-bounds surge 를
+> audit 이 잡아냄을 확인. elasticity × surge-bound 에 대한 sensitivity grid, 그리고 effect ≈ 0 /
+> CI 가 0 을 포함하는 **A/A switchback dry-run** (treatment effect 가 아니라 design 유효성).
+> 전부 `simulated`. 7 tests. Artifacts: `reports/v2/pricing/{guardrail_audit,sensitivity}.json`.
 
 ## Policy
 
-- Prices/incentives are bounded: `price ∈ [p_min, p_max]`, incentive `∈ [0, i_max]`.
-- Elasticity comes from the versioned assumption set (`config/v2/assumptions.yaml`,
-  `claim_status: assumption`). The LLM never computes price numbers directly.
-- The policy optimizes the ledger objective subject to guardrails.
+- Prices/incentives 는 bounded: `price ∈ [p_min, p_max]`, incentive `∈ [0, i_max]`.
+- Elasticity 는 버전 관리된 assumption set (`config/v2/assumptions.yaml`,
+  `claim_status: assumption`) 에서 온다. LLM 은 price 숫자를 직접 계산하지 않는다.
+- Policy 는 guardrails 를 지키며 ledger objective 를 최적화한다.
 
 ## Guardrails (audited)
 
@@ -29,14 +29,14 @@ G4  bounded total incentive budget per period
 G5  monotonicity sanity: higher shortage risk ⇒ non-decreasing incentive (within bounds)
 ```
 
-The guardrail audit checks every recommended action against G1–G5 and records violations
+Guardrail audit 는 추천된 모든 action 을 G1–G5 에 대해 검사하고 위반을 기록한다
 (target: zero).
 
 ## Experiment dry-run
 
-- Design an A/B or switchback **offline** on fixtures; label results `simulated`.
-- Report the design's validity (e.g. A/A CI covering 0) — not a treatment effect on real riders.
-- No online learning / bandits (no real user logs → prohibited by base contract).
+- fixtures 위에서 A/B 또는 switchback 을 **offline** 으로 설계; 결과는 `simulated` 로 라벨링.
+- design 의 유효성 (예: A/A CI 가 0 포함) 을 보고 — 실제 rider 에 대한 treatment effect 가 아님.
+- online learning / bandits 없음 (실제 사용자 로그가 필요 → base contract 로 금지).
 
 ## Artifact schemas
 
@@ -66,6 +66,6 @@ The guardrail audit checks every recommended action against G1–G5 and records 
 
 ## Acceptance
 
-- All recommendations within bounds; guardrail violations = 0.
-- Elasticity from versioned assumptions; pricing decisions not made by the LLM.
-- Experiment labeled `simulated`; no causal claim.
+- 모든 추천이 bounds 내; guardrail 위반 = 0.
+- Elasticity 는 버전 관리된 assumptions 에서; pricing 결정은 LLM 이 내리지 않음.
+- Experiment 는 `simulated` 로 라벨링; causal 주장 없음.
