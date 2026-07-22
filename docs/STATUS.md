@@ -12,14 +12,14 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00…V2-06 **PASSED**; **V2-07 IN PROGRESS** (artifact-backed metrics surface done);
-  V2-08 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
-- **V2-07 (started):** `services/api/v2_metrics.py` + `GET /v2/cockpit/metrics` — every headline
-  cockpit metric is read live from its committed `reports/v2/**` artifact and wrapped in the
-  `ResultEnvelope` (run_id/artifact_id/mode/claim_status/freshness). No hard-coded numbers; `research`
-  results excluded from product surfaces; missing artifact → blocked envelope, not a fake value.
-  4 tests re-read each value from its artifact (`tests/unit/test_v2_cockpit_metrics.py`). Remaining:
-  cockpit/rider Next.js views + screenshots.
+- **Phases:** V2-00…V2-07 **PASSED**; V2-08 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **V2-07 done:** `services/api/v2_metrics.py` + `GET /v2/cockpit/metrics` — every headline cockpit
+  metric is read live from its committed `reports/v2/**` artifact and wrapped in the `ResultEnvelope`
+  (run_id/artifact_id/mode/claim_status/freshness). No hard-coded numbers; `research` results excluded
+  from product surfaces; missing artifact → blocked envelope, not a fake value. 4 tests re-read each
+  value from its artifact. **UI:** cockpit `apps/web/app/cockpit/page.tsx` (claim badges + provenance)
+  + rider home consumer view — both verified against the running app (`make api`+`make web`) and
+  screenshotted via headless Chromium: `docs/screenshots/{v2_cockpit,v2_rider}.png`.
 - **V2-06 done:** GraphRAG typed-tool Copilot (`ml/copilot/`, `make v2-copilot`). Numbers come only
   from typed tools reading committed V2 artifacts (with `artifact_id`); unanswerable questions are
   refused. **Two routers compared on 20 Q** — keyword matcher vs **real in-session claude-opus-4-8

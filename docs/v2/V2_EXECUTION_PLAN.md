@@ -134,7 +134,7 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   Tests: `pytest tests/unit/test_v2_copilot.py` -> 7 passed.
 
 ## V2-07 — Operator Cockpit & Rider Preview
-- **Status:** IN PROGRESS — artifact-backed metrics surface delivered; UI wiring + rider preview next.
+- **Status:** ✅ PASSED — artifact-backed metrics API + cockpit UI + rider preview, verified against the running app.
 - **Goal:** Product UI where **every metric points to an artifact** (`run_id`/`artifact_id`),
   plus a rider-facing preview.
 - **Acceptance:** No hard-coded UI metrics; each surfaced number resolves to a `reports/v2/**`
@@ -151,11 +151,16 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   `api.cockpitMetrics`) renders each metric from `GET /v2/cockpit/metrics` with its **claim_status
   badge** (측정됨/시뮬레이션/…) and **artifact + run_id provenance**; no hard-coded numbers; a blocked
   metric shows "artifact 없음", never a fake value; `ModeBadge` marks the surface mode.
-- **Verified end-to-end:** ran `make api` + `make web` (Next.js dev) and captured the real cockpit
-  render via headless Chromium — `docs/screenshots/v2_cockpit.png` shows all 7 metrics live from the
-  API with claim badges (측정됨/시뮬레이션) + artifact/run_id provenance and the historical_replay mode
-  badge. No hard-coded numbers on screen.
-- **Remaining:** rider-facing preview polish (optional).
+- **Verified end-to-end (both surfaces):** ran `make api` + `make web` (Next.js dev) and captured the
+  real renders via headless Chromium:
+  - **Operator cockpit** — `docs/screenshots/v2_cockpit.png`: all 7 metrics live from the API with
+    claim badges (측정됨/시뮬레이션) + artifact/run_id provenance and the historical_replay mode badge.
+    No hard-coded numbers on screen.
+  - **Rider preview** — `docs/screenshots/v2_rider.png`: consumer view (`/`, rider role) with as-of
+    availability, rider copilot (labeled 규칙 기반/rule-based), event-surge markers, and the
+    historical_replay mode badge; demo/replay data, no fabricated live claims.
+- **Status:** PASSED — artifact-backed metrics API + envelope enforcement + cockpit UI + rider
+  preview, all verified against the running app.
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels
