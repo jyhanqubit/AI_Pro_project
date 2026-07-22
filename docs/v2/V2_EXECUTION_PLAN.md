@@ -151,7 +151,11 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   `api.cockpitMetrics`) renders each metric from `GET /v2/cockpit/metrics` with its **claim_status
   badge** (측정됨/시뮬레이션/…) and **artifact + run_id provenance**; no hard-coded numbers; a blocked
   metric shows "artifact 없음", never a fake value; `ModeBadge` marks the surface mode.
-- **Remaining:** rider-facing preview polish + `docs/screenshots/` (needs a browser run).
+- **Verified end-to-end:** ran `make api` + `make web` (Next.js dev) and captured the real cockpit
+  render via headless Chromium — `docs/screenshots/v2_cockpit.png` shows all 7 metrics live from the
+  API with claim badges (측정됨/시뮬레이션) + artifact/run_id provenance and the historical_replay mode
+  badge. No hard-coded numbers on screen.
+- **Remaining:** rider-facing preview polish (optional).
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels

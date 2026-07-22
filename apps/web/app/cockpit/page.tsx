@@ -44,10 +44,15 @@ function fmtValue(m: CockpitMetric): string {
 function MetricCard({ m }: { m: CockpitMetric }) {
   const e = m.envelope;
   const decision = e.claim_status === "measured" || e.claim_status === "offline_benchmark";
+  const shown = fmtValue(m);
+  // shrink long string values (e.g. model names) so they don't overflow the card
+  const big = typeof e.value === "string" && shown.length > 10;
   return (
     <div className="card stat">
       <h2>{m.label}</h2>
-      <div className="metric mono">{fmtValue(m)}</div>
+      <div className="metric mono" style={big ? { fontSize: 18, wordBreak: "break-all", lineHeight: 1.3 } : undefined}>
+        {shown}
+      </div>
       <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
         <span className={`pill ${claimTone(e.claim_status)}`} title="이 수치를 얼마나 신뢰할 수 있는가">
           {CLAIM_LABEL[e.claim_status]}
