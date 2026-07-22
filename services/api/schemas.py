@@ -217,6 +217,16 @@ class RiderAskRequest(BaseModel):
     cutoff: AwareDatetime | None = None
 
 
+class TripPlanRequest(BaseModel):
+    """A rider trip request: either explicit origin/destination place ids, or a free-text query
+    (e.g. '시청에서 뉴포트 가고 싶어') the copilot parses into endpoints. V2-07 rider."""
+
+    origin: str | None = Field(default=None, max_length=80)
+    destination: str | None = Field(default=None, max_length=80)
+    query: str | None = Field(default=None, max_length=200)
+    cutoff: AwareDatetime | None = None
+
+
 class PricingQuoteRequest(BaseModel):
     """Dynamic-fare shadow-quote request (V2-05). ``stale`` / ``safety`` are what-if toggles."""
 

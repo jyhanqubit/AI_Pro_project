@@ -159,6 +159,13 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
   - **Rider preview** — `docs/screenshots/v2_rider.png`: consumer view (`/`, rider role) with as-of
     availability, rider copilot (labeled 규칙 기반/rule-based), event-surge markers, and the
     historical_replay mode badge; demo/replay data, no fabricated live claims.
+  - **Rider trip planner** — `docs/screenshots/v2_rider_trip.png`: "A에서 B까지" → walk → rent → bike
+    → return → walk. `services/api/trip_planner.py` (`POST /v2/rider/plan-trip`) picks the nearest
+    rentable/returnable station and lays out the legs with straight-line distances/times — **all
+    numbers deterministic, never from an LLM**. The LLM's honest role (per V2-06): parse the NL
+    request into origin/destination + narrate; rule-based here (`answer_mode`), LLM parser slots into
+    `resolve_endpoints` when a key is configured. Verified live: "시청에서 뉴포트" → rent City Hall
+    (6) → 🚲 5min/1173m → return Newport (10). 6 tests (`test_v2_trip_planner.py`).
 - **Status:** PASSED — artifact-backed metrics API + envelope enforcement + cockpit UI + rider
   preview, all verified against the running app.
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
