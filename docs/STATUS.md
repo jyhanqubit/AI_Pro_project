@@ -12,7 +12,12 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00…V2-07 **PASSED**; V2-08 … V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00…V2-08 **PASSED**; V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **V2-08 done:** `make v2-monitor` — `ml/monitoring/run_manifest.py` indexes all 26 `reports/v2/**`
+  artifacts (run_id/claim_status/freshness/staleness → `run_manifest.json`; 0 stale) and
+  `ml/monitoring/delayed_labels.py` runs the leakage-safe `pending_live_label`→`measured` loop (a label
+  closes a forecast only if `available_at > forecast_cutoff`, else `leakage_rejected`). Live-traffic
+  drift = `blocked_data` (no live labels), stated honestly. 5 tests. See `V2_MONITORING.md`.
 - **V2-07 done:** `services/api/v2_metrics.py` + `GET /v2/cockpit/metrics` — every headline cockpit
   metric is read live from its committed `reports/v2/**` artifact and wrapped in the `ResultEnvelope`
   (run_id/artifact_id/mode/claim_status/freshness). No hard-coded numbers; `research` results excluded

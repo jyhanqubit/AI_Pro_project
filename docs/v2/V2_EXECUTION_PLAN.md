@@ -164,13 +164,17 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels
-- **Status:** PLANNED
+- **Status:** ✅ PASSED (drift = `blocked_data`, no live labels — stated honestly)
 - **Goal:** Persist runs/artifacts; monitor served model; connect delayed live labels to close
   the `pending_live_label` → `measured` loop.
-- **Acceptance:** Artifacts persisted with run manifests; monitoring surfaces freshness/drift;
-  delayed-label backfill does not leak into past cutoffs.
-- **Artifact:** run manifests under `reports/v2/**`; monitoring doc.
-- **Command:** `make v2-monitor` _(added when real)_.
+- **Acceptance:** Artifacts persisted with run manifests ✅; monitoring surfaces freshness ✅ (drift
+  needs a live label stream → `blocked_data`, not faked); delayed-label backfill does not leak into
+  past cutoffs ✅ (strict `available_at > forecast_cutoff` guard, unit-tested incl. the boundary).
+- **Delivered:** `ml/monitoring/run_manifest.py` (indexes all 26 `reports/v2/**` artifacts w/ run_id,
+  claim_status, freshness, staleness) + `ml/monitoring/delayed_labels.py` (leakage-safe
+  pending→measured loop). Artifacts `reports/v2/monitoring/{run_manifest,delayed_labels}.json`.
+  5 tests (`tests/unit/test_v2_monitoring.py`). See `V2_MONITORING.md`.
+- **Command:** `make v2-monitor`.
 
 ## V2-09 — Final Audit & Portfolio Packaging
 - **Status:** PLANNED
