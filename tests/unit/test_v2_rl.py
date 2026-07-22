@@ -89,6 +89,70 @@ def test_decode_action_roundtrip_covers_mpc_and_noaction():
     assert decode_action(_action(0.0, 1))[0] == 0.0  # No-Action
 
 
+def test_continuous_env_shares_mpc_physics():
+    """The PPO env must be the same simulator: a constant per-zone target frac == the same move,
+    shortage, and overflow as feeding that target to the shared move/realized helpers."""
+    from optimization.rl.env import (
+        ContinuousRebalanceEnv,
+        apply_realized,
+        move_toward_target,
+    )
+
+    A = load_assumptions()
+    zones = default_network(6)
+    fc, realized = demand_series(zones, 24, seed=42)
+
+    env = ContinuousRebalanceEnv(zones, A, hours=24)
+    env.reset(42)
+    # Reference rollout via the shared physics helpers with the same 0.5-fraction target.
+    bikes = env.capacity / 2.0
+    ref_short = ref_over = ref_moved = 0.0
+    for t in range(24):
+        target = [int(x) for x in np.rint(0.5 * env.capacity)]
+        moved, _ = move_toward_target(bikes, env.capacity, target, zones, env.costs, 18)
+        s, o = apply_realized(bikes, env.capacity, realized[t])
+        ref_short += s
+        ref_over += o
+        ref_moved += moved
+    # Env rollout with the identical constant action.
+    frac = np.full(env.action_dim, 0.5)
+    done = False
+    while not done:
+        _, _, done = env.step(frac)
+    assert env.tot_short == pytest.approx(ref_short, abs=1e-6)
+    assert env.tot_over == pytest.approx(ref_over, abs=1e-6)
+    assert env.tot_moved == pytest.approx(ref_moved, abs=1e-6)
+
+
+def test_ppo_learns_and_is_reproducible():
+    """PPO must (a) reproduce bit-for-bit for a fixed seed and (b) beat a random policy — proving
+    the from-scratch numpy implementation actually optimizes."""
+    from optimization.rl.env import ContinuousRebalanceEnv
+    from optimization.rl.ppo import PPOConfig
+    from optimization.rl.ppo import greedy_return as ppo_greedy
+    from optimization.rl.ppo import train as ppo_train
+
+    A = load_assumptions()
+    zones = default_network(6)
+    cfg = PPOConfig(iterations=12, episodes_per_iter=4, minibatches=2, epochs=4)
+    seeds = [100, 101, 102, 103]
+
+    env = ContinuousRebalanceEnv(zones, A, hours=24)
+    a1 = ppo_train(env, cfg, train_seeds=seeds)
+    r1 = ppo_greedy(env, a1, eval_seed=42)
+    a2 = ppo_train(ContinuousRebalanceEnv(zones, A, hours=24), cfg, train_seeds=seeds)
+    r2 = ppo_greedy(ContinuousRebalanceEnv(zones, A, hours=24), a2, eval_seed=42)
+    assert r1 == pytest.approx(r2)  # reproducible
+
+    rng = np.random.default_rng(0)
+    env.reset(42)
+    rand_total, done = 0.0, False
+    while not done:
+        _, r, done = env.step(rng.random(env.action_dim))
+        rand_total += r
+    assert r1 > rand_total  # learned policy beats random
+
+
 def test_research_value_blocked_off_research_surface():
     """The honesty contract: a research result may not surface in a product mode."""
     from datetime import UTC, datetime

@@ -22,7 +22,10 @@ from pathlib import Path
 from contracts.v2.envelope import ResultEnvelope
 from optimization.ledger_run import load_assumptions
 from optimization.mpc import default_network, demand_series, simulate
-from optimization.rl.env import RebalanceEnv, decode_action
+from optimization.rl.env import ContinuousRebalanceEnv, RebalanceEnv, decode_action
+from optimization.rl.ppo import PPOConfig
+from optimization.rl.ppo import greedy_return as ppo_greedy_return
+from optimization.rl.ppo import train as ppo_train
 from optimization.rl.qlearning import QLearnConfig, greedy_return, train
 
 OUT_DIR = Path("reports/v2/research")
@@ -37,7 +40,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--eval-seed", type=int, default=42, help="held-out eval scenario (matches v2-mpc)"
     )
-    ap.add_argument("--episodes", type=int, default=300)
+    ap.add_argument("--episodes", type=int, default=300, help="tabular Q-learning episodes")
+    ap.add_argument("--ppo-iterations", type=int, default=60, help="PPO update iterations")
     ap.add_argument("--vehicle-capacity", type=int, default=18)
     ns = ap.parse_args(argv)
     stamp = datetime.now(UTC)
@@ -94,25 +98,50 @@ def main(argv: list[str] | None = None) -> int:
         "moved_units": round(env.tot_moved, 1),
         "infeasible_periods": env.infeasible_periods,
     }
-
-    mpc_regret = oracle_net - baseline["mpc"].net
     rl_regret = float(rl_regret)
-    beats_mpc = bool(rl_regret < mpc_regret - 1e-6)
+
+    # --- PPO: per-zone continuous control (removes the tabular state/action bottleneck) ---------
+    cont = ContinuousRebalanceEnv(zones, A, hours=ns.hours, vehicle_capacity=ns.vehicle_capacity)
+    ppo_cfg = PPOConfig(iterations=ns.ppo_iterations)
+    ppo_agent = ppo_train(cont, ppo_cfg, train_seeds=train_seeds)
+    ppo_total_cost = -float(ppo_greedy_return(cont, ppo_agent, eval_seed=ns.eval_seed))
+    ppo_net = -ppo_total_cost
+    ppo_regret = float(oracle_net - ppo_net)
+    by_policy["rl_ppo"] = {
+        "total_cost": round(ppo_total_cost, 2),
+        "net": round(ppo_net, 2),
+        "regret_vs_oracle": round(ppo_regret, 2),
+        "shortage_units": round(cont.tot_short, 1),
+        "overflow_units": round(cont.tot_over, 1),
+        "moved_units": round(cont.tot_moved, 1),
+        "infeasible_periods": cont.infeasible_periods,
+    }
+
+    mpc_regret = float(oracle_net - baseline["mpc"].net)
+    best_rl_regret = min(rl_regret, ppo_regret)
+    best_rl = "rl_ppo" if ppo_regret <= rl_regret else "rl_qlearning"
+    beats_mpc = bool(best_rl_regret < mpc_regret - 1e-6)
+    ppo_beats_tabular = bool(ppo_regret < rl_regret - 1e-6)
     # Honest verdict — computed, never asserted. No RL advantage is claimed.
     if beats_mpc:
         verdict = (
-            "RL_MATCHES_OR_EXCEEDS_MPC_ON_THIS_SCENARIO — reported as a research observation "
-            "on one seeded scenario; NOT a general RL advantage claim."
+            f"RL_MATCHES_OR_EXCEEDS_MPC_ON_THIS_SCENARIO (best: {best_rl}) — a research "
+            "observation on one seeded scenario; NOT a general RL advantage claim."
         )
-    elif abs(rl_regret - mpc_regret) <= 0.05 * max(abs(mpc_regret), 1.0):
+    elif best_rl_regret <= mpc_regret + 0.05 * max(abs(mpc_regret), 1.0):
         verdict = (
-            "RL_REDISCOVERED_MPC — learned policy is within 5% of MPC regret, as expected "
-            "(MPC is one of the actions). No RL advantage claimed."
+            f"RL_APPROACHES_MPC (best: {best_rl}) — the best learned policy is within 5% of MPC "
+            "regret. No RL advantage claimed."
         )
     else:
         verdict = (
-            "RL_UNDERPERFORMS_MPC — the tuned classical MPC remains the best policy here. "
-            "No RL advantage claimed; RL kept as a research baseline."
+            f"RL_UNDERPERFORMS_MPC (best: {best_rl}) — the tuned classical MPC remains the best "
+            "policy here. No RL advantage claimed; RL kept as a research baseline."
+        )
+    if ppo_beats_tabular:
+        verdict += (
+            " PPO improved on tabular Q-learning, consistent with the diagnosis that the tabular "
+            "state/action abstraction (not the algorithm) was the bottleneck."
         )
 
     report = {
@@ -121,7 +150,12 @@ def main(argv: list[str] | None = None) -> int:
         "mode": "research",
         "claim_status": "research",
         "freshness": stamp.isoformat(),
-        "method": "tabular Q-learning (numpy) over V2-04 sim; action = target-shaping (alpha, H)",
+        "methods": {
+            "rl_qlearning": "tabular Q-learning (numpy); coarse state (hour, imbalance bucket), "
+            "action = global target-shaping (alpha, H); MPC (alpha=1,H=6) is one of the actions.",
+            "rl_ppo": "PPO (numpy, no torch): per-zone continuous state (inventory + own forecast) "
+            "and per-zone continuous target fraction — the information MPC uses.",
+        },
         "objective": "minimize V2-02 ledger total_cost (same scoreboard as the mandatory policies)",
         "assumption_set_version": A.version,
         "leakage_guard": {
@@ -133,17 +167,23 @@ def main(argv: list[str] | None = None) -> int:
             "n_zones": ns.zones,
             "hours": ns.hours,
             "mpc_horizon": ns.horizon,
-            "episodes": ns.episodes,
+            "q_episodes": ns.episodes,
+            "ppo_iterations": ns.ppo_iterations,
         },
         "by_policy": by_policy,
-        "rl_action_histogram": action_hist,
+        "rl_qlearning_action_histogram": action_hist,
         "ranking_by_regret": sorted(by_policy, key=lambda p: by_policy[p]["regret_vs_oracle"]),
+        "mpc_regret": round(mpc_regret, 2),
+        "best_rl": best_rl,
+        "best_rl_regret": round(best_rl_regret, 2),
+        "ppo_beats_tabular": ppo_beats_tabular,
         "beats_mpc": beats_mpc,
         "verdict": verdict,
         "note": (
             "Research Mode only (RL is not a V2 completion condition). Dollar/cost figures are "
             "simulated over a documented scenario + the versioned assumption set. No RL "
-            "advantage is claimed — the MPC policy is itself one of the agent's actions."
+            "advantage is claimed — MPC is itself one of the tabular agent's actions, and its "
+            "regret gap to Oracle is largely irreducible forecast noise."
         ),
     }
 
@@ -160,22 +200,19 @@ def main(argv: list[str] | None = None) -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "rl_rebalancing.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    print(
-        f"V2 research — RL rebalancing (tabular Q-learning), {ns.zones} zones, {ns.hours}h, "
-        f"{ns.episodes} episodes"
-    )
+    print(f"V2 research — RL rebalancing (tabular Q-learning + PPO), {ns.zones} zones, {ns.hours}h")
     print(f"objective: min ledger total_cost (assumptions {A.version}); eval seed {ns.eval_seed}")
     print(
         f"\n  {'policy':14s} {'total_cost':>11s} {'regret':>9s} "
         f"{'short_u':>8s} {'over_u':>8s} {'moved':>7s}"
     )
-    for p in [*BASELINE_POLICIES, "rl_qlearning"]:
+    for p in [*BASELINE_POLICIES, "rl_qlearning", "rl_ppo"]:
         b = by_policy[p]
         print(
             f"  {p:14s} {b['total_cost']:11.1f} {b['regret_vs_oracle']:9.1f} "
             f"{b['shortage_units']:8.0f} {b['overflow_units']:8.0f} {b['moved_units']:7.0f}"
         )
-    print(f"\nRL action mix: {action_hist}")
+    print(f"\ntabular action mix: {action_hist}")
     print(f"ranking (best->worst regret): {report['ranking_by_regret']}")
     print(f"\nverdict: {verdict}")
     print(f"report -> {OUT_DIR}/rl_rebalancing.json")

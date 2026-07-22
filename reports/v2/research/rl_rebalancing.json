@@ -1,10 +1,13 @@
 {
-  "run_id": "run_rl_20260722T053222Z",
+  "run_id": "run_rl_20260722T060008Z",
   "artifact_id": "reports/v2/research/rl_rebalancing.json",
   "mode": "research",
   "claim_status": "research",
-  "freshness": "2026-07-22T05:32:22.179565+00:00",
-  "method": "tabular Q-learning (numpy) over the V2-04 simulator; action = target-shaping (alpha, H)",
+  "freshness": "2026-07-22T06:00:08.643420+00:00",
+  "methods": {
+    "rl_qlearning": "tabular Q-learning (numpy); coarse state (hour, imbalance bucket), action = global target-shaping (alpha, H); MPC (alpha=1,H=6) is one of the actions.",
+    "rl_ppo": "PPO (numpy, no torch): per-zone continuous state (inventory + own forecast) and per-zone continuous target fraction \u2014 the information MPC uses."
+  },
   "objective": "minimize V2-02 ledger total_cost (same scoreboard as the mandatory policies)",
   "assumption_set_version": "v2-assumptions-1",
   "leakage_guard": {
@@ -33,7 +36,8 @@
     "n_zones": 8,
     "hours": 72,
     "mpc_horizon": 6,
-    "episodes": 300
+    "q_episodes": 300,
+    "ppo_iterations": 60
   },
   "by_policy": {
     "no_action": {
@@ -84,9 +88,18 @@
       "overflow_units": 449.8,
       "moved_units": 905.0,
       "infeasible_periods": 0
+    },
+    "rl_ppo": {
+      "total_cost": 921.65,
+      "net": -921.65,
+      "regret_vs_oracle": 202.94,
+      "shortage_units": 632.6,
+      "overflow_units": 603.4,
+      "moved_units": 270.0,
+      "infeasible_periods": 0
     }
   },
-  "rl_action_histogram": {
+  "rl_qlearning_action_histogram": {
     "alpha=0.0,H=1": 2,
     "alpha=0.0,H=3": 16,
     "alpha=0.0,H=6": 2,
@@ -104,12 +117,17 @@
   "ranking_by_regret": [
     "oracle",
     "mpc",
+    "rl_ppo",
     "rl_qlearning",
     "milp",
     "no_action",
     "greedy"
   ],
+  "mpc_regret": 21.63,
+  "best_rl": "rl_ppo",
+  "best_rl_regret": 202.94,
+  "ppo_beats_tabular": true,
   "beats_mpc": false,
-  "verdict": "RL_UNDERPERFORMS_MPC \u2014 the tuned classical MPC remains the best policy here. No RL advantage claimed; RL kept as a research baseline.",
-  "note": "Research Mode only (RL is not a V2 completion condition). Dollar/cost figures are simulated over a documented scenario + the versioned assumption set. No RL advantage is claimed \u2014 the MPC policy is itself one of the agent's actions."
+  "verdict": "RL_UNDERPERFORMS_MPC (best: rl_ppo) \u2014 the tuned classical MPC remains the best policy here. No RL advantage claimed; RL kept as a research baseline. PPO improved on tabular Q-learning, consistent with the diagnosis that the tabular state/action abstraction (not the algorithm) was the bottleneck.",
+  "note": "Research Mode only (RL is not a V2 completion condition). Dollar/cost figures are simulated over a documented scenario + the versioned assumption set. No RL advantage is claimed \u2014 MPC is itself one of the tabular agent's actions, and its regret gap to Oracle is largely irreducible forecast noise."
 }
