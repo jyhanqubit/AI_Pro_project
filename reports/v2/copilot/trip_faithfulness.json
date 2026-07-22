@@ -1,0 +1,57 @@
+{
+  "run_id": "run_v2-07faith_20260722T041909Z",
+  "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-07-22T04:19:09.857284+00:00",
+  "metric": "numeric faithfulness (RAGAS-style): every number in the answer must appear as a value in the typed plan; distances are haversine-computed from real station coordinates, never LLM-generated",
+  "n_plans": 5,
+  "mean_faithfulness": 1.0,
+  "ungrounded_numbers_total": 0,
+  "per_plan": [
+    {
+      "pair": "A->D",
+      "answer": "가역에서 라역까지: 나역에서 자전거를 빌리고(12대), 다역에 반납(9칸)한 뒤 목적지까지 걸어가세요. 총 도보 약 6분 · 자전거 약 9분.",
+      "total_numbers": 4,
+      "ungrounded": [],
+      "faithfulness": 1.0
+    },
+    {
+      "pair": "B->C",
+      "answer": "나역에서 다역까지: 출발지 대여소에서 자전거를 빌리고(12대), 다역에 반납(9칸)한 뒤 목적지까지 걸어가세요. 총 도보 약 0분 · 자전거 약 9분.",
+      "total_numbers": 4,
+      "ungrounded": [],
+      "faithfulness": 1.0
+    },
+    {
+      "pair": "A->E",
+      "answer": "가역에서 마역까지: 나역에서 자전거를 빌리고(12대), 마역에 반납(6칸)한 뒤 목적지까지 걸어가세요. 총 도보 약 3분 · 자전거 약 15분.",
+      "total_numbers": 4,
+      "ungrounded": [],
+      "faithfulness": 1.0
+    },
+    {
+      "pair": "D->B",
+      "answer": "라역에서 나역까지: 출발지 대여소에서 자전거를 빌리고(2대), 나역에 반납(3칸)한 뒤 목적지까지 걸어가세요. 총 도보 약 0분 · 자전거 약 10분. ⚠ 대여소 재고가 빠듯해요 (2대) — 서두르세요. 반납소 빈 칸이 얼마 없어요 (3칸).",
+      "total_numbers": 6,
+      "ungrounded": [],
+      "faithfulness": 1.0
+    },
+    {
+      "pair": "C->A",
+      "answer": "다역에서 가역까지: 출발지 대여소에서 자전거를 빌리고(4대), 가역에 반납(5칸)한 뒤 목적지까지 걸어가세요. 총 도보 약 0분 · 자전거 약 10분.",
+      "total_numbers": 4,
+      "ungrounded": [],
+      "faithfulness": 1.0
+    }
+  ],
+  "negative_control": {
+    "injected": "999",
+    "detected_ungrounded": [
+      999.0
+    ],
+    "faithfulness_when_corrupted": 0.8,
+    "guard_works": true
+  },
+  "finding": "faithfulness 1.0, ungrounded_numbers_total 0 — the answer restates only plan values (grounded by the template). The negative control (injected 999) is caught, so the verifier would flag a hallucinated number if an LLM narrator replaced the template. Same guarantee as V2-06 ungrounded_numeric=0, applied to the trip planner."
+}

@@ -150,6 +150,7 @@ v2-copilot:  ## V2-06: Copilot benchmark — typed-tool numeric grounding + Grap
 	python -m ml.copilot.ragas_retrieval
 	python -m ml.copilot.ragas_generation
 	python -m ml.copilot.trip_parse_benchmark
+	python -m ml.copilot.trip_faithfulness
 
 v2-monitor:  ## V2-08: run manifest + freshness monitoring + delayed-label loop (leakage-safe)
 	python -m ml.monitoring.run_manifest

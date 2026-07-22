@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-07tripparse_20260722T041130Z",
+  "run_id": "run_v2-07tripparse_20260722T041909Z",
   "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-07-22T04:11:30.744105+00:00",
+  "freshness": "2026-07-22T04:19:09.847078+00:00",
   "judge": "claude-opus-4-8-insession",
   "note": "LLM parses committed to data/fixtures/v2/trip_parse_claude.jsonl (no API key; in-session, auditable). The planner's distances/times/stations remain deterministic; only the NL→(origin,destination) parse is compared here.",
   "n": 10,

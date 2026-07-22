@@ -101,3 +101,18 @@ def test_trip_parse_benchmark_llm_beats_rules_on_hard_cases():
         if p["id"] in d["hard_cases_where_llm_wins"]:
             assert p["llm_ok"] and not p["rule_ok"]
     assert d["claim_status"] == "offline_benchmark"
+
+
+def test_trip_answer_has_no_hallucinated_numbers():
+    # Every number in the planner's answer must be grounded in the typed plan (RAGAS-style numeric
+    # faithfulness), and the verifier must catch an injected fake (negative control).
+    import json
+    from pathlib import Path
+
+    from ml.copilot.trip_faithfulness import main
+
+    assert main([]) == 0
+    d = json.loads(Path("reports/v2/copilot/trip_faithfulness.json").read_text(encoding="utf-8"))
+    assert d["mean_faithfulness"] == 1.0
+    assert d["ungrounded_numbers_total"] == 0
+    assert d["negative_control"]["guard_works"] is True   # a fabricated 999 IS flagged

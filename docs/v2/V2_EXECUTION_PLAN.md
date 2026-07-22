@@ -172,6 +172,12 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
       negation `익스체인지 말고`, origin-stated-last `출발은 시청`). LLM parses committed to
       `data/fixtures/v2/trip_parse_claude.jsonl` for audit; `offline_benchmark`. This is the V2-06
       lesson (intent understanding is the LLM's measured value) applied to the planner.
+    - **Numeric faithfulness / no-hallucination** (`ml/copilot/trip_faithfulness.py`, in
+      `make v2-copilot`): RAGAS-style check that every number in the answer is grounded in the typed
+      plan (distances are haversine-computed from real station coordinates, never LLM-generated).
+      **mean_faithfulness 1.0, 0 ungrounded numbers** across 5 plans; a negative control (injected
+      `999`) is caught, so the guard would flag a hallucinated number if an LLM narrator replaced the
+      template. Same guarantee as V2-06 `ungrounded_numeric=0`.
 - **Status:** PASSED — artifact-backed metrics API + envelope enforcement + cockpit UI + rider
   preview, all verified against the running app.
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
