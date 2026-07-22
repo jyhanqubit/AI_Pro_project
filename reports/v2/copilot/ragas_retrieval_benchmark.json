@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06ragas_20260721T084144Z",
+  "run_id": "run_v2-06ragas_20260722T082523Z",
   "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-07-21T08:41:44.213083+00:00",
+  "freshness": "2026-07-22T08:25:23.437724+00:00",
   "tool": {
     "package": "ragas",
     "version": "0.4.3",

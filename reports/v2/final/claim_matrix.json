@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-09_20260722T072321Z",
+  "run_id": "run_v2-09_20260722T082728Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-22T07:23:21.858806+00:00",
+  "freshness": "2026-07-22T08:27:28.192871+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
@@ -55,11 +55,11 @@
   "claims": [
     {
       "artifact": "reports/v2/copilot/correctness_benchmark.json",
-      "run_id": "run_v2-06_20260721T084148Z",
+      "run_id": "run_v2-06_20260722T082522Z",
       "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
       "mode": "research",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-21T08:41:48.301484+00:00",
+      "freshness": "2026-07-22T08:25:22.436904+00:00",
       "headline": {
         "routing_accuracy": 1.0,
         "hallucinated_answers": 0,
@@ -68,29 +68,29 @@
     },
     {
       "artifact": "reports/v2/copilot/graphrag_benchmark.json",
-      "run_id": "run_v2-06graphscale_20260721T084143Z",
+      "run_id": "run_v2-06graphscale_20260722T082522Z",
       "artifact_id": "reports/v2/copilot/graphrag_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-21T08:41:43.796817+00:00",
+      "freshness": "2026-07-22T08:25:22.442207+00:00",
       "headline": {}
     },
     {
       "artifact": "reports/v2/copilot/neutral_retrieval_benchmark.json",
-      "run_id": "run_v2-06neutral_20260721T084143Z",
+      "run_id": "run_v2-06neutral_20260722T082523Z",
       "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-21T08:41:43.902450+00:00",
+      "freshness": "2026-07-22T08:25:23.015630+00:00",
       "headline": {}
     },
     {
       "artifact": "reports/v2/copilot/ragas_generation_benchmark.json",
-      "run_id": "run_v2-06ragasgen_20260721T084146Z",
+      "run_id": "run_v2-06ragasgen_20260722T082529Z",
       "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-21T08:41:46.372531+00:00",
+      "freshness": "2026-07-22T08:25:29.977843+00:00",
       "headline": {
         "faithfulness": 1.0,
         "answer_relevancy": 0.985
@@ -98,20 +98,20 @@
     },
     {
       "artifact": "reports/v2/copilot/ragas_retrieval_benchmark.json",
-      "run_id": "run_v2-06ragas_20260721T084144Z",
+      "run_id": "run_v2-06ragas_20260722T082523Z",
       "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-21T08:41:44.213083+00:00",
+      "freshness": "2026-07-22T08:25:23.437724+00:00",
       "headline": {}
     },
     {
       "artifact": "reports/v2/copilot/trip_faithfulness.json",
-      "run_id": "run_v2-07faith_20260722T041909Z",
+      "run_id": "run_v2-07faith_20260722T082556Z",
       "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T04:19:09.857284+00:00",
+      "freshness": "2026-07-22T08:25:56.112653+00:00",
       "headline": {
         "mean_faithfulness": 1.0,
         "ungrounded_numbers_total": 0
@@ -119,11 +119,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_parse_benchmark.json",
-      "run_id": "run_v2-07tripparse_20260722T041909Z",
+      "run_id": "run_v2-07tripparse_20260722T082556Z",
       "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T04:19:09.847078+00:00",
+      "freshness": "2026-07-22T08:25:56.108961+00:00",
       "headline": {}
     },
     {
