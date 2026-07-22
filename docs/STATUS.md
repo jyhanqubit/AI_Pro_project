@@ -12,7 +12,17 @@ lift and whether that lift converts to profit net of LLM cost.
 
 - **New docs:** `docs/v2/{README,V2_MISSION,V2_EXECUTION_PLAN,V2_CLAIMS_MATRIX,V2_EVALUATION_PROTOCOL,V2_PROFIT_REGRET_LEDGER,V2_LLM_VALUE_ABLATION,V2_MPC_DECISIONING,V2_PRICING,V2_GRAPHRAG_COPILOT,V2_KNOWN_LIMITATIONS}.md`.
 - **New folders:** `contracts/v2/`, `config/v2/`, `data/fixtures/v2/`, `reports/v2/{holdout,ledger,llm_value,mpc,pricing,copilot,final}/`.
-- **Phases:** V2-00…V2-08 **PASSED**; V2-09 `PLANNED` (see `docs/v2/V2_EXECUTION_PLAN.md`).
+- **Phases:** V2-00…V2-09 **PASSED**. RL/QAOA are research-only (not completion conditions).
+- **V2-09 done (final audit):** `make v2-final` — `scripts/v2_final_audit.py` judges the portfolio by
+  its committed artifacts with three machine gates (envelope honesty over all **31** `reports/v2/**`
+  artifacts via `ResultEnvelope`; completion-artifact coverage; artifact_id traceability) and mirrors
+  the claim matrix into `reports/v2/final/claim_matrix.json`. Verdict: **PASS — V2_COMPLETE**. Catches
+  a mislabeled envelope (test). Summary `reports/v2/final/v2_final_audit.md`; algorithm principles +
+  metric definitions `docs/v2/V2_ALGORITHMS.md`.
+- **Research (not a gate): RL rebalancing** — `make v2-rl` (`optimization/rl/`): tabular Q-learning +
+  from-scratch numpy PPO on the V2-04 simulator/ledger. Regret vs Oracle: PPO **202.9** < tabular
+  **247.8**, both trail MPC **21.6**; `beats_mpc=false`, **no RL advantage claimed**. `mode=research`,
+  blocked from product surfaces by `ResultEnvelope`. 8 tests. See `docs/v2/V2_RESEARCH_RL.md`.
 - **V2-08 done:** `make v2-monitor` — `ml/monitoring/run_manifest.py` indexes all 26 `reports/v2/**`
   artifacts (run_id/claim_status/freshness/staleness → `run_manifest.json`; 0 stale) and
   `ml/monitoring/delayed_labels.py` runs the leakage-safe `pending_live_label`→`measured` loop (a label
