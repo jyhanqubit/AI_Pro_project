@@ -81,3 +81,23 @@ def test_resolve_endpoints_single_mention_is_destination():
     aliases = v2._alias_index()
     o, d = resolve_endpoints("뉴포트 가고 싶어", aliases)
     assert o is None and d == "JC_NEWPORT"
+
+
+def test_trip_parse_benchmark_llm_beats_rules_on_hard_cases():
+    # The NL parse is the LLM seam: in-session LLM parses (committed) must beat the rule-based
+    # parser on the hard set (typos / negation / origin-stated-last), and never do worse.
+    import json
+    from pathlib import Path
+
+    from ml.copilot.trip_parse_benchmark import main
+
+    assert main([]) == 0
+    d = json.loads(Path("reports/v2/copilot/trip_parse_benchmark.json").read_text(encoding="utf-8"))
+    assert d["llm_accuracy"] >= d["rule_based_accuracy"]
+    assert d["llm_accuracy"] == 1.0
+    assert d["rule_based_accuracy"] < 1.0            # there ARE cases rules miss (else no point)
+    assert d["hard_cases_where_llm_wins"]            # non-empty
+    for p in d["per_query"]:
+        if p["id"] in d["hard_cases_where_llm_wins"]:
+            assert p["llm_ok"] and not p["rule_ok"]
+    assert d["claim_status"] == "offline_benchmark"

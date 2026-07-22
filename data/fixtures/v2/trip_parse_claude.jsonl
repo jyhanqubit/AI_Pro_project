@@ -1,0 +1,10 @@
+{"id": "t01", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "명시적 '에서/가고 싶어'"}
+{"id": "t02", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "영어 'X to Y'"}
+{"id": "t03", "origin": "JC_NEWPORT", "destination": "JC_CITYHALL", "rationale": "영어 'from X to Y' — 출발 Newport"}
+{"id": "t04", "origin": "JC_GROVE", "destination": "JC_HOBOKEN", "rationale": "명시적 '에서/까지'"}
+{"id": "t05", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "'일단(출발)=시청', '목적지=뉴포트'"}
+{"id": "t06", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "'지금 ~근처야'=현위치(출발), '~로 가는데'=목적지"}
+{"id": "t07", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "'세우고 싶은데'=반납(목적지)=뉴포트, '출발은 시청'=출발; 순서가 목적지 먼저라도 역할로 판별"}
+{"id": "t08", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "오타 '뉴포뜨'→'뉴포트'로 정정, '시청서'='시청에서'"}
+{"id": "t09", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "오타 '시쳥'→'시청'으로 정정"}
+{"id": "t10", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT", "rationale": "'익스체인지 말고'=제외(부정) → 출발은 시청, 목적지 뉴포트"}

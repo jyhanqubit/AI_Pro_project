@@ -165,7 +165,13 @@ Legend for `Status`: `PLANNED` → `IN_PROGRESS` → `PASSED` / `PASSED_BLOCKED_
     numbers deterministic, never from an LLM**. The LLM's honest role (per V2-06): parse the NL
     request into origin/destination + narrate; rule-based here (`answer_mode`), LLM parser slots into
     `resolve_endpoints` when a key is configured. Verified live: "시청에서 뉴포트" → rent City Hall
-    (6) → 🚲 5min/1173m → return Newport (10). 6 tests (`test_v2_trip_planner.py`).
+    (6) → 🚲 5min/1173m → return Newport (10). 7 tests (`test_v2_trip_planner.py`).
+    - **LLM-parse benchmark** (`ml/copilot/trip_parse_benchmark.py`, in `make v2-copilot`): the NL
+      parse is the LLM seam. On a 10-query set (method-independent gold), rule-based scores **0.6**
+      and the in-session LLM **1.0** — the LLM wins exactly the hard cases (typos `뉴포뜨`/`시쳥`,
+      negation `익스체인지 말고`, origin-stated-last `출발은 시청`). LLM parses committed to
+      `data/fixtures/v2/trip_parse_claude.jsonl` for audit; `offline_benchmark`. This is the V2-06
+      lesson (intent understanding is the LLM's measured value) applied to the planner.
 - **Status:** PASSED — artifact-backed metrics API + envelope enforcement + cockpit UI + rider
   preview, all verified against the running app.
 - **Command:** `make web` (+ `make api`) driving V2 artifacts.
