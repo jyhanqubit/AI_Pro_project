@@ -1,0 +1,115 @@
+{
+  "run_id": "run_rl_20260722T053222Z",
+  "artifact_id": "reports/v2/research/rl_rebalancing.json",
+  "mode": "research",
+  "claim_status": "research",
+  "freshness": "2026-07-22T05:32:22.179565+00:00",
+  "method": "tabular Q-learning (numpy) over the V2-04 simulator; action = target-shaping (alpha, H)",
+  "objective": "minimize V2-02 ledger total_cost (same scoreboard as the mandatory policies)",
+  "assumption_set_version": "v2-assumptions-1",
+  "leakage_guard": {
+    "eval_seed": 42,
+    "train_seeds": [
+      100,
+      101,
+      102,
+      103,
+      104,
+      105,
+      106,
+      107,
+      108,
+      109,
+      110,
+      111,
+      112,
+      113,
+      114,
+      115
+    ],
+    "note": "eval scenario is never in the training seeds; RL never sees the eval demand."
+  },
+  "scenario": {
+    "n_zones": 8,
+    "hours": 72,
+    "mpc_horizon": 6,
+    "episodes": 300
+  },
+  "by_policy": {
+    "no_action": {
+      "total_cost": 1126.72,
+      "net": -1126.72,
+      "regret_vs_oracle": 408.01,
+      "shortage_units": 874.5,
+      "overflow_units": 840.8,
+      "moved_units": 0.0
+    },
+    "greedy": {
+      "total_cost": 1154.66,
+      "net": -1154.66,
+      "regret_vs_oracle": 435.94,
+      "shortage_units": 554.9,
+      "overflow_units": 513.7,
+      "moved_units": 1114.0
+    },
+    "milp": {
+      "total_cost": 1086.88,
+      "net": -1086.88,
+      "regret_vs_oracle": 368.17,
+      "shortage_units": 510.2,
+      "overflow_units": 488.9,
+      "moved_units": 1075.0
+    },
+    "mpc": {
+      "total_cost": 740.34,
+      "net": -740.34,
+      "regret_vs_oracle": 21.63,
+      "shortage_units": 237.9,
+      "overflow_units": 213.4,
+      "moved_units": 1096.0
+    },
+    "oracle": {
+      "total_cost": 718.71,
+      "net": -718.71,
+      "regret_vs_oracle": 0.0,
+      "shortage_units": 232.1,
+      "overflow_units": 211.3,
+      "moved_units": 1058.0
+    },
+    "rl_qlearning": {
+      "total_cost": 966.47,
+      "net": -966.47,
+      "regret_vs_oracle": 247.76,
+      "shortage_units": 469.5,
+      "overflow_units": 449.8,
+      "moved_units": 905.0,
+      "infeasible_periods": 0
+    }
+  },
+  "rl_action_histogram": {
+    "alpha=0.0,H=1": 2,
+    "alpha=0.0,H=3": 16,
+    "alpha=0.0,H=6": 2,
+    "alpha=0.5,H=3": 10,
+    "alpha=0.5,H=6": 4,
+    "alpha=1.0,H=1": 7,
+    "alpha=1.0,H=3": 2,
+    "alpha=1.0,H=6": 1,
+    "alpha=1.5,H=3": 9,
+    "alpha=1.5,H=6": 2,
+    "alpha=2.0,H=1": 5,
+    "alpha=2.0,H=3": 8,
+    "alpha=2.0,H=6": 4
+  },
+  "ranking_by_regret": [
+    "oracle",
+    "mpc",
+    "rl_qlearning",
+    "milp",
+    "no_action",
+    "greedy"
+  ],
+  "beats_mpc": false,
+  "verdict": "RL_UNDERPERFORMS_MPC \u2014 the tuned classical MPC remains the best policy here. No RL advantage claimed; RL kept as a research baseline.",
+  "note": "Research Mode only (RL is not a V2 completion condition). Dollar/cost figures are simulated over a documented scenario + the versioned assumption set. No RL advantage is claimed \u2014 the MPC policy is itself one of the agent's actions."
+}
