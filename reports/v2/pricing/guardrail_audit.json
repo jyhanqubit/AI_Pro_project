@@ -1,0 +1,29 @@
+{
+  "run_id": "run_v2-05_20260721T034413Z",
+  "artifact_id": "reports/v2/pricing/guardrail_audit.json",
+  "mode": "research",
+  "claim_status": "simulated",
+  "freshness": "2026-07-21T03:44:13.721367+00:00",
+  "assumption_set_version": "v2-assumptions-1",
+  "n_zone_hours": 576,
+  "action_mix": {
+    "base": 561,
+    "surge": 15
+  },
+  "total_credit_spend": 0.0,
+  "credit_budget": 40.0,
+  "budget_respected": true,
+  "guardrails": {
+    "G1_surge_bounds": "[1.0, 1.5]",
+    "G2_credit_bounds": "[0.0, 0.25]",
+    "G3_no_negative_marginal_net": true,
+    "G4_budget_cap": 40.0,
+    "G5_monotone_in_shortage_risk": "structural (net-maximising tier)",
+    "G6_no_surge_on_safety_zone": true
+  },
+  "violations": {},
+  "violation_count": 0,
+  "safety_zones_kept_base_fare": true,
+  "negative_control_audit_catches_planted_violation": true,
+  "note": "Every quote is a SIMULATED SHADOW quote \u2014 never applied to a rider; no causal claim."
+}

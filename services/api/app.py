@@ -42,6 +42,7 @@ from .schemas import (
     ReplayState,
     RevenueRequest,
     RiderAskRequest,
+    TripPlanRequest,
     ScenarioRequest,
     ScenarioResponse,
     ScenarioZone,
@@ -420,6 +421,24 @@ def create_app() -> FastAPI:
 
         return rider_ask(engine, body.query, engine.cutoff)
 
+    @app.post("/v2/rider/plan-trip")
+    def plan_trip_endpoint(engine: EngineDep, body: TripPlanRequest) -> dict:
+        """V2-07 rider trip planner: walk → rent → bike → return → walk. Origin/destination come
+        either as explicit place ids or parsed from a free-text query; all distances/times/stations
+        are deterministic (never LLM). answer_mode marks how the query was parsed (rule_based here)."""
+        from .trip_planner import plan_trip, resolve_endpoints
+        from .v2 import _alias_index
+
+        origin, destination = body.origin, body.destination
+        answer_mode = "explicit"
+        if not (origin and destination) and body.query:
+            origin, destination = resolve_endpoints(body.query, _alias_index())
+            answer_mode = "rule_based"  # LLM parser slots in here when a key is configured
+        if not origin or not destination:
+            return {"feasible": False, "reason": "unresolved_endpoints", "answer_mode": answer_mode,
+                    "answer": "출발지와 목적지를 모두 알려주세요. 예: '시청에서 뉴포트 가고 싶어'."}
+        return {**plan_trip(engine, engine.cutoff, origin, destination), "answer_mode": answer_mode}
+
     @app.post("/v2/pricing/quote")
     def pricing_quote_endpoint(engine: EngineDep, body: PricingQuoteRequest) -> dict:
         """V2-05 dynamic fare: SIMULATED SHADOW quotes + guardrails (never applied to a rider)."""
@@ -466,6 +485,18 @@ def create_app() -> FastAPI:
         from .v2 import operator_timeline
 
         return operator_timeline(engine)
+
+    @app.get("/v2/cockpit/metrics")
+    def cockpit_metrics_endpoint(mode: str = "historical_replay") -> dict:
+        """V2-07: every headline cockpit metric, each resolved live from a committed reports/v2/**
+        artifact and wrapped in the result envelope (run_id/artifact_id/claim_status/freshness).
+        No hard-coded numbers; a missing artifact surfaces as a blocked envelope, never a fake value.
+        """
+        from contracts.enums import OperatingMode
+
+        from .v2_metrics import cockpit_metrics
+
+        return {"mode": mode, "metrics": cockpit_metrics(OperatingMode(mode))}
 
     @app.post(
         "/v2/operator/rebalancing/allocate",

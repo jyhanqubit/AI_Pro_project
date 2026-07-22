@@ -68,7 +68,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 이벤트 그래프 **5,770 노드 · 11,850 엣지** | `make seed-graph` | `data/processed/graph/event_graph.json` |
 | 이벤트 피처 리프트 **WAPE −1.65%** (95% CI [0.36, 5.11]) | 결과 확인: `reports/borough_event_lift.json` · 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
 | 방향별 리프트 (수요 급락 **95.2%** 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요) · 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
-| 전체 테스트 | `make test` | 375 passed |
+| 전체 테스트 | `make test` | 483 passed / 2 skipped (torch 없는 환경 기준). `torch`가 필요한 v1 recsys retriever/reranker 테스트만 제외되며, torch 설치 시 함께 실행됩니다 |
 
 > **Note.** 화면의 `7/12` 수치는 라벨을 붙인 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
 > **2026년 1–6월 실데이터 측정치**입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로,
@@ -325,6 +325,60 @@ make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig g
 
 자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화·
 Elasticsearch·LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
+
+## V2 — LLM 순가치 검증 (V2-00 … V2-09)
+
+위의 "V2 사용성 업데이트"가 **UI/UX** 릴리스라면, 이 절은 그와 별개인 **LLM net-business-value 검증**
+릴리스입니다(계약: [CLAUDE_V2_APPEND_REVISED.md](CLAUDE_V2_APPEND_REVISED.md)). 핵심 질문은 하나입니다 —
+**LLM/event feature가 예측 정확도를, 그리고 그 정확도가 (LLM 비용을 제하고도) 이익을 실제로 개선하는가?**
+모든 결과는 `reports/v2/**`의 versioned artifact가 뒷받침하고, 각 값은 `run_id / artifact_id / mode /
+claim_status / freshness`를 담은 `ResultEnvelope`로 라벨됩니다. 완성 판정은 기능 존재 여부가 아니라
+**artifact 기준**입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v2/V2_ALGORITHMS.md](docs/v2/V2_ALGORITHMS.md)에
+정리돼 있습니다.
+
+**측정된 결과 (measured / simulated, artifact 링크):**
+
+| 결과 | claim_status | 수치 | 재현 |
+|---|---|---|---|
+| Promoted model + H3 multi-holdout | **measured** | `hist_gradient_boosting`, rolling-origin 3-window: WAPE **0.4828 ± 0.0030**, MASE **0.7996 ± 0.0186** (naive를 이김) | `make v2-holdout` |
+| Structured event feed lift (A1−A0) | **measured** | nowcast에서 **`MEANINGFUL_POSITIVE` +2.69%** | `make v2-llm-value-borough` |
+| LLM-from-news 증분 (A2−A1) | **measured (negative)** | net-negative / null, net LLM value **−$17,789** — news는 structured feed 대비 redundant | `make v2-llm-value-borough` |
+| Profit / Regret ledger | **simulated** | no-action 대비 net **+$103,271** (9개 cost 설정 모두 부호 양수); Oracle 대비 regret **$218,697** | `make v2-ledger` |
+| MPC vs No-Action/Greedy/MILP/Oracle | **simulated** | ledger total_cost: NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719 — MPC가 best feasible, regret **21.6** | `make v2-mpc` |
+| Dynamic pricing + guardrail | **simulated** | 576 zone-hour에서 guardrail 위반 **0**, A/A CI가 0 포함 (shadow quote만) | `make v2-pricing` |
+| Copilot 정확도 + grounding | **offline_benchmark** | typed-tool routing **1.0**, numeric hallucination **0**; RAGAS faithfulness **1.0**, answer_relevancy **0.985**; trip-plan faithfulness **1.0** | `make v2-copilot` |
+| Final audit (완성 판정) | **measured** | envelope honesty + completion-artifact + traceability 3 gate PASS, **31 artifacts** → **V2_COMPLETE** | `make v2-final` |
+
+```bash
+make v2-audit             # V2-00: domain-drift + result-envelope 계약 gate (오프라인)
+make v2-holdout           # V2-01: promoted model + H3 multi-holdout (원본 트립 필요)
+make v2-ledger            # V2-02: profit/regret ledger
+make v2-llm-value-borough # V2-03: No-Event / Rule-Event / LLM-Event ablation + CI + LLM 비용
+make v2-mpc               # V2-04: multi-period 정책 비교 (No-Action/Greedy/MILP/MPC/Oracle)
+make v2-pricing           # V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run
+make v2-copilot           # V2-06: typed-tool grounding + GraphRAG + RAGAS 벤치마크
+make v2-monitor           # V2-08: run manifest + freshness + delayed-label loop (leakage-safe)
+make v2-final             # V2-09: 최종 audit → reports/v2/final/claim_matrix.json
+make v2-rl                # (research 전용) tabular Q-learning + PPO 재배치 정책
+```
+
+**정직성 posture (핵심):**
+- **Measured 승리** — promoted forecaster가 seasonal-naive를 이기고, structured event feed가 measured lift를
+  주며, Copilot은 typed tool로 numeric hallucination **0**.
+- **정직한 null (대표 발견)** — 이 데이터에서 **LLM-from-news feature는 수요 예측을 개선하지 않습니다**. LLM
+  Feature Value metric + CI로 보고하고 root cause까지 규명(source가 dense + precise-time + precise-location +
+  forward-looking이어야 하는데 news는 하나도 만족 못 함), *simulated* synthetic ceiling(+10.43%)으로 "방법
+  자체는 조건을 만족하면 동작"함을 보였습니다. 전체 정리: [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
+- **Simulated이지 measured 아님** — 모든 금액(ledger, MPC, pricing)은 assumption에 조건부이고 `simulated`로
+  라벨. 단위 수량만 measured.
+- **Research 전용, 완성 조건 아님** — RL(tabular Q-learning + PPO)과 QAOA. RL은 같은 ledger로 채점하면 PPO
+  **202.9** < tabular **247.8**, 둘 다 MPC **21.6**에 못 미쳐 **RL advantage는 주장하지 않습니다**.
+  `ResultEnvelope`가 research 값을 product surface에서 차단합니다. ([docs/v2/V2_RESEARCH_RL.md](docs/v2/V2_RESEARCH_RL.md))
+
+계획·claim matrix·한계는 [docs/v2/README.md](docs/v2/README.md),
+[docs/v2/V2_CLAIMS_MATRIX.md](docs/v2/V2_CLAIMS_MATRIX.md),
+[docs/v2/V2_KNOWN_LIMITATIONS.md](docs/v2/V2_KNOWN_LIMITATIONS.md), 최종 감사는
+[reports/v2/final/v2_final_audit.md](reports/v2/final/v2_final_audit.md) 참고.
 
 ## 상태
 

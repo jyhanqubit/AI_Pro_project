@@ -1,0 +1,113 @@
+{
+  "run_id": "run_v2-01_20260720T121350Z_f1a28b37",
+  "artifact_id": "reports/v2/holdout/h3_multiholdout.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-20T12:13:50.724396+00:00",
+  "grain": "h3_zone_x_local_hour",
+  "target": "departures",
+  "seed": 42,
+  "split": "rolling_origin_expanding_monthly",
+  "feature_version": "dfv1",
+  "promoted_model": {
+    "algorithm": "hist_gradient_boosting",
+    "params": {
+      "model__learning_rate": 0.05,
+      "model__max_depth": 8,
+      "model__max_iter": 600
+    },
+    "selection_cv_wape": 0.523624356988963,
+    "pool": [
+      "ridge",
+      "hist_gradient_boosting"
+    ]
+  },
+  "data_source": "data/raw/citibike",
+  "usable_rows": 210042,
+  "h3_zones": 234,
+  "windows": [
+    {
+      "window_id": 0,
+      "test_start": "2024-06-01T00:00:00-04:00",
+      "test_end": "2024-07-01T00:00:00-04:00",
+      "train_end_hour": "2024-05-31T23:00:00-04:00",
+      "n_train": 95963,
+      "n_test": 38246,
+      "n_zones_test": 176,
+      "seasonal_scale_mae": 1.6982066004605942,
+      "metrics": {
+        "wape": 0.48232834331692354,
+        "mae": 1.3949890105109424,
+        "mase": 0.8214483503553619,
+        "bias": -0.05534396825977457,
+        "peak_direction_accuracy": 0.6477801600167338
+      },
+      "b0_seasonal_naive": {
+        "wape": 0.6434841567599331,
+        "mae": 1.861083512001255,
+        "mase": 1.095911128537885
+      }
+    },
+    {
+      "window_id": 1,
+      "test_start": "2024-07-01T00:00:00-04:00",
+      "test_end": "2024-08-01T00:00:00-04:00",
+      "train_end_hour": "2024-06-30T23:00:00-04:00",
+      "n_train": 134209,
+      "n_test": 38395,
+      "n_zones_test": 168,
+      "seasonal_scale_mae": 1.7446221937425954,
+      "metrics": {
+        "wape": 0.47939021870840737,
+        "mae": 1.3977917534737574,
+        "mase": 0.801200258994292,
+        "bias": -0.05206294466573222,
+        "peak_direction_accuracy": 0.6447714546164866
+      },
+      "b0_seasonal_naive": {
+        "wape": 0.6479531223481702,
+        "mae": 1.8892824586534704,
+        "mase": 1.0829178176396732
+      }
+    },
+    {
+      "window_id": 2,
+      "test_start": "2024-08-01T00:00:00-04:00",
+      "test_end": "2024-09-01T00:00:00-04:00",
+      "train_end_hour": "2024-07-31T23:00:00-04:00",
+      "n_train": 172604,
+      "n_test": 37438,
+      "n_zones_test": 152,
+      "seasonal_scale_mae": 1.776801232879887,
+      "metrics": {
+        "wape": 0.4867258568172822,
+        "mae": 1.3788182453820632,
+        "mase": 0.7760115312095083,
+        "bias": 0.07368772298069903,
+        "peak_direction_accuracy": 0.6471499545915914
+      },
+      "b0_seasonal_naive": {
+        "wape": 0.6520611752281813,
+        "mae": 1.8471873497515894,
+        "mase": 1.0396139509412758
+      }
+    }
+  ],
+  "aggregate": {
+    "wape": {
+      "mean": 0.48281480628087103,
+      "std": 0.0030144519985743803,
+      "n": 3
+    },
+    "mae": {
+      "mean": 1.3905330031222543,
+      "std": 0.008362236690919003,
+      "n": 3
+    },
+    "mase": {
+      "mean": 0.7995533801863873,
+      "std": 0.01858602146559248,
+      "n": 3
+    }
+  }
+}

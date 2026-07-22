@@ -1,0 +1,98 @@
+{
+  "run_id": "run_v2-06ragasgen_20260722T082529Z",
+  "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-07-22T08:25:29.977843+00:00",
+  "judge": "claude-opus-4-8-insession",
+  "judge_note": "No LLM API key in sandbox; the model judged in-session (as in V2-03 extraction and V2-06 routing). Every verdict is committed in data/fixtures/v2/copilot_ragas_judgments.jsonl for audit.",
+  "metric_definitions": {
+    "faithfulness": "RAGAS: supported_claims / total_claims, claims verified against the typed-tool retrieved context (value + cited artifact).",
+    "answer_relevancy": "DIRECT relevance judgment (0..1). NOT RAGAS's embedding-similarity proxy (no embedding model available); labeled as a direct judgment."
+  },
+  "scope": "answered questions only (refusals graded by correctness_benchmark.json)",
+  "n_answered": 10,
+  "faithfulness": 1.0,
+  "answer_relevancy": 0.985,
+  "per_question": [
+    {
+      "id": "q01",
+      "faithfulness": 1.0,
+      "supported_claims": 3,
+      "total_claims": 3,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q02",
+      "faithfulness": 1.0,
+      "supported_claims": 2,
+      "total_claims": 2,
+      "answer_relevancy": 0.9
+    },
+    {
+      "id": "q03",
+      "faithfulness": 1.0,
+      "supported_claims": 1,
+      "total_claims": 1,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q04",
+      "faithfulness": 1.0,
+      "supported_claims": 2,
+      "total_claims": 2,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q05",
+      "faithfulness": 1.0,
+      "supported_claims": 2,
+      "total_claims": 2,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q06",
+      "faithfulness": 1.0,
+      "supported_claims": 2,
+      "total_claims": 2,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q07",
+      "faithfulness": 1.0,
+      "supported_claims": 2,
+      "total_claims": 2,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q08",
+      "faithfulness": 1.0,
+      "supported_claims": 4,
+      "total_claims": 4,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q09",
+      "faithfulness": 1.0,
+      "supported_claims": 1,
+      "total_claims": 1,
+      "answer_relevancy": 1.0
+    },
+    {
+      "id": "q10",
+      "faithfulness": 1.0,
+      "supported_claims": 1,
+      "total_claims": 1,
+      "answer_relevancy": 0.95
+    }
+  ],
+  "notable": [
+    "faithfulness is high BY DESIGN: the Copilot only restates typed-tool values with their artifact-backed claim_status, so answers are structurally grounded. The value of judging is catching mislabels, not raw grounding.",
+    "This pass caught a real defect: llm_news_value stamped a SIMULATED dollar figure as 'measured' (inherited from the artifact's top-level WAPE claim_status). Fixed to 'simulated'; q08 re-scored 1.0. Without the fix q08 faithfulness was 3/4=0.75."
+  ],
+  "caveats": [
+    "Self-judgment: judge and system are the same model family; no independent LLM available. Verdicts are committed for external audit to mitigate this.",
+    "answer_relevancy is a direct judgment, not RAGAS's embedding-based generated-question proxy \u2014 comparable in intent, not in method.",
+    "Small fixed set (10 answered Q). This measures grounding discipline, not broad coverage."
+  ]
+}

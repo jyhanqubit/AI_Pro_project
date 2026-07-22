@@ -615,8 +615,75 @@ export interface RevenueResponse {
   note: string;
 }
 
+// ---- V2-07: artifact-backed cockpit metrics ---------------------------------
+export type ClaimStatus =
+  | "measured"
+  | "offline_benchmark"
+  | "simulated"
+  | "pending_live_label"
+  | "assumption"
+  | "blocked_data"
+  | "blocked_external"
+  | "demo_fixture"
+  | "research";
+
+export interface ResultEnvelope {
+  value: number | string | boolean | null;
+  run_id: string;
+  artifact_id: string | null;
+  mode: OperatingMode;
+  claim_status: ClaimStatus;
+  freshness: string;
+}
+
+export interface CockpitMetric {
+  key: string;
+  label: string;
+  unit: string | null;
+  text: string;
+  envelope: ResultEnvelope;
+}
+
+export interface CockpitMetricsResponse {
+  mode: OperatingMode;
+  metrics: CockpitMetric[];
+}
+
+// ---- V2-07 rider: trip planner ---------------------------------------------
+export interface TripSegment {
+  kind: "walk" | "bike";
+  from: string;
+  to: string;
+  distance_m: number;
+  minutes: number;
+}
+
+export interface TripPlan {
+  mode: OperatingMode;
+  cutoff: string;
+  disclaimer: string;
+  feasible: boolean;
+  reason?: string;
+  answer: string;
+  answer_mode?: string;
+  origin?: { id: string; ko: string; en: string };
+  destination?: { id: string; ko: string; en: string };
+  segments?: TripSegment[];
+  rent_station?: { id: string; ko: string; en: string; bikes: number; level_label: string };
+  return_station?: { id: string; ko: string; en: string; docks_free: number; capacity: number };
+  total_walk_minutes?: number;
+  bike_minutes?: number;
+  total_minutes?: number;
+  confidence?: string;
+  warnings?: string[];
+}
+
 export const api = {
   health: () => req<{ status: string; mode: OperatingMode }>("/v1/health"),
+  cockpitMetrics: (mode: OperatingMode = "historical_replay") =>
+    req<CockpitMetricsResponse>(`/v2/cockpit/metrics?mode=${mode}`),
+  planTrip: (body: { query?: string; origin?: string; destination?: string; cutoff?: string }) =>
+    req<TripPlan>("/v2/rider/plan-trip", { method: "POST", body: JSON.stringify(body) }),
   replayState: () => req<ReplayState>("/v1/replay/state"),
   setCutoff: (cutoff: string) =>
     req<ReplayState>("/v1/replay/set-cutoff", {
