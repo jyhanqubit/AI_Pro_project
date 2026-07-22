@@ -1,0 +1,343 @@
+<style>
+  :root{
+    /* --- ops-console palette (light report ground) --- */
+    --ink:#0C1220; --ground:#EEF1F6; --sheet:#FFFFFF; --sheet-2:#F5F7FA;
+    --line:#D9DFEA; --line-soft:#E7ECF3;
+    --tx-hi:#101725; --tx:#33405A; --tx-lo:#697692;
+    --amber:#E07C05; --amber-soft:#FBEBD3; --teal:#0E8C9B; --teal-soft:#DBF1F3;
+    --good:#1E9E6A; --warn:#C98A00; --crit:#D23B41; --violet:#6B57C9;
+    --shadow:0 1px 2px rgba(16,23,37,.06),0 8px 26px -12px rgba(16,23,37,.22);
+    --mono:ui-monospace,"SF Mono","Cascadia Code",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --ink:#070B14; --ground:#070B14; --sheet:#0F1826; --sheet-2:#131E30;
+      --line:#243247; --line-soft:#1B2942;
+      --tx-hi:#EEF3FB; --tx:#B7C4DA; --tx-lo:#7D8BA6;
+      --amber:#F5A02B; --amber-soft:#3A2A10; --teal:#3AC6D4; --teal-soft:#0E2A33;
+      --good:#43C08A; --warn:#E7B23A; --crit:#F0656A; --violet:#9C8BF0;
+      --shadow:0 1px 0 rgba(255,255,255,.02),0 14px 40px -18px rgba(0,0,0,.7);
+    }
+  }
+  :root[data-theme="light"]{
+    --ink:#0C1220; --ground:#EEF1F6; --sheet:#FFFFFF; --sheet-2:#F5F7FA;
+    --line:#D9DFEA; --line-soft:#E7ECF3; --tx-hi:#101725; --tx:#33405A; --tx-lo:#697692;
+    --amber:#E07C05; --amber-soft:#FBEBD3; --teal:#0E8C9B; --teal-soft:#DBF1F3;
+    --good:#1E9E6A; --warn:#C98A00; --crit:#D23B41; --violet:#6B57C9;
+    --shadow:0 1px 2px rgba(16,23,37,.06),0 8px 26px -12px rgba(16,23,37,.22);
+  }
+  :root[data-theme="dark"]{
+    --ink:#070B14; --ground:#070B14; --sheet:#0F1826; --sheet-2:#131E30;
+    --line:#243247; --line-soft:#1B2942; --tx-hi:#EEF3FB; --tx:#B7C4DA; --tx-lo:#7D8BA6;
+    --amber:#F5A02B; --amber-soft:#3A2A10; --teal:#3AC6D4; --teal-soft:#0E2A33;
+    --good:#43C08A; --warn:#E7B23A; --crit:#F0656A; --violet:#9C8BF0;
+    --shadow:0 1px 0 rgba(255,255,255,.02),0 14px 40px -18px rgba(0,0,0,.7);
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--ground);color:var(--tx);font-family:var(--sans);
+    line-height:1.5;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:900px;margin:0 auto;padding:28px 20px 60px;display:flex;flex-direction:column;gap:26px;}
+
+  .sheet{background:var(--sheet);border:1px solid var(--line);border-radius:14px;
+    box-shadow:var(--shadow);overflow:hidden;position:relative;}
+  .sheet__body{padding:26px 30px 30px;}
+
+  /* header band */
+  .band{padding:22px 30px;background:
+      radial-gradient(120% 160% at 100% 0%, color-mix(in srgb,var(--amber) 12%,transparent), transparent 55%),
+      linear-gradient(180deg, var(--sheet-2), var(--sheet));
+    border-bottom:1px solid var(--line);}
+  .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--tx-lo);margin:0 0 8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--amber);
+    box-shadow:0 0 0 3px color-mix(in srgb,var(--amber) 22%,transparent);}
+  h1{font-size:33px;letter-spacing:-.02em;font-weight:800;color:var(--tx-hi);margin:0;
+    text-wrap:balance;line-height:1.05;}
+  h1 .tld{color:var(--amber);}
+  .thesis{margin:11px 0 0;max-width:64ch;font-size:13px;color:var(--tx);}
+  .thesis b{color:var(--tx-hi);font-weight:650;}
+  .pagetag{position:absolute;top:18px;right:22px;font-family:var(--mono);font-size:10px;
+    letter-spacing:.1em;color:var(--tx-lo);border:1px solid var(--line);border-radius:20px;
+    padding:3px 10px;background:var(--sheet);}
+
+  h2.sec{font-size:11px;font-family:var(--mono);letter-spacing:.13em;text-transform:uppercase;
+    color:var(--amber);margin:0 0 12px;display:flex;align-items:center;gap:9px;}
+  h2.sec::before{content:"";width:16px;height:2px;background:var(--amber);border-radius:2px;}
+  h2.sec .en{color:var(--tx-lo);}
+
+  /* workflow strip */
+  .flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;
+    border:1px solid var(--line);border-radius:11px;overflow:hidden;background:var(--sheet-2);}
+  .node{flex:1 1 0;min-width:104px;padding:12px 12px 13px;position:relative;
+    border-right:1px solid var(--line-soft);}
+  .node:last-child{border-right:0;}
+  .node .k{font-family:var(--mono);font-size:9.5px;color:var(--tx-lo);letter-spacing:.06em;}
+  .node .t{font-size:12px;color:var(--tx-hi);font-weight:650;margin-top:4px;line-height:1.28;}
+  .node.in{background:color-mix(in srgb,var(--teal) 9%,var(--sheet-2));}
+  .node.core{background:color-mix(in srgb,var(--amber) 11%,var(--sheet-2));}
+  .node.act{background:color-mix(in srgb,var(--good) 10%,var(--sheet-2));}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:24px;}
+  .col{min-width:0;}
+  p.body{margin:0;font-size:12.5px;color:var(--tx);}
+  p.body + p.body{margin-top:9px;}
+  .body b{color:var(--tx-hi);font-weight:650;}
+
+  ul.pts{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;}
+  ul.pts li{display:flex;gap:10px;font-size:12.5px;color:var(--tx);}
+  ul.pts li .n{flex:none;font-family:var(--mono);font-size:10px;font-weight:700;color:var(--amber);
+    border:1px solid color-mix(in srgb,var(--amber) 45%,var(--line));border-radius:6px;
+    width:20px;height:20px;display:grid;place-items:center;margin-top:1px;background:var(--amber-soft);}
+  ul.pts li b{color:var(--tx-hi);font-weight:650;}
+  ul.pts.teal li .n{color:var(--teal);border-color:color-mix(in srgb,var(--teal) 45%,var(--line));
+    background:var(--teal-soft);}
+
+  /* table */
+  .stage{width:100%;border-collapse:collapse;font-size:11.5px;}
+  .stage th,.stage td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line-soft);
+    vertical-align:top;}
+  .stage thead th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--tx-lo);border-bottom:1px solid var(--line);}
+  .stage td.st{color:var(--tx-hi);font-weight:650;white-space:nowrap;}
+  .stage td.st .num{font-family:var(--mono);color:var(--amber);font-size:10px;margin-right:6px;}
+  .stage td .tech{color:var(--tx);}
+  .stage .metric{font-family:var(--mono);font-size:10.5px;color:var(--tx-hi);
+    font-variant-numeric:tabular-nums;}
+  .stage tr:last-child td{border-bottom:0;}
+  .ok{color:var(--good);font-weight:700;}
+  .neg{color:var(--crit);font-weight:700;}
+
+  /* kpi tiles */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:4px 0 0;}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:12px 12px 11px;background:var(--sheet-2);}
+  .kpi .v{font-family:var(--mono);font-size:19px;font-weight:700;color:var(--tx-hi);
+    font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1;}
+  .kpi .v.amber{color:var(--amber);} .kpi .v.teal{color:var(--teal);} .kpi .v.good{color:var(--good);}
+  .kpi .l{font-size:10px;color:var(--tx-lo);margin-top:7px;line-height:1.3;}
+
+  /* dual + research + honesty small cards */
+  .mini{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;}
+  .card{border:1px solid var(--line);border-radius:11px;padding:14px 16px;background:var(--sheet-2);}
+  .card h3{margin:0 0 8px;font-size:12px;color:var(--tx-hi);font-weight:700;
+    display:flex;align-items:center;gap:8px;}
+  .tagv{font-family:var(--mono);font-size:9px;letter-spacing:.06em;padding:2px 7px;border-radius:20px;
+    text-transform:uppercase;}
+  .tagv.v1{background:var(--teal-soft);color:var(--teal);border:1px solid color-mix(in srgb,var(--teal) 40%,transparent);}
+  .tagv.v2{background:var(--amber-soft);color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 40%,transparent);}
+  .card p{margin:0;font-size:11.5px;color:var(--tx);}
+  .card ul{margin:6px 0 0;padding-left:16px;font-size:11.5px;color:var(--tx);}
+  .card ul li{margin:3px 0;}
+
+  .honesty{margin-top:22px;border:1px dashed color-mix(in srgb,var(--amber) 50%,var(--line));
+    border-radius:11px;padding:14px 16px;background:color-mix(in srgb,var(--amber) 5%,var(--sheet));}
+  .honesty h3{margin:0 0 8px;font-size:11px;font-family:var(--mono);letter-spacing:.1em;
+    text-transform:uppercase;color:var(--amber);}
+  .honesty .row{display:flex;flex-wrap:wrap;gap:8px 18px;}
+  .honesty .row span{font-size:11.5px;color:var(--tx);display:flex;gap:7px;}
+  .honesty .row b{color:var(--tx-hi);}
+  .chk{color:var(--good);font-weight:700;}
+
+  /* bars (MPC comparison) */
+  .bars{display:flex;flex-direction:column;gap:6px;margin-top:2px;}
+  .bar{display:grid;grid-template-columns:74px 1fr 42px;align-items:center;gap:9px;font-size:10.5px;}
+  .bar .lab{font-family:var(--mono);color:var(--tx-lo);}
+  .bar .track{height:9px;border-radius:5px;background:var(--line-soft);overflow:hidden;}
+  .bar .fill{height:100%;border-radius:5px;background:var(--tx-lo);}
+  .bar.best .fill{background:var(--amber);} .bar.oracle .fill{background:var(--teal);}
+  .bar .val{font-family:var(--mono);color:var(--tx-hi);text-align:right;font-variant-numeric:tabular-nums;}
+
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;
+    margin-top:22px;padding-top:14px;border-top:1px solid var(--line-soft);
+    font-size:10px;color:var(--tx-lo);font-family:var(--mono);letter-spacing:.04em;}
+  .foot .badge{color:var(--good);}
+
+  @media (max-width:680px){
+    .grid2,.mini,.kpis{grid-template-columns:1fr;}
+    .kpis{grid-template-columns:1fr 1fr;}
+    h1{font-size:27px;}
+  }
+  @media print{
+    body{background:#fff;} .wrap{max-width:none;padding:0;gap:0;}
+    .sheet{border:0;border-radius:0;box-shadow:none;page-break-after:always;min-height:100vh;}
+    .sheet:last-child{page-break-after:auto;}
+    @page{size:A4;margin:12mm;}
+  }
+</style>
+
+<div class="wrap">
+
+  <!-- ============ PAGE 1 — MACRO ============ -->
+  <section class="sheet">
+    <div class="band">
+      <span class="pagetag">01 · 거시 / Macro</span>
+      <p class="eyebrow"><span class="dot"></span> Event-aware Urban Mobility · Citi Bike / New York City</p>
+      <h1>ShockFlow <span class="tld">AI</span></h1>
+      <p class="thesis">시간정보가 붙은 event에서 불규칙한 <b>수요 shock</b>를 감지하고, 추적 가능한
+        <b>graph feature</b>로 변환해 예측에 준 <b>model-attributed 영향</b>(입증된 인과 아님)을 정량화한 뒤,
+        그 결과를 현장에서 실행 가능한 <b>rebalancing 조치</b>로 잇는 의사결정 지원 시스템.</p>
+    </div>
+
+    <div class="sheet__body">
+      <h2 class="sec">Workflow <span class="en">— 정규 파이프라인</span></h2>
+      <div class="flow">
+        <div class="node in"><div class="k">INPUT 1</div><div class="t">Citi Bike 수요 이력</div></div>
+        <div class="node in"><div class="k">INPUT 2</div><div class="t">timestamped news / event</div></div>
+        <div class="node in"><div class="k">INPUT 3</div><div class="t">station 재고 (GBFS)</div></div>
+        <div class="node core"><div class="k">STEP 1·2</div><div class="t">LLM event 추출 → Neo4j event graph</div></div>
+        <div class="node core"><div class="k">STEP 3</div><div class="t">as-of numeric graph feature</div></div>
+        <div class="node core"><div class="k">STEP 4</div><div class="t">H3 zone-hour 수요 forecast</div></div>
+        <div class="node act"><div class="k">STEP 5·6</div><div class="t">설명 · scenario → feasible rebalancing</div></div>
+      </div>
+
+      <div class="grid2">
+        <div class="col">
+          <h2 class="sec" style="margin-top:2px">Background <span class="en">— 배경 / 문제</span></h2>
+          <p class="body">Bike-share 운영의 손실 대부분은 <b>stockout(품절)</b>과 <b>overflow(dock 초과)</b>에서
+            나옵니다. rider가 자전거를 못 찾으면 trip과 신뢰를 잃고, dock이 넘치면 rebalancing 트럭 비용이
+            발생합니다.</p>
+          <p class="body">특히 event·교통 장애·날씨 같은 <b>irregular demand shock</b>에 기존 예측은 취약하고,
+            "LLM/뉴스로 개선했다"는 주장은 검증 없이 과장되기 쉽습니다. ShockFlow AI는 shock를 <b>구조화된
+            신호</b>로 바꾸고, 그 가치가 실제로 있는지를 <b>측정</b>하는 데 초점을 둡니다.</p>
+
+          <h2 class="sec" style="margin-top:20px">Business <span class="en">— 사업 포인트</span></h2>
+          <ul class="pts teal">
+            <li><span class="n">1</span><span><b>운영비 절감</b> — 더 정확한 forecast → shortage/overflow·트럭 이동 비용 감소.</span></li>
+            <li><span class="n">2</span><span><b>LLM 가치의 이익 환산</b> — event/LLM feature 효과를 LLM 비용을 제한 <b>profit 순가치</b>로 정량화.</span></li>
+            <li><span class="n">3</span><span><b>Operator Decision Copilot</b> — 근거 기반 자연어 질의(숫자 hallucination 0).</span></li>
+            <li><span class="n">4</span><span><b>Rider trip planner</b> — 대여·반납 station + 도보를 계산해 안내.</span></li>
+          </ul>
+        </div>
+
+        <div class="col">
+          <h2 class="sec" style="margin-top:2px">Differentiation <span class="en">— 차별성</span></h2>
+          <ul class="pts">
+            <li><span class="n">1</span><span><b>End-to-end 추적성</b> — <span style="font-family:var(--mono);font-size:11px">Article→Event→H3Zone→Feature→forecast delta→action</span> 전 구간 provenance. black box 없음.</span></li>
+            <li><span class="n">2</span><span><b>Temporal correctness</b> — <span style="font-family:var(--mono);font-size:11px">available_at ≤ forecast_cutoff</span> 엄수, leakage 방지 회귀 테스트(14:01→14:00).</span></li>
+            <li><span class="n">3</span><span><b>Honesty 계약</b> — <span style="font-family:var(--mono);font-size:11px">claim_status</span> taxonomy + <span style="font-family:var(--mono);font-size:11px">ResultEnvelope</span>, artifact 기반 완성, <b>null도 정직 보고</b>, 수치·인과·양자우위 과장 금지.</span></li>
+            <li><span class="n">4</span><span><b>LLM 경계</b> — LLM은 event structuring·routing·explanation만. <b>숫자는 typed tool</b>에서만 나옴.</span></li>
+            <li><span class="n">5</span><span><b>Graph가 실제 기여</b> — Neo4j event graph → numeric forecasting feature (시각화 장식 아님).</span></li>
+          </ul>
+
+          <div class="honesty" style="margin-top:18px">
+            <h3>결과 라벨링 (모든 값에 부착)</h3>
+            <div class="row">
+              <span><b>run_id</b></span><span><b>artifact_id</b></span><span><b>mode</b></span>
+              <span><b>claim_status</b></span><span><b>freshness</b></span>
+            </div>
+            <p style="margin:8px 0 0;font-size:11px;color:var(--tx-lo)">measured · offline_benchmark · simulated · assumption · blocked · demo_fixture · research — 9-value taxonomy로 무엇을 주장할 수 있는지 코드가 강제.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>ShockFlow AI — Citi Bike / NYC · H3 zone × local hour</span>
+        <span class="badge">V2_COMPLETE · 31 artifacts · 3 gates PASS</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PAGE 2 — MICRO ============ -->
+  <section class="sheet">
+    <div class="band">
+      <span class="pagetag">02 · 미시 / Micro</span>
+      <p class="eyebrow"><span class="dot"></span> Workflow별 기술 · 달성 지표 · 상세</p>
+      <h1 style="font-size:24px">단계별 기술 &amp; <span class="tld">측정 지표</span></h1>
+    </div>
+
+    <div class="sheet__body">
+      <div class="kpis">
+        <div class="kpi"><div class="v amber">0.4828</div><div class="l">H3 holdout WAPE (±0.0030), MASE 0.7996 — naive를 이김</div></div>
+        <div class="kpi"><div class="v good">+$103k</div><div class="l">promoted forecast net vs no-action (9/9 cost 설정 부호+)</div></div>
+        <div class="kpi"><div class="v amber">21.6</div><div class="l">MPC regret vs Oracle — best feasible policy</div></div>
+        <div class="kpi"><div class="v teal">0</div><div class="l">Copilot numeric hallucination · pricing guardrail 위반</div></div>
+        <div class="kpi"><div class="v good">31</div><div class="l">committed artifacts · final audit V2_COMPLETE</div></div>
+      </div>
+
+      <h2 class="sec" style="margin-top:24px">Workflow × 기술 × 지표</h2>
+      <table class="stage">
+        <thead><tr><th style="width:20%">단계</th><th style="width:42%">핵심 기술</th><th style="width:38%">달성 지표 (artifact)</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="st"><span class="num">01</span>Data collection</td>
+            <td class="tech">Citi Bike trip CSV/ZIP · news JSONL fixture · GBFS <span style="font-family:var(--mono);font-size:10px">station_status</span>. 경계마다 typed Pydantic v2 contract, 배제 행 사유 기록.</td>
+            <td class="metric">3 source 오프라인 재현 · schema hash / exclusion stats 저장</td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">02</span>LLM event 추출</td>
+            <td class="tech">provider interface + deterministic mock + real Claude. evidence-span 강제, Pydantic 검증, bounded retry, prompt version 기록.</td>
+            <td class="metric">23 clean NYC events · 근거 없는 event 0 (evidence 필수)</td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">03</span>Neo4j event graph</td>
+            <td class="tech">Article/Event/Place/H3Zone/Station node, parameterized Cypher, idempotent upsert, uniqueness 제약.</td>
+            <td class="metric">2,895 events / 6 zones (GraphRAG scale) · 재실행 시 node 증가 0</td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">04</span>As-of graph feature</td>
+            <td class="tech">half-life decay · exp distance decay · neighbor spillover — 순수 함수 kernel, leakage-gated, config+version persist.</td>
+            <td class="metric">14:01→14:00 leakage 회귀 테스트 통과 · deterministic</td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">05</span>Forecasting</td>
+            <td class="tech">promoted <span style="font-family:var(--mono);font-size:10px">HistGradientBoosting</span>, rolling-origin H3 multi-holdout. <b>LFV metric</b> = active-subset 상대 WAPE + block-bootstrap CI + 사전 판정 규칙.</td>
+            <td class="metric">WAPE <b>0.4828</b> / MASE <b>0.7996</b>. structured event <span class="ok">+2.69%</span>; LLM-from-news <span class="neg">null / −$17,789</span> (redundant)</td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">06</span>설명 · Copilot</td>
+            <td class="tech">GraphRAG typed-tool Copilot — 숫자는 tool 결과만. RAGAS(non-LLM retrieval + 생성 faithfulness) 벤치마크.</td>
+            <td class="metric">routing <b>1.0</b> · halluc <b>0</b> · faithfulness <b>1.0</b> · answer_relevancy <b>0.985</b> · trip faith <b>1.0</b></td>
+          </tr>
+          <tr>
+            <td class="st"><span class="num">07</span>Rebalancing · pricing</td>
+            <td class="tech">Greedy → MILP → MPC(receding-horizon) → Oracle, 공통 profit/regret ledger. bounded dynamic pricing + guardrail + A/A dry-run.</td>
+            <td class="metric">MPC total_cost <b>740</b> / regret <b>21.6</b> · pricing 위반 <b>0</b>/576 zone-h · A/A CI∋0</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mini">
+        <div class="card">
+          <h3>MPC 정책 비교 <span style="color:var(--tx-lo);font-weight:400;font-size:10px">— ledger total_cost, 낮을수록 좋음</span></h3>
+          <div class="bars">
+            <div class="bar"><span class="lab">No-Action</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="val">1127</span></div>
+            <div class="bar"><span class="lab">Greedy</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="val">1155</span></div>
+            <div class="bar"><span class="lab">MILP</span><span class="track"><span class="fill" style="width:96%"></span></span><span class="val">1087</span></div>
+            <div class="bar best"><span class="lab">MPC ★</span><span class="track"><span class="fill" style="width:66%"></span></span><span class="val">740</span></div>
+            <div class="bar oracle"><span class="lab">Oracle</span><span class="track"><span class="fill" style="width:64%"></span></span><span class="val">719</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>LLM news null — 근본 원인</h3>
+          <p>feature가 예측을 돕는 조건은 source가 <b>dense + precise-time + precise-location + forward-looking</b> 4가지를 모두 만족할 때. news는 하나도 만족 못 함(23건 중 forward-looking 2건).</p>
+          <ul>
+            <li>synthetic ceiling(<i>simulated</i>): 4조건 충족 시 <span class="ok">+10.43%</span> → 방법은 유효, 한계는 <b>source</b>.</li>
+            <li>structured permit feed는 조건 충족 → measured <span class="ok">+2.69%</span>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mini">
+        <div class="card">
+          <h3><span class="tagv v1">V1</span> 측정된 모델 · 제품 스토리</h3>
+          <p>B0–B4 ablation · attention dual-encoder recommender + reranker + policy · dynamic incentive/정책 simulation · clustered switchback 실험 · anomaly detection · live shadow(pending label) · FAISS news vector store. web 8 화면.</p>
+          <ul><li>Phase06 forecasting: test WAPE 0.5161 / MASE 0.7936 vs B0 0.658 (~21.6%↑, JC June 실데이터)</li>
+              <li>rebalancing: MILP = exact enumeration, shortage 146→78 (−47%)</li></ul>
+        </div>
+        <div class="card">
+          <h3><span class="tagv v2">V2</span> LLM net-business-value 검증</h3>
+          <p>V2-00…V2-09 — 측정 모델 productization · H3 multi-holdout · profit/regret ledger · Rule vs LLM ablation · MPC · bounded pricing · GraphRAG Copilot · cockpit/rider · monitoring · final audit.</p>
+          <ul><li>완성 판정 = artifact 기반(기능 존재 아님) → <b>V2_COMPLETE</b></li>
+              <li>Research(비-완성조건): Quantum QUBO/QAOA · RL — <span style="color:var(--tx-lo)">Q-learning regret 247.8 / PPO 202.9, 둘 다 MPC 21.6 미달, <b>no advantage</b></span></li></ul>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span>모든 수치는 reports/v2/** committed artifact가 재현 · make v2-final → claim_matrix.json</span>
+        <span class="badge">✔ measured/simulated/research 구분 · 인용 시 artifact 링크</span>
+      </div>
+    </div>
+  </section>
+
+</div>
