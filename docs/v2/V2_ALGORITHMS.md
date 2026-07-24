@@ -22,6 +22,9 @@
 
 모든 error metric은 **H3 zone × local-hour** grain에서, leakage 없는 as-of holdout 위에서 계산합니다.
 
+> 도메인 용어: **H3 zone** = Uber의 육각 격자(hexagonal grid), 이 프로젝트는 res 9(한 칸 ≈170 m, 동네
+> 몇 블록 크기)를 사용. **borough** = 뉴욕시 자치구(시 행정구역, Manhattan 등 5개, H3보다 훨씬 거친 단위).
+
 | Metric | 공식 | 쓰는 이유 | Zero-denominator 규칙 |
 |---|---|---|---|
 | **MAE** | `mean(|y − ŷ|)` | 자전거 대수 단위의 절대 오차 | 비어 있으면 `NaN` |

@@ -173,7 +173,10 @@ function foot(s, txt, badge, badgeColor) {
       color: C.tx, align: "left", margin: 0, valign: "top", lineSpacingMultiple: 1.02 });
   });
   s.addText("흐름: 01→02→03→04→05→(06 설명)→07 실행 · 08은 전 구간 상시 모니터링",
-    { x: M, y: 6.75, w: 12, h: 0.3, fontFace: MONO, fontSize: 9.5, color: C.txLo, align: "left", margin: 0 });
+    { x: M, y: 6.68, w: 12, h: 0.28, fontFace: MONO, fontSize: 9.5, color: C.txLo, align: "left", margin: 0 });
+  s.addText([{ text: "용어  ", options: { color: C.amber, bold: true, fontFace: MONO, fontSize: 8.5 } },
+    { text: "H3 zone = 동네 블록 단위(육각 격자 res 9, ~170 m) · borough = 뉴욕 자치구(시 행정구역)", options: { color: C.txLo, fontSize: 8.5 } }],
+    { x: M, y: 6.94, w: 12.3, h: 0.24, fontFace: SANS, align: "left", margin: 0, valign: "middle" });
   foot(s, "각 요소는 mode(demo/replay/live/research)를 명시", "");
 })();
 

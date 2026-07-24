@@ -68,6 +68,11 @@ nodes.forEach((n, i) => {
     fontFace: SANS, fontSize: 14, color: C.txLo, align: "center", valign: "middle", margin: 0 });
 });
 
+// domain-term gloss (한 번만): 도메인 용어 풀이
+s1.addText([{ text: "용어  ", options: { color: C.amber, bold: true, fontFace: MONO, fontSize: 8.5 } },
+  { text: "H3 zone = 동네 블록 단위(육각 격자 res 9, ~170 m) · borough = 뉴욕 자치구(시 행정구역)", options: { color: C.txLo, fontSize: 8.5 } }],
+  { x: 0.5, y: 3.16, w: 12.3, h: 0.22, fontFace: SANS, align: "left", margin: 0, valign: "middle" });
+
 // two columns
 const colY = 3.42, colBot = 7.15;
 // left column

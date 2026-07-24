@@ -1,0 +1,168 @@
+{
+  "run_id": "run_v2-03_newsfollowups_20260724T050331Z",
+  "artifact_id": "reports/v2/llm_value/news_followups.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-24T05:03:31.720564+00:00",
+  "thresholds": {
+    "rel_threshold": 0.01,
+    "min_active": 100
+  },
+  "basis": "committed measured artifacts (news_condition_audit, horizon_contribution, copilot/*)",
+  "q1_forward_looking_only": {
+    "question": "뉴스 중 forward-looking 기사만 골라내면 수요예측 효과가 있나?",
+    "n_events_total": 23,
+    "n_forward_looking": 2,
+    "n_forward_and_precise": 1,
+    "lead_time_h": {
+      "min": -66.4,
+      "median": -3.3,
+      "max": 9.2
+    },
+    "n_coincident_or_lagging": 20,
+    "forward_events": [
+      {
+        "date": "2026-02-21",
+        "type": "WEATHER_SHOCK",
+        "lead_h": 7.5
+      },
+      {
+        "date": "2026-06-14",
+        "type": "PUBLIC_GATHERING",
+        "lead_h": 9.2
+      }
+    ],
+    "optimistic_active_rows_upper_bound": 48,
+    "min_active_required": 100,
+    "verdict": "INSUFFICIENT_SUPPORT",
+    "finding": "23건 중 forward-looking은 2건뿐(lead +7.5h, +9.2h)이고 median lead는 −3.3h로 대부분 coincident/retrospective. 선행 기사만 남기면 active support가 min_active(100)에 구조적으로 미달 → 예측 효과를 '측정할 subset' 자체가 형성되지 않는다. 이는 뉴스가 선행 정보를 거의 담지 못한다는 결론을 오히려 강화한다(데이터를 더 모아도 news는 여전히 coincident).",
+    "claim_status": "measured"
+  },
+  "q2_other_unstructured_sources": {
+    "question": "예측에 도움이 될 다른 비정형 source가 있나?",
+    "criteria": [
+      "dense",
+      "precise_time",
+      "precise_location",
+      "forward_looking"
+    ],
+    "scorecard": [
+      {
+        "source": "Permitted events (NYC 허가)",
+        "dense": true,
+        "precise_time": true,
+        "precise_location": "borough",
+        "forward_looking": true,
+        "conditions_met": "3.5/4",
+        "availability": "in-repo",
+        "status": "measured_positive",
+        "note": "A1 structured feed — WAPE −2.69% @ nowcast(측정). 유일하게 조건 충족."
+      },
+      {
+        "source": "News / wire articles",
+        "dense": false,
+        "precise_time": false,
+        "precise_location": "partial",
+        "forward_looking": false,
+        "conditions_met": "0.5/4",
+        "availability": "in-repo(fixture)",
+        "status": "measured_negative",
+        "note": "sparse(≈23)+coincident → 4조건 모두 취약. net −$17,789."
+      },
+      {
+        "source": "MTA service alerts (교통 장애)",
+        "dense": true,
+        "precise_time": true,
+        "precise_location": true,
+        "forward_looking": true,
+        "conditions_met": "4/4",
+        "availability": "blocked_external",
+        "status": "candidate",
+        "note": "노선·시각 정확 + 사전 공지(forward) → 조건 충족 유력. 수집 필요(optional collector)."
+      },
+      {
+        "source": "Venue / event schedules (공연·경기 일정)",
+        "dense": true,
+        "precise_time": true,
+        "precise_location": true,
+        "forward_looking": true,
+        "conditions_met": "4/4",
+        "availability": "blocked_external",
+        "status": "candidate",
+        "note": "장소·시각 확정 + 사전 공개 → 유력 후보. permit feed와 상보적."
+      },
+      {
+        "source": "Weather forecast",
+        "dense": true,
+        "precise_time": true,
+        "precise_location": false,
+        "forward_looking": true,
+        "conditions_met": "3/4",
+        "availability": "in-repo",
+        "status": "measured_negative",
+        "note": "v1에서 negative lift. 위치 정밀도 낮고 시스템 전역 효과."
+      },
+      {
+        "source": "Social media (SNS)",
+        "dense": true,
+        "precise_time": false,
+        "precise_location": false,
+        "forward_looking": false,
+        "conditions_met": "1/4",
+        "availability": "blocked_external",
+        "status": "not_recommended",
+        "note": "noise 많고 위치·시각 부정확 → news보다 나쁠 가능성."
+      }
+    ],
+    "finding": "예측 개선의 관건은 '더 똑똑한 모델'이 아니라 '4조건(dense·precise-time·precise-location·forward-looking)을 만족하는 source'다. in-repo에서 조건을 만족하는 건 permitted events뿐이고 실제로 그것만 measured lift를 준다. 다음 후보는 MTA service alerts와 venue/event schedule — 둘 다 사전 공지·정확 위치/시각이라 조건 충족이 유력하나 현재 미수집(blocked_external).",
+    "recommendation": "MTA alerts + venue schedule 수집 → structured event feed에 결합(A1 확장). news/SNS는 예측용으로 비권장.",
+    "claim_status": "measured (scorecard 근거는 committed ablation; 후보 source는 blocked_external)"
+  },
+  "q3_alternate_quantity": {
+    "question": "뉴스가 수요예측이 아닌 다른 quantity에서는 개선을 주나?",
+    "A_demand_forecast": {
+      "status": "measured_negative",
+      "by_horizon": [
+        {
+          "horizon_h": 1,
+          "news_A2_minus_A1": "NO_MEANINGFUL_EFFECT",
+          "news_skill_pct": -2.04
+        },
+        {
+          "horizon_h": 6,
+          "news_A2_minus_A1": "NO_MEANINGFUL_EFFECT",
+          "news_skill_pct": -9.59
+        },
+        {
+          "horizon_h": 24,
+          "news_A2_minus_A1": "NO_MEANINGFUL_EFFECT",
+          "news_skill_pct": -9.59
+        },
+        {
+          "horizon_h": 48,
+          "news_A2_minus_A1": "NO_MEANINGFUL_EFFECT",
+          "news_skill_pct": -2.82
+        }
+      ],
+      "note": "어느 horizon(1h/6h)에서도 news는 유의한 예측 개선 없음."
+    },
+    "B_explanation_grounding": {
+      "status": "measured_positive",
+      "evidence": {
+        "routing_accuracy": 1.0,
+        "hallucinated_answers": 0,
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.985
+      },
+      "note": "뉴스→LLM event structuring이 실측 가치를 주는 quantity는 '예측 정확도'가 아니라 '설명·grounding'이다. Copilot이 이벤트 그래프 근거로 답하며 numeric hallucination 0, RAGAS faithfulness 1.0 — retrospective/broad 텍스트가 오히려 '왜 이런 수요가?'를 설명하는 데 적합."
+    },
+    "C_anomaly_event_window": {
+      "status": "blocked_data",
+      "proposed_metric": "event-window peak-direction accuracy + anomaly recall (retrospective 허용)",
+      "note": "후행 뉴스도 이상치 사후 라벨링/triage에는 유용할 수 있음. 측정하려면 event-overlap된 실데이터 창 필요(data/raw/nyc 미복원 → 현재 blocked)."
+    },
+    "finding": "news의 정직한 자리 = '예측 feature'가 아니라 '설명/attribution'. 예측에서는 measured negative, 설명에서는 measured positive(Copilot). 예측 개선을 원하면 §(2)의 forward-looking structured source가 답.",
+    "claim_status": "measured (forecast·grounding) + blocked_data (anomaly window)"
+  },
+  "headline": "1) forward-looking 뉴스만으론 support 부족(측정 불가) — 뉴스는 구조적으로 후행. 2) 조건 충족 source는 permit뿐, 다음 후보는 MTA alerts·venue schedule(미수집). 3) 뉴스의 실측 가치는 예측이 아니라 설명/grounding(Copilot, faithfulness 1.0)."
+}
