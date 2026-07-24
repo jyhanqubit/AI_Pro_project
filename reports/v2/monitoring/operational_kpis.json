@@ -1,0 +1,104 @@
+{
+  "run_id": "run_v2_kpi_20260724T074949Z",
+  "artifact_id": "reports/v2/monitoring/operational_kpis.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-24T07:49:49.613734+00:00",
+  "trip_source": "data/raw/nyc",
+  "proposed_kpi_taxonomy": [
+    {
+      "kpi": "사용율 (utilization / turnover)",
+      "formula": "trips / active_station / day",
+      "source": "trip history",
+      "claim_status": "measured",
+      "business": "자산 효율 — 자전거당 매출. 낮으면 idle 자산(놀고 있음)."
+    },
+    {
+      "kpi": "재고 가용률 (bike availability)",
+      "formula": "P(bikes ≥ 1 & renting)",
+      "source": "GBFS station_status",
+      "claim_status": "demo_fixture / live→measured",
+      "business": "빌릴 수 있는가 — 낮으면 trip·매출 손실."
+    },
+    {
+      "kpi": "품절률 (stockout rate)",
+      "formula": "P(bikes == 0)",
+      "source": "GBFS station_status",
+      "claim_status": "demo_fixture / live→measured",
+      "business": "rebalancing 우선순위 신호(부족). ledger shortage와 직결."
+    },
+    {
+      "kpi": "반납 가용률 / 포화률 (dock avail / full)",
+      "formula": "P(docks ≥ 1) / P(docks == 0)",
+      "source": "GBFS station_status",
+      "claim_status": "demo_fixture / live→measured",
+      "business": "반납 가능한가 — 포화 시 rider 이탈, overflow 비용."
+    },
+    {
+      "kpi": "net-flow 불균형 지수",
+      "formula": "Σ|arr−dep| / Σ(arr+dep)",
+      "source": "trip history",
+      "claim_status": "measured",
+      "business": "구조적 rebalancing 수요 — 어디서 어디로 옮겨야 하는지의 크기."
+    },
+    {
+      "kpi": "service level (충족률)",
+      "formula": "realized / (realized + shortage)",
+      "source": "ledger",
+      "claim_status": "simulated",
+      "business": "핵심 사업 KPI — 충족된 수요 비율. 예측→rebalancing 개선의 최종 성과."
+    },
+    {
+      "kpi": "peak 집중도",
+      "formula": "peak-hour trips / total (또는 peak/mean)",
+      "source": "trip history",
+      "claim_status": "measured",
+      "business": "첨두 부하 — 재배치·요금 타이밍 설계 근거."
+    }
+  ],
+  "utilization": {
+    "n_trips": 14536837,
+    "n_days": 152,
+    "n_active_stations": 2433,
+    "daily_trips": 95637.1,
+    "trips_per_active_station_per_day": 39.308,
+    "peak_hour_share": 0.096,
+    "peak_to_mean_ratio": 2.31,
+    "one_way_ratio": 0.9809,
+    "net_flow_imbalance_index": 0.0169,
+    "claim_status": "measured",
+    "note": "trip history에서 직접 계산 — 자산 회전(사용율)과 구조적 rebalancing 압력의 measured 지표."
+  },
+  "inventory": {
+    "n_stations": 3,
+    "bike_availability_rate": 0.6667,
+    "stockout_rate": 0.3333,
+    "dock_availability_rate": 0.6667,
+    "full_rate": 0.0,
+    "mean_fill_ratio": 0.3778,
+    "claim_status": "demo_fixture",
+    "note": "GBFS는 실시간 스냅샷만 제공 → fixture는 demo. 과거 시계열 재고율은 라이브 폴링 축적 필요(blocked_data). 라이브 모드에서 이 함수가 그대로 measured가 된다."
+  },
+  "service_level": {
+    "by_policy": {
+      "no_action": {
+        "fill_rate": 0.643,
+        "unmet_demand_rate": 0.357,
+        "overflow_units": 95552.0
+      },
+      "promoted_model": {
+        "fill_rate": 0.7622,
+        "unmet_demand_rate": 0.2378,
+        "overflow_units": 77724.0
+      },
+      "oracle": {
+        "fill_rate": 1.0,
+        "unmet_demand_rate": 0.0,
+        "overflow_units": 0.0
+      }
+    },
+    "claim_status": "simulated",
+    "note": "ledger 단위(측정) + 금액 가정(simulated). fill_rate=충족 수요/총수요."
+  },
+  "note": "예측 metric(WAPE)만으로 못 보는 운영/사업 KPI를 source별로 정직하게 계산. utilization·imbalance는 measured(trip), 재고는 GBFS 실시간(fixture=demo), service level은 ledger(simulated)."
+}

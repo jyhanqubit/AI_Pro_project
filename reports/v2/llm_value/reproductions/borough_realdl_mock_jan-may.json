@@ -1,0 +1,106 @@
+{
+  "run_id": "run_v2-03b_20260724T074948Z",
+  "artifact_id": "reports/v2/llm_value/reproductions/borough_realdl_mock_jan-may.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-24T07:49:48.988449+00:00",
+  "grain": "borough-hour (nearest-centroid; approximate)",
+  "target": "departures",
+  "extraction_provider": "mock",
+  "data_source": "data/raw/nyc",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "test_rows_with_permitted_event": 2600,
+  "test_rows_with_llm_news_event": 216,
+  "news_attribution": {
+    "events": 88,
+    "attributed_events": 35,
+    "attributed_articles": 35,
+    "citywide": true
+  },
+  "arms": {
+    "A0_demand_calendar": {
+      "wape": 0.0908,
+      "mae": 143.218,
+      "net_profit_simulated": 6356831.9
+    },
+    "A1_plus_permitted": {
+      "wape": 0.0883,
+      "mae": 139.231,
+      "net_profit_simulated": 6367580.0
+    },
+    "A2_plus_llm_news": {
+      "wape": 0.0912,
+      "mae": 143.886,
+      "net_profit_simulated": 6349384.4
+    }
+  },
+  "structured_event_lift_A1_minus_A0": {
+    "n": 2975,
+    "n_blocks": 31,
+    "mean_loss_m0": 143.218366,
+    "mean_loss_m1": 139.230996,
+    "verdict": "measured_improvement",
+    "claim_enabled": true,
+    "mean_gain": 3.98737,
+    "ci_95": [
+      1.081975,
+      6.705241
+    ],
+    "coverage_ok": true
+  },
+  "llm_news_increment_A2_minus_A1": {
+    "n": 2975,
+    "n_blocks": 31,
+    "mean_loss_m0": 139.230996,
+    "mean_loss_m1": 143.885827,
+    "verdict": "negative_lift",
+    "claim_enabled": false,
+    "mean_gain": -4.654831,
+    "ci_95": [
+      -6.117902,
+      -3.140806
+    ],
+    "coverage_ok": true
+  },
+  "llm_feature_value_metric": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.03,
+    "llm_active_skill_pct": -3.0,
+    "global_skill_score": -0.0334,
+    "significant": true,
+    "active_error_gain_mean": -5.209841,
+    "active_error_gain_ci95": [
+      -15.04655,
+      -0.709224
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 216,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 3.0% on active zone-hours (CI excludes 0)."
+  },
+  "llm_arm_identical_to_A1": false,
+  "llm_cost": {
+    "provider": "mock",
+    "actual_usd": 0.0,
+    "n_articles": 371,
+    "estimated_input_tokens": 20228,
+    "price_per_mtok_assumption": 0.3,
+    "estimated_real_usd": 0.0061,
+    "basis": "chars/4 tokens * assumed cheap-tier input price; real cost depends on provider/model"
+  },
+  "profit_lift_llm_over_permitted_simulated": -18195.6,
+  "net_llm_value_simulated": -18195.61,
+  "headline_verdict_llm_increment": "negative_lift",
+  "note": "A1-A0 tests the structured permitted-event feed (reproduces v1); A2-A1 isolates the LLM-from-news increment on top. Borough attribution is by explicit borough-name match in article text (no guessing); thinly-attributed news => small A2-A1, reported honestly. Profit is simulated (assumption-conditioned); LLM actual cost $0 (mock) + est real.",
+  "reproduction_of": "reports/v2/llm_value/incremental_value_borough.json",
+  "reproduction_window": "train Jan-Apr / test May (matches committed n_train=10655)",
+  "reproduction_note": "실데이터 재현(S3 다운로드). provider=mock. 구조 lift(A1-A0) committed와 동일 재현; news arm은 mock에서도 negative."
+}

@@ -1,19 +1,19 @@
 {
-  "run_id": "run_v2-09_20260724T050725Z",
+  "run_id": "run_v2-09_20260724T075204Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-24T05:07:25.039948+00:00",
+  "freshness": "2026-07-24T07:52:04.524220+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 32,
+  "n_artifacts": 35,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 1,
-    "measured": 17,
+    "measured": 20,
     "offline_benchmark": 7,
     "research": 1,
     "simulated": 5
@@ -287,6 +287,24 @@
       "headline": {}
     },
     {
+      "artifact": "reports/v2/llm_value/reproductions/borough_realdl_mock_feb-may.json",
+      "run_id": "run_v2-03b_20260724T074513Z",
+      "artifact_id": "reports/v2/llm_value/reproductions/borough_realdl_mock_feb-may.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-24T07:45:13.447942+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/reproductions/borough_realdl_mock_jan-may.json",
+      "run_id": "run_v2-03b_20260724T074948Z",
+      "artifact_id": "reports/v2/llm_value/reproductions/borough_realdl_mock_jan-may.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-24T07:49:48.988449+00:00",
+      "headline": {}
+    },
+    {
       "artifact": "reports/v2/llm_value/signed_demand_contribution.json",
       "run_id": "run_v2-03signed_20260721T111042Z",
       "artifact_id": "reports/v2/llm_value/signed_demand_contribution.json",
@@ -311,6 +329,15 @@
       "mode": "demo_fixture",
       "claim_status": "demo_fixture",
       "freshness": "2026-07-22T03:24:28.247326+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/monitoring/operational_kpis.json",
+      "run_id": "run_v2_kpi_20260724T074949Z",
+      "artifact_id": "reports/v2/monitoring/operational_kpis.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-24T07:49:49.613734+00:00",
       "headline": {}
     },
     {
