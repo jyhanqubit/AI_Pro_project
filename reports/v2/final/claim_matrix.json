@@ -1,19 +1,19 @@
 {
-  "run_id": "run_v2-09_20260724T082722Z",
+  "run_id": "run_v2-09_20260724T084953Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-24T08:27:22.895182+00:00",
+  "freshness": "2026-07-24T08:49:53.895252+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 35,
+  "n_artifacts": 36,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 1,
-    "measured": 20,
+    "measured": 21,
     "offline_benchmark": 7,
     "research": 1,
     "simulated": 5
@@ -329,6 +329,15 @@
       "mode": "demo_fixture",
       "claim_status": "demo_fixture",
       "freshness": "2026-07-22T03:24:28.247326+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/monitoring/eda_nyc.json",
+      "run_id": "run_v2_eda_20260724T084521Z",
+      "artifact_id": "reports/v2/monitoring/eda_nyc.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-24T08:45:21.287477+00:00",
       "headline": {}
     },
     {
