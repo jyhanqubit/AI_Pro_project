@@ -1,27 +1,13 @@
-"""V2 운영 KPI — 계산 로직 검증(자체 완결: committed fixture/artifact + tmp zip)."""
+"""V2 운영 KPI(measured only) — 계산 로직 검증(자체 완결: committed fixture + tmp zip)."""
 
 from __future__ import annotations
 
 import zipfile
 from pathlib import Path
 
-from ml.monitoring.operational_kpis import (
-    inventory_kpis,
-    service_level_kpis,
-    utilization_kpis,
-)
+from ml.monitoring.operational_kpis import taxonomy, utilization_kpis
 
 FIX = Path("data/fixtures")
-
-
-def test_inventory_kpis_rates_in_range():
-    r = inventory_kpis(FIX / "gbfs_station_status.json")
-    assert r["n_stations"] >= 1
-    rate_keys = ("bike_availability_rate", "stockout_rate", "dock_availability_rate",
-                 "full_rate", "mean_fill_ratio")
-    for k in rate_keys:
-        assert 0.0 <= r[k] <= 1.0
-    assert r["claim_status"] == "demo_fixture"  # GBFS 스냅샷 = 실시간만
 
 
 def test_utilization_on_sample_zip(tmp_path):
@@ -33,8 +19,11 @@ def test_utilization_on_sample_zip(tmp_path):
     r = utilization_kpis(tmp_path)
     assert r["n_trips"] >= 1
     assert r["claim_status"] == "measured"
-    assert 0.0 <= r["one_way_ratio"] <= 1.0
-    assert 0.0 <= r["net_flow_imbalance_index"] <= 1.0
+    ratio_keys = ("one_way_ratio", "net_flow_imbalance_index", "member_ratio",
+                  "ebike_ratio", "peak_hour_share")
+    for k in ratio_keys:
+        assert 0.0 <= r[k] <= 1.0
+    assert 0 <= r["peak_hour_of_day"] <= 23
 
 
 def test_utilization_blocked_when_no_zips(tmp_path):
@@ -42,9 +31,8 @@ def test_utilization_blocked_when_no_zips(tmp_path):
     assert r["status"] == "blocked_data"  # 데이터 없으면 정직하게 blocked
 
 
-def test_service_level_from_committed_ledger():
-    r = service_level_kpis(Path("reports/v2/ledger/profit_regret.json"))
-    pm = r["by_policy"]["promoted_model"]
-    # fill_rate + unmet_demand_rate ≈ 1 (충족 + 미충족)
-    assert abs(pm["fill_rate"] + pm["unmet_demand_rate"] - 1.0) < 1e-6
-    assert r["claim_status"] == "simulated"
+def test_taxonomy_is_measured_only():
+    # demo/simulated 지표(재고·service level)는 제외되어 있어야 한다
+    labels = " ".join(t["kpi"] for t in taxonomy())
+    assert "사용율" in labels
+    assert "재고" not in labels and "service level" not in labels

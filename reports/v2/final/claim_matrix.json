@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-09_20260724T075204Z",
+  "run_id": "run_v2-09_20260724T082722Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-24T07:52:04.524220+00:00",
+  "freshness": "2026-07-24T08:27:22.895182+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
@@ -333,11 +333,11 @@
     },
     {
       "artifact": "reports/v2/monitoring/operational_kpis.json",
-      "run_id": "run_v2_kpi_20260724T074949Z",
+      "run_id": "run_v2_kpi_20260724T082238Z",
       "artifact_id": "reports/v2/monitoring/operational_kpis.json",
       "mode": "historical_replay",
       "claim_status": "measured",
-      "freshness": "2026-07-24T07:49:49.613734+00:00",
+      "freshness": "2026-07-24T08:22:38.985977+00:00",
       "headline": {}
     },
     {
