@@ -75,8 +75,9 @@ def run(data_dir: Path, chunk: int = 300_000) -> dict:
                             .fillna(-1)
                             .astype(int)
                         )
-                        ss = ch["start_station_id"].astype(str)
-                        es = ch["end_station_id"].astype(str)
+                        # fillna 먼저 → StringDtype의 NA가 키에 섞이지 않게(NA vs str 비교 방지)
+                        ss = ch["start_station_id"].fillna("NA").astype(str)
+                        es = ch["end_station_id"].fillna("NA").astype(str)
                         for (sid, h), c in ss.groupby([ss, hi]).size().items():
                             dep_h[(sid, h)] = dep_h.get((sid, h), 0) + int(c)
                         for (sid, h), c in es.groupby([es, hi]).size().items():
@@ -163,11 +164,12 @@ def run(data_dir: Path, chunk: int = 300_000) -> dict:
     n_h3 = len({z for (z, _) in cells})
 
     # ---- (2) OD corridors ----
-    top_od = [{"o": o, "d": d, "n": n} for (o, d), n in od.most_common(10)]
-    # 순불균형 corridor: flow(a->b) - flow(b->a)
+    top_od = [{"o": str(o), "d": str(d), "n": n} for (o, d), n in od.most_common(10)]
+    # 순불균형 corridor: flow(a->b) - flow(b->a). 키는 str로 강제(혼합 타입 비교 방지)
     net_dir = {}
     for (o, d), n in od.items():
-        if o == d:
+        o, d = str(o), str(d)
+        if o == d or "NA" in (o, d):
             continue
         key = (o, d) if o < d else (d, o)
         net_dir[key] = net_dir.get(key, 0) + (n if o < d else -n)
