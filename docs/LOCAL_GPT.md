@@ -50,7 +50,7 @@ through GraphRAG:
   an event that is not really in the as-of context. Forecast changes are labelled model-attributed,
   not causal.
 
-### How GraphRAG stays honest
+### How GraphRAG stays grounded
 
 The event graph (`Article → Event → H3Zone → Feature → Forecast`) is the **retrieval substrate**. For
 each question the API assembles the as-of events, their grounded evidence, the zones they affect, and

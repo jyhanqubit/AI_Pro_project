@@ -25,7 +25,7 @@ Feasibility & Policy → Top-3**, measured on **real** JC-202606. Reproduce:
 | avg detour | 0.413 km |
 | latency p50 / p95 | 15.6 ms / 19.0 ms |
 
-## Honest reading
+## Reading
 
 - **Open-retrieval setting.** The pipeline retrieves over **all 251 stations** (retriever
   Recall@20 = 0.952, `V1_RETRIEVER_REPORT.md`), so ~5% of positives are lost before reranking — an

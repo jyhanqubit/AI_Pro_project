@@ -25,7 +25,7 @@ left empty (a title-only snippet, never fabricated), and `seendate` is used for 
 `first_seen_at` (documented approximation). The availability rule still holds:
 `available_at = max(published_at, first_seen_at)`.
 
-## 2. Honest caveat — real news is noisy
+## 2. Caveat — real news is noisy
 
 Keyword collection over the whole web has a low signal-to-noise ratio for a small area. A tighter,
 Jersey-City-anchored, mobility-specific query (`config/backfill.py::DEFAULT_GDELT_QUERY`) returns
@@ -33,7 +33,7 @@ mostly-relevant June-2026 items (e.g. Hudson Place ribbon-cutting, NJ commuting,
 zones, Hoboken) **mixed with keyword false positives**. That is a genuine property of the source, so:
 
 - The **coverage gate** (`pipelines/collectors/coverage.py`) reports the real accepted count and
-  passes/fails honestly; a broad query that yields mostly noise **fails the gate**, which keeps the
+  passes/fails on the gate; a broad query that yields mostly noise **fails the gate**, which keeps the
   accuracy claim disabled (§7) — we never rewrite or hand-pick the data.
 - GDELT already location/topic-matches the full text server-side, so the live path trusts the query
   and skips a redundant title-only re-filter; the fixture path keeps the ontology+city filter.

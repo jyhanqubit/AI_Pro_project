@@ -7,7 +7,7 @@ screens follow the **Alert → Why → Simulate → Act** flow (CLAUDE.md §13):
 - **Why Changed** — Article → Event → H3 Zone → Feature trace with grounded evidence and the
   model-attributed delta.
 - **Scenario Lab** — toggle events on/off and compare against the default forecast.
-- **Rebalancing** — honest Phase 08 placeholder (the API returns 501; nothing is faked).
+- **Rebalancing** — Phase 08 placeholder (the API returns 501; nothing is faked).
 
 ## Run (offline)
 

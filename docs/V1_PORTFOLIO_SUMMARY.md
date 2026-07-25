@@ -3,7 +3,7 @@
 Event-aware urban mobility demand forecasting + fleet decision support, extended in V1 with a
 measured model story, a rider-facing recommendation/pricing stack, live-shadow serving, anomaly
 detection, experimentation, and a FAISS news vector store — all **offline-reproducible** and held to
-a strict honesty boundary (measured / pending / simulated / blocked).
+a strict claim boundary (measured / pending / simulated / blocked).
 
 ## What a reviewer can run offline
 
@@ -19,8 +19,8 @@ fixture/GDELT news → backfill + coverage gate → event extraction → event g
 ## Highlights (measured, on real JC-202606 data)
 
 - **Forecasting** — history+calendar (M0) cuts WAPE 0.658→0.516 vs seasonal naive; event/graph
-  features add **no measured lift** on this data (events don't overlap the eval window) — reported
-  honestly, not hidden.
+  features add **no measured lift** on this data (events don't overlap the eval window) — reported,
+  not hidden.
 - **Recommendation** — dual-encoder retriever Recall@20 **0.952**; end-to-end HitRate@3 **0.754**,
   feasible@3 **1.00**, p50 latency ~16 ms. Open-retrieval setting (not directly comparable to the
   radius baselines) — stated plainly.
@@ -30,7 +30,7 @@ fixture/GDELT news → backfill + coverage gate → event extraction → event g
 - **Anomaly** — 4 detector families; synthetic faults detected with **zero false alerts** on clean
   data; a depletion is root-caused to a source event with article evidence.
 
-## The honesty boundary (the point of the project)
+## The claim boundary (the point of the project)
 
 | Surface | Claim state |
 |---------|-------------|

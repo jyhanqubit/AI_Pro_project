@@ -2,7 +2,7 @@
 
 This document fixes the forecasting evaluation so a reviewer can reproduce every number from a
 saved config (CLAUDE.md §11, §18). Metrics are generated only from executed experiments; if
-event-aware features do not improve performance, the result is reported honestly (§11.4, §22).
+event-aware features do not improve performance, the result is reported (§11.4, §22).
 
 ## Task
 
@@ -85,7 +85,7 @@ OCS = ( shortage_cost · Σ max(y − ŷ, 0)  +  overflow_cost · Σ max(ŷ − 
 | B3 | B1 + LLM event features |
 | B4 | B3 + graph-propagated features |
 
-**Event-window caveat (honest, not hidden):** on the June evaluation window the only curated
+**Event-window caveat (recorded, not hidden):** on the June evaluation window the only curated
 events postdate the data (fixture events are 2026-07-12). The availability rule (§5.2) forces
 every event/graph feature to zero, so B2–B4 reproduce B1 exactly. The runner verifies this by
 calling `build_graph_features` at the window's last cutoff and confirming zero snapshots. Event

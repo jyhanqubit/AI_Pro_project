@@ -6,7 +6,7 @@
 
 ## 1. What V1 adds over v0
 
-v0 delivers the honest offline vertical slice: event extraction → graph → as-of features →
+v0 delivers the offline vertical slice: event extraction → graph → as-of features →
 demo-heuristic forecast → rebalancing. V1 turns the **demo heuristic into measured models** and adds
 a **rider-facing recommendation + incentive** layer, **anomaly detection**, a **live-shadow**
 pipeline, and **experimentation**, each behind an explicit claim boundary.

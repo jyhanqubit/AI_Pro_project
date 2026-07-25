@@ -124,7 +124,7 @@ python -m ml.forecasting.run --data-dir data\raw\citibike --max-months 3 `
 Output: `reports\phase06_results.json` (B0–B4 leaderboard + lift). Verdict only:
 `python -m ml.forecasting.predictive_lift_demo`.
 
-**Honest reading:** B3 (LLM) / B4 (graph) beat B1 on WAPE with a CI above 0 → a measured lift;
+**Reading:** B3 (LLM) / B4 (graph) beat B1 on WAPE with a CI above 0 → a measured lift;
 otherwise the verdict is `no_lift` / `inconclusive` — reported as-is, never fabricated.
 
 ## C. Databases (optional)

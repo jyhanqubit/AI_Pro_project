@@ -18,7 +18,7 @@ assumption-set elasticity** (`config/v2/assumptions.yaml`) and whose objective i
   audit — the check has teeth, not a rubber stamp.
 - Action mix: 561 base / 15 surge / 0 credit — the policy is conservative, acting only where it
   clearly beats doing nothing (with elasticity −0.3, shedding demand rarely pays), which is the
-  honest, guardrail-respecting outcome.
+  guardrail-respecting outcome.
 
 ## `sensitivity.json`
 

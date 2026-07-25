@@ -6,10 +6,10 @@ and its claim is disabled — never fabricated.
 
 ## Phase status
 
-| Phase | Status | Honest note |
+| Phase | Status | Note |
 |-------|--------|-------------|
 | V1-00 Contracts & scaffold | PASSED | 6 modes + ClaimState + 11 contracts; v0 untouched |
-| V1-01 News backfill & coverage gate | PASSED · real-news claim **BLOCKED_DATA** | GDELT live works (opt-in); fixture path default; gate honest |
+| V1-01 News backfill & coverage gate | PASSED · real-news claim **BLOCKED_DATA** | GDELT live works (opt-in); fixture path default; gate enforced |
 | V1-02 Event extraction & incremental features | PASSED | incremental == full rebuild (verified) |
 | V1-03 Model registry & dual inference | PASSED · event lift **0** | measured B0-B4; M1==M0 (no overlap) |
 | V1-04 Event-lift evaluation | PASSED · gate **BLOCKED** | paired B4-B1=0, CI [0,0]; claim disabled |

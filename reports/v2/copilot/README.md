@@ -41,7 +41,7 @@ model routed the questions directly, like the V2-03 extraction; decisions commit
 
 **Bottom line:** the typed-tool design guarantees no *ungrounded* number regardless of router; but
 preventing *confidently-wrong, grounded* answers — answering the wrong question, or answering one
-that should be refused — is precisely where the real LLM adds value. That is the honest,
+that should be refused — is precisely where the real LLM adds value. That is the
 demonstrated difference between the keyword stand-in and the real model.
 
 
@@ -65,7 +65,7 @@ Task (as-of 2026-06-30): "which {event_type} events affect zone Z?" — 21 quest
 - Its only failure is the **answerable** part (0/15): being **zone-agnostic**, it retrieves the
   right event *type* but from the wrong borough, so it can't name the per-zone event set.
 
-### Honest limitation (why the answerable gap is so large)
+### Limitation (why the answerable gap is so large)
 
 This task is **inherently graph-structural**: the gold answer IS the graph's Event→Zone edges, and
 the question asks for the exact per-borough event set. So **no zone-agnostic method can win the
@@ -81,7 +81,7 @@ task where plain RAG is competitive. Recorded in the artifact's `caveats`.
 
 ## Neutral counterpart — text lookup (`neutral_retrieval_benchmark.json`)
 
-The structural benchmark above is honest but *asymmetric*: because the gold answer **is** the
+The structural benchmark above is *asymmetric*: because the gold answer **is** the
 graph's edges, the graph cannot lose. To close the loop we also ran the mirror-image test — one
 where plain retrieval is genuinely competitive — so the pair is unrigged in **both** directions.
 
@@ -100,7 +100,7 @@ where plain retrieval is genuinely competitive — so the pair is unrigged in **
 
 **graph − flat (top1) = −0.083.** On a text-native task the graph structure gives **no lift** —
 the degree boost actually *distracts* (a frequently-connected event isn't the one a description
-names). This is the honest counterpart to the structural result:
+names). This is the neutral counterpart to the structural result:
 
 > **The graph helps relational / per-zone queries, not text lookup. Match the tool to the query
 > type.** Neither benchmark alone is a fair "GraphRAG vs RAG" verdict; together they bound it —
@@ -147,7 +147,7 @@ confirming that; it is **catching mislabels** — and this pass caught a real on
 > translation is simulated. **Fixed** the tool to `simulated`; q08 re-scored 1.0 (it was 3/4 = 0.75
 > before the fix). Regression test added.
 
-**Honesty guards & caveats:** a **drift guard** re-runs the live Copilot and fails the run if any
+**Guards & caveats:** a **drift guard** re-runs the live Copilot and fails the run if any
 judged answer no longer matches the code's output, so verdicts can't silently detach from the
 implementation. **Self-judgment limitation** (recorded in the artifact): judge and system are the
 same model family — no independent LLM is available — so verdicts are committed for external audit.

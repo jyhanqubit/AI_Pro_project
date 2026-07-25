@@ -13,7 +13,7 @@ A1 Rule-Event  = B2  A0 + raw article-count features (no structured extraction)
 A2 LLM-Event   = B4  A0 + LLM-extracted event features + graph-propagated features
 ```
 
-## Result — honest null: `insufficient_event_overlap` (`claim_status: blocked_data`)
+## Result — null result: `insufficient_event_overlap` (`claim_status: blocked_data`)
 
 Real JC Citi Bike 2026 H1 (114,885 zone-hour test decisions) + real GDELT NYC 2026 news
 (371 articles, mock extractor):
@@ -37,7 +37,7 @@ Real JC Citi Bike 2026 H1 (114,885 zone-hour test decisions) + real GDELT NYC 20
   price). **Net LLM value (simulated): −$0.01** — the LLM adds cost without measurable benefit here.
 
 This is the **same gap v1 flagged** (`insufficient_event_overlap`), now shown rigorously with the
-full 3-arm + block-bootstrap-CI + profit + cost framework. It is a valid, honest V2 outcome —
+full 3-arm + block-bootstrap-CI + profit + cost framework. It is a valid V2 outcome —
 not fabricated into a positive.
 
 ## Borough re-measurement on NYC data — the FAIR test (`incremental_value_borough.json`, `make v2-llm-value-borough`)
@@ -72,7 +72,7 @@ A0 demand+calendar   A1 +permitted-events (structured feed)   A2 +LLM-news event
   news signal degrades the forecast and costs money.
 
 **V2 mission answer (this data):** the *structured event feed* is worth money; the *LLM-from-news*
-layer is **net-negative**. Reported honestly — not tuned to a positive.
+layer is **net-negative**. Reported — not tuned to a positive.
 
 ### Real-LLM extraction (in-session Claude) — the decisive test
 
@@ -95,7 +95,7 @@ test rows), the LLM-news arm is **still net-negative** on top of the structured 
 The LLM did its job (clean events), but news events are **sparse, temporally coarse, and largely
 redundant** with the dense official permitted-event schedule — so they add variance, not signal.
 The negative is therefore **not** a mock artifact: on this data, LLM-from-news has **no positive
-net business value** over the structured feed. Honest, and now free of the extraction-quality
+net business value** over the structured feed. Now free of the extraction-quality
 confound.
 
 ### Why the LLM-news features hurt, in plain terms
@@ -128,7 +128,7 @@ what little they do say is already in the permitted feed), temporally coarse (24
 instead of exact windows), and spatially coarse (citywide flat values instead of per-borough).
 That is not information the model can use to sharpen a borough-hour forecast — it is four extra
 mostly-empty columns for a gradient-boosted model to latch onto in training and then fail to
-generalise from. The result is a small but consistent increase in test error. The honest
+generalise from. The result is a small but consistent increase in test error. The
 conclusion is not "the LLM is bad" but "in a city with a dense, precise official event schedule,
 news-derived events are the inferior source, and stacking them on top adds noise, not lift."
 
@@ -137,7 +137,7 @@ news-derived events are the inferior source, and stacking them on top adds noise
 The permitted-event effect is real but **small** (~0.002 WAPE) and sensitive to the sample: on a
 June test window it did not replicate (see git history), on May it does with a clear CI. Borough
 grain washes out localized event impact; a finer grain with geo-precise events would be a stronger
-test (blocked here by news geo-sparsity). The honest reading: event value at borough grain is
+test (blocked here by news geo-sparsity). The takeaway: event value at borough grain is
 marginal, and the LLM-from-news variant is currently net-negative.
 
 ## Path to a real LLM positive

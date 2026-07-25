@@ -1,6 +1,6 @@
 # Known Limitations
 
-Honest scope boundaries (CLAUDE.md §11.4, §18, §22). Nothing here is hidden to make a phase
+Scope boundaries (CLAUDE.md §11.4, §18, §22). Nothing here is hidden to make a phase
 look complete.
 
 ## Data

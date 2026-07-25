@@ -21,7 +21,7 @@ make web      # terminal 2  (cd apps/web && npm install first)
 3. **뉴스 검색 (FAISS)** — search "PATH suspended Hoboken": semantic ranking over the accumulating
    news vector store; the 3 wire copies of one story are grouped into one same-event cluster.
 4. **모델 Lift** — measured B0→B4: history+calendar (M0) beats seasonal naive, but event/graph
-   features add **0** (banner: `insufficient_event_overlap`) — with the unlock path shown. *Honest.*
+   features add **0** (banner: `insufficient_event_overlap`) — with the unlock path shown.
 5. **이상 탐지** — 4 detectors flag a stale feed, an impossible capacity, a sudden depletion (root-caused
    to a source event with article evidence), and a forecast residual — all flagged synthetic.
 6. **시나리오 비교** — toggle an event off and compare the counterfactual forecast. *Simulate.*

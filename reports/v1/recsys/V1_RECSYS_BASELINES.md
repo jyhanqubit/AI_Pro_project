@@ -25,7 +25,7 @@ June 2026 Trip History. Reproduce with `make evaluate-recommendation` (writes
 | B3 MLP pair scorer (sklearn) | 0.842 | 0.983 | 0.912 | 0.928 |
 | candidate coverage | 10.6 stations/query · positive-in-candidate rate = 1.00 | | | |
 
-## Honest reading (non-improvement reported, §13 / invariant 15)
+## Reading (non-improvement reported, §13 / invariant 15)
 
 - **Pure distance (B0) is the strongest baseline here.** With inventory unknown for 98% of
   candidates, the capacity- and risk-aware heuristics (B1/B2) have little real signal and do **not**

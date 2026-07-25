@@ -25,7 +25,7 @@ Borough) and forbids inventing a Seoul / Gwanak / ParcelFlow / parcel-logistics 
 - **Actual geography in the repo** (case-insensitive token counts): `nyc` ~36.5k, `manhattan`
   ~13k+, `brooklyn` ~13k, `citibike/citi bike` ~236, `hoboken` ~105, `jersey city` ~30,
   `jc-202606` ~27.
-- **Honest nuance (recorded, not a defect):** the v1 *measured* forecasting slice used the
+- **Nuance (recorded, not a defect):** the v1 *measured* forecasting slice used the
   **Jersey City, NJ** Citi Bike system (`JC-202606` = June 2026), which is part of the Citi Bike
   network but is across the river from NYC proper. The product domain (Citi Bike, NYC-anchored)
   is correct; the measured-data footprint is currently JC/Hoboken plus NYC-wide permitted-events
@@ -42,7 +42,7 @@ New in `contracts/v2/` (additive; nothing in v0/v1 contracts changed):
   `offline_benchmark`, `simulated`, `pending_live_label`, `assumption`, `blocked_data`,
   `blocked_external`, `demo_fixture`, `research`.
 - `ResultEnvelope` (`contracts/v2/envelope.py`) — carries `value`, `run_id`, `artifact_id`,
-  `mode`, `claim_status`, `freshness`. It enforces the honesty rules in code:
+  `mode`, `claim_status`, `freshness`. It enforces the integrity rules in code:
   1. a `measured`/`offline_benchmark` value outside demo mode **must** cite an `artifact_id`;
   2. `demo_fixture` status only in `demo_fixture` mode;
   3. `research` status only in `research` mode;
@@ -62,7 +62,7 @@ claim cell.
 | Figure | Appears in | Reproduction command | Backing artifact | V2 disposition |
 |---|---|---|---|---|
 | Borough event lift WAPE 0.1013 → 0.0996 (−1.65%), CI [0.36, 5.11], `measured_improvement` | `docs/STATUS.md`, `docs/EVENT_LIFT_FINDINGS.md` | `python -m ml.forecasting.borough_event_lift` | `reports/borough_event_lift.json` | v1-measured (borough grain). Re-measure at **H3** grain + multi-holdout in V2-01/V2-03 before any V2 lift claim |
-| Weather lift WAPE 0.4868 → 0.4893, `negative_lift` | `docs/STATUS.md` | `python -m ml.forecasting.weather_lift` | `reports/weather_lift.json` | v1-measured honest-negative. Weather not required in V2 MVP; keep as context |
+| Weather lift WAPE 0.4868 → 0.4893, `negative_lift` | `docs/STATUS.md` | `python -m ml.forecasting.weather_lift` | `reports/weather_lift.json` | v1-measured negative result. Weather not required in V2 MVP; keep as context |
 | Forecasting M0 test WAPE 0.516 / MASE 0.794 vs B0 0.658 | `docs/STATUS.md`, `docs/V2_HANDOFF_REPORT.md` | evaluation run (needs `CITIBIKE_ZIP`) | run manifest | Re-measure under V2-01 multi-holdout; do not carry the single-split number into V2 |
 | Retriever Recall@20 0.952 / E2E HitRate@3 0.754 | `docs/V2_HANDOFF_REPORT.md` | recommender eval targets | `reports/v1/recsys/*` | v1 recsys context; not on the V2 critical path |
 | Event lift = 0 (`insufficient_event_overlap`) | `docs/V2_HANDOFF_REPORT.md` | V1-04 gate | — | **Key V2-03 driver**: re-evaluate once overlapping events exist; may stay `blocked_data` |

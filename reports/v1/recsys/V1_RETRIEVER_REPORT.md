@@ -23,7 +23,7 @@ JC-202606 Trip History. Reproduce: `make train-recommendation-retriever`
 
 Latency (CPU): embed **0.21 ms/query**, exact search **0.003 ms/query** (251-vector index).
 
-## Honest reading (no fabricated lift)
+## Reading (no fabricated lift)
 
 - **Not an apples-to-apples win over the baselines.** The retriever does *open* Top-K over **all 251
   stations**; the B0–B3 baselines (`V1_RECSYS_BASELINES.md`) rank within a **radius-filtered

@@ -60,7 +60,7 @@ do **not** need it. Do not commit large raw data.
   B0, six-algorithm zoo, rolling-origin CV, GridSearch, permutation-importance feature selection,
   B0–B4 ablation, metrics (WAPE/MAE/MASE/event-window/peak-dir/delta-stability) **plus a
   data/domain-customised metric OCS** (asymmetric shortage-vs-overflow, reduces to WAPE at equal
-  costs). Results & interpretation are in README + `docs/EVALUATION_PROTOCOL.md`. Honest finding:
+  costs). Results & interpretation are in README + `docs/EVALUATION_PROTOCOL.md`. Finding:
   event features are zero on the June window (curated events postdate the data, §5.2), so B2–B4 =
   B1; and OCS reorders the leaderboard (knn wins CV-WAPE but is worst learned model on OCS).
 - **07 — API + UI**:
@@ -69,7 +69,7 @@ do **not** need it. Do not commit large raw data.
     `/v1/zones/{id}/explanation`, `/v1/scenarios`. `/v1/rebalancing/solve` currently returns
     **501** (deferred to Phase 08 — do NOT fake it). 7 integration tests pass. `make api`.
   - `apps/web/` — Next.js (App Router, TS strict) operator console: Control Tower, Why Changed,
-    Scenario Lab, Rebalancing (honest placeholder). Consumes the API. `make web`.
+    Scenario Lab, Rebalancing (placeholder — the API returns 501; nothing is faked). Consumes the API. `make web`.
 
 ---
 
@@ -149,7 +149,7 @@ Build order:
   `docs/DEMO_SCRIPT.md`, `docs/KNOWN_LIMITATIONS.md` (exists), `docs/STATUS.md`, `README.md`.
 - `docs/STATUS.md` must state: completed phase (09), commands verified, tests passing/failing,
   measured results available, known blockers, portfolio-ready.
-- Final honesty audit: no fabricated metrics, no causal claims from feature attribution, no
+- Final audit: no fabricated metrics, no causal claims from feature attribution, no
   quantum-advantage claims, event-lift limitation stated, fixture vs live vs measured clearly
   separated. Full gate must be green. Commit → push.
 
@@ -183,7 +183,7 @@ CLAUDE.md                         operating contract (read first)
 README.md                         product story + Phase 06 results/interpretation (Korean)
 docs/STATUS.md                    phase status, verified commands, results, blockers
 docs/EVALUATION_PROTOCOL.md       forecasting eval method + metrics (incl. OCS)
-docs/KNOWN_LIMITATIONS.md         honest scope boundaries (esp. event-lift caveat)
+docs/KNOWN_LIMITATIONS.md         scope boundaries (esp. event-lift caveat)
 contracts/                        Pydantic v2 data contracts (§6)
 config/                           typed config: features, events, graph_features, forecasting, api
 pipelines/features/               demand aggregation + leakage-safe + as-of graph features

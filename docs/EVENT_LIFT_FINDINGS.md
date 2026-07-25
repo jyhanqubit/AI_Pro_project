@@ -42,7 +42,7 @@ We ran this twice, with two different real event sources:
 Provenance is preserved end to end, and the filtering step is a pure pass-through — no event record
 was invented or altered, only included or excluded.
 
-## How the measurement is kept honest
+## How the measurement avoids p-hacking
 
 **Grain.** The event experiment aggregates demand to **borough × local hour** (five boroughs). This
 is a deliberate, documented approximation: full-NYC H3-zone forecasting does not fit in this
@@ -58,7 +58,7 @@ was genuinely available at that hour. Weather features use the **previous day's*
 no future weather informs a past prediction. A random train/test split is never used; the split is a
 single expanding-window holdout at the calendar boundary.
 
-**An honest verdict, not a p-hack.** For each experiment the paired per-row improvement is
+**A pre-registered verdict, not a p-hack.** For each experiment the paired per-row improvement is
 bootstrapped over **day blocks** (resampling whole days, so autocorrelation within a day does not
 shrink the interval), giving a 95% confidence interval on the mean error reduction. A gain is only
 called a *measured improvement* when that interval lies entirely above zero; otherwise the verdict is
@@ -115,7 +115,7 @@ by the direction the event feature moved the forecast relative to the baseline
 So yes — there are many measured cases where the event feature correctly predicts *lower* demand and
 matches the outcome better; that is where most of the aggregate gain comes from.
 
-### June weather does not help — an honest negative
+### June weather does not help — a negative result
 
 The same experiment design applied to weather features (run on the smaller Jersey City H3-zone panel,
 210 zones, 145k train / 40k test rows) came out the other way:
@@ -135,7 +135,7 @@ The two results are not directly comparable in WAPE level — they run on differ
 (NYC boroughs vs. Jersey City zones) — but each is a valid within-experiment baseline-vs-feature
 comparison, which is what the lift claim rests on.
 
-## Honest limitations
+## Limitations
 
 - **Borough grain, approximate geocoding.** The event result is at borough × hour with
   nearest-centroid assignment, coarser than the product's H3 zone grain. A finer result would need
@@ -145,7 +145,7 @@ comparison, which is what the lift claim rests on.
 - **One split, one test month.** A single June holdout; a rolling multi-month evaluation would
   strengthen the claim.
 - **Modest effect size.** 1.65% WAPE is real (CI above zero) but small; it should be described as a
-  measurable, honest lift, not a headline transformation.
+  measurable lift, not a headline transformation.
 
 ## Reproduce
 

@@ -64,8 +64,8 @@ top recomputes every metric as-of the new boundary.
 ### 4. Event-window timeline — `GET /v2/operator/timeline`
 
 A time-series strengthening of the operator analytics: for every hourly cutoff across the demo
-window (12:00 → 18:00) the **same offline pipeline is recomputed as-of that boundary**, yielding an
-honest series of `event_count`, `affected_zone_count`, `total_shortage_units`, `stations_in_shortage`,
+window (12:00 → 18:00) the **same offline pipeline is recomputed as-of that boundary**, yielding a
+series of `event_count`, `affected_zone_count`, `total_shortage_units`, `stations_in_shortage`,
 and `demand_delta_total` — plus `event_markers` at each event's `available_at`.
 
 - Rendered on `/statistics` as two self-contained **SVG area+line charts** (부족 재고 units and
@@ -89,7 +89,7 @@ relocation solver (which conserves the total): here we **add** bikes.
   the objective is **separable and convex**, a greedy that places each bike where its marginal
   benefit is largest is **globally optimal**; `allocate_brute_force` validates greedy == exhaustive
   optimum in tests (mirrors the QUBO validation pattern, §14.2).
-- **Honest by construction**: a bike is placed only while it strictly reduces cost (fills a
+- **By construction**: a bike is placed only while it strictly reduces cost (fills a
   shortage). Once every station is at target, further bikes would only add overflow, so they are
   reported as **held back in the depot** (`leftover`) rather than force-placed to inflate a number.
 - **UI**: a "추가 자전거 최적 분배" card at the top of `/rebalancing` with a numeric input for M and a
@@ -105,7 +105,7 @@ The app now separates the two audiences (V2 goal "Rider / Operator 최상위 경
 
 - A segmented **role switch** in the top bar (🚲 라이더 / 🛠 운영자), persisted to `localStorage`.
 - **Rider mode** is a clean consumer view: the operator tab bar is hidden, and the replay strip is
-  a compact **read-only** clock (`RiderClock`) — the mode + as-of time are shown honestly (never
+  a compact **read-only** clock (`RiderClock`) — the mode + as-of time are shown explicitly (never
   fixture-as-live), but the scrubber/presets are an operator control. A drill-in to "why is this
   busy?" (`/why`) shows a "← 자전거 찾기" back link.
 - **Operator mode** shows the full tool tab bar (통계·원인·뉴스·시나리오·재배치·모델 Lift·이상 탐지·실험)
@@ -201,9 +201,9 @@ source of truth for numbers).
   measured on the offline provider (all 1.0 on the gold set; p50 ≈ 0.1 ms). Files:
   `config/search_v2.py`, `ml/search/*`, `v2.hybrid_search`.
 
-### 12. Predictive lift protocol (V2-02, honestly blocked offline)
+### 12. Predictive lift protocol (V2-02, blocked offline)
 
-Formalises the "do event features reduce holdout error?" measurement with the honest V2 claim rule.
+Formalises the "do event features reduce holdout error?" measurement with the V2 claim rule.
 `ml/forecasting/predictive_lift.py` is a pure, tested protocol: `chronological_split` (train/val/test
 with an embargo/purge gap), `block_bootstrap_ci` (paired improvement CI resampled over **event
 blocks**), and `lift_verdict` — a *measured improvement* is asserted only when the coverage gate
@@ -213,7 +213,7 @@ passes **and** the 95% CI lies strictly above 0; otherwise the verdict is
 - The protocol is validated on synthetic data with known outcomes (`tests/unit/test_predictive_lift.py`).
 - The demo run (`make v2-evaluate-predictive-lift`, `GET /v2/model/predictive-lift`) measures the
   **real** coverage of the demo fixture (2 events, 15 affected zone-hours — far below the gate) and
-  therefore reports **`blocked_data`** honestly, matching V1's `insufficient_event_overlap`. No
+  therefore reports **`blocked_data`**, matching V1's `insufficient_event_overlap`. No
   paired gain is fabricated. Surfaced in the Model Lift Lab with the coverage-gate table. A measured
   claim requires a real overlapping-news backfill + training run (blocked in this offline env).
 
@@ -223,7 +223,7 @@ A "🔄 뉴스 동기화" button on the news screen pulls **real, timely mobilit
 (free, no API key) on demand — `POST /v2/news/sync`. Fetched articles are deduplicated on `url_hash`
 and accumulated into the persistent news vector store, so they immediately become searchable.
 
-- Honest by construction (`services/api/news_sync.py`): results are labelled `live` only when they
+- By construction (`services/api/news_sync.py`): results are labelled `live` only when they
   actually came from GDELT this call; a network/API failure returns `status: "degraded"` with the
   reason and **zero fabricated articles** — Demo Mode is never broken, fixture is never shown as
   live. GDELT gives title + metadata only, so the body stays empty (title-only snippet).
@@ -287,7 +287,7 @@ python -m pytest tests/integration/test_api_v2.py -q
 cd apps/web && npm run typecheck && npm run build
 ```
 
-## Honesty / invariants
+## Invariants
 
 - No fabricated metrics: statistics are pure aggregations of the offline state; the demand delta is
   the labelled demo heuristic, not a measured model.

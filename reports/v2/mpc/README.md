@@ -25,7 +25,7 @@ are **simulated** (policy comparison over a documented demand scenario), not mea
   value on the table — quantifying why multi-period decisioning matters.
 - **Greedy can be net-harmful**: it relocates 1,114 units but, with these cost weights, the
   reposition spend outweighs the imbalance it relieves, so it costs slightly more than doing
-  nothing. An honest reminder that "any rebalancing" is not automatically good.
+  nothing. A reminder that "any rebalancing" is not automatically good.
 - Every policy is feasibility-checked each period (0 infeasible periods); Oracle bounds them all.
 
 ## Computational cost (reproduce: `make v2-mpc` → `python -m optimization.mpc_run --timing`)

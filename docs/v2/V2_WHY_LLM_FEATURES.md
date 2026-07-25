@@ -70,7 +70,7 @@ density learning curve + quality-degradation ablation으로 확립됨
 *어느 하나라도* 저하시키면 +2.69%가 사라집니다. 이것이 feature cleverness보다 source가 더 중요한
 이유입니다.
 
-## 4. LLM features가 도움이 되지 않는 곳 (그리고 왜) — the honest boundary
+## 4. LLM features가 도움이 되지 않는 곳 (그리고 왜) — the boundary
 
 - **LLM-from-retrospective-news**는 이 데이터에서 incremental demand accuracy를 더하지 않습니다.
   일곱 가지 접근(raw / improved / permit-schema / importance-weight / signed / post-processing /
