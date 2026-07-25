@@ -12,7 +12,7 @@
 현재 스캔: **26 artifacts, 모두 `run_id` 보유, 0 stale** — claim_status별로: measured 15,
 offline_benchmark 5, simulated 5, blocked_data 1.
 
-**Drift, 정직하게:** live-traffic drift(serving 분포 vs training)는 여기에 없는 live label stream이 필요하므로
+**Drift:** live-traffic drift(serving 분포 vs training)는 여기에 없는 live label stream이 필요하므로
 `blocked_data`로 보고하며 절대 가짜로 만들지 않습니다. Freshness/staleness와 아래의
 delayed-label closure가 실제로 사용 가능한 monitoring 신호입니다.
 
@@ -37,5 +37,5 @@ runner는 `demo_fixture`에서 이 loop를 시연합니다(여기에는 live sha
 ## Acceptance status
 
 - Artifacts persisted with run manifests — **done** (`run_manifest.json`).
-- Monitoring surfaces freshness — **done**; drift — `blocked_data` (no live labels), 정직하게 명시됨.
+- Monitoring surfaces freshness — **done**; drift — `blocked_data` (no live labels), 명시됨.
 - Delayed-label backfill does not leak into past cutoffs — **done + tested** (strict `>` guard).

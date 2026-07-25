@@ -28,7 +28,7 @@ def test_utilization_on_sample_zip(tmp_path):
 
 def test_utilization_blocked_when_no_zips(tmp_path):
     r = utilization_kpis(tmp_path)
-    assert r["status"] == "blocked_data"  # 데이터 없으면 정직하게 blocked
+    assert r["status"] == "blocked_data"  # 데이터 없으면 blocked
 
 
 def test_taxonomy_is_measured_only():

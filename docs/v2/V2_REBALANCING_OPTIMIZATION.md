@@ -98,7 +98,7 @@ $s_i = \max(0,\, t_i - f_i)$, $o_i = \max(0,\, f_i - t_i)$. 즉 절댓값/`max`�
 
 ## 5. 실제 풀이의 어려움
 
-이 문제는 "작으면 쉽고, 현실 규모·현실 조건에선 어렵다". 정직하게 정리한다.
+이 문제는 "작으면 쉽고, 현실 규모·현실 조건에선 어렵다". 정리한다.
 
 ### 5.1 규모 — 변수 폭발
 $n$개 station이면 flow 변수가 $n(n-1)$개. NYC 실데이터는 **station ≈ 2,433개 → $x_{ij}$ ≈ 590만 개**.
@@ -121,7 +121,7 @@ $c_s \gg c_o$ 라 **동일 비용의 최적해가 여러 개** 나온다. solver
 ### 5.4 시간 결합 — 진짜 어려운 부분
 single-period MILP은 "지금 한 번"만 본다. 실제 수요는 연속적으로 흐르고(§EDA: 같은 zone이 아침 순유입·저녁
 순유출), 최적 재배치는 **multi-period inventory routing** 문제다 — static transportation MILP보다 훨씬 어렵다.
-MPC는 receding-horizon으로 근사하지만 **완전한 동적 최적을 푸는 것은 아니다**(정직한 범위 한계).
+MPC는 receding-horizon으로 근사하지만 **완전한 동적 최적을 푸는 것은 아니다**(범위 한계).
 
 ### 5.5 라우팅 미모델링
 $x_{ij}$ = "i→j로 q대"는 **트럭의 실제 경로**(여러 station을 순회 — capacitated VRP)를 추상화한다. 우리 모델은
@@ -137,7 +137,7 @@ programming / CVaR 같은 robust 변형이 필요(현재는 deterministic; SP/CV
 
 ---
 
-## 6. 정직한 범위 요약
+## 6. 범위 요약
 
 | 우리가 실제로 푸는 것 | 완전한 현실 문제 |
 |---|---|

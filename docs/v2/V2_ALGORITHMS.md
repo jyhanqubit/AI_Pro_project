@@ -46,7 +46,7 @@
 
 | 모델 | 원리 | 역할 |
 |---|---|---|
-| **B0 Seasonal-Naive** | `ŷ_t = y_{t−168h}` (지난주 같은 시간) | 정직성의 바닥; MASE 분모이기도 함 |
+| **B0 Seasonal-Naive** | `ŷ_t = y_{t−168h}` (지난주 같은 시간) | 성능의 바닥; MASE 분모이기도 함 |
 | **Global tree (promoted)** | lag/rolling/calendar feature 위의 `HistGradientBoosting`, 전 zone 공통 단일 모델 | 실제 서빙 모델 |
 | **Event-aware** | 위 tree + LLM/graph event feature (§3) | 검증 대상 |
 
@@ -94,7 +94,7 @@ skill ≤ −0.01 이고 CI<0   → MEANINGFUL_NEGATIVE
 ```
 
 **Metric = `(decision, skill, CI, n_active)` 튜플.** 승리만큼이나 null도 그대로 보고합니다 — 개선이 없는
-모델도 정직한 1급 결과입니다 (contract §11.4). 순수 함수이고 unit test 6개.
+모델도 1급 결과입니다 (contract §11.4). 순수 함수이고 unit test 6개.
 
 **측정 결과 (V2-03 핵심 발견):**
 - Structured event feed (A1−A0): nowcast에서 **`MEANINGFUL_POSITIVE +2.69%`** — event는 도움이 됨.
@@ -239,7 +239,7 @@ LLM은 **오직** event structuring, tool routing, explanation에만 씀 — 숫
 | **RAGAS generation** | faithfulness = 답의 모든 claim이 retrieved context에 근거; answer-relevancy | faithfulness / answer_relevancy | **faithfulness 1.0**, **answer_relevancy 0.985** (답한 10 Q; in-session 판정 + verdict commit + drift-guard) |
 | **Trip-plan faithfulness** | rider plan 숫자(distance/time)는 반드시 typed plan에 있는 값이어야 함 | grounded-number 비율 | **1.0**, ungrounded 0; negative control("999") 잡아냄 |
 
-**정직한 프레이밍:** GraphRAG가 항상 나은 게 아님 — 질문이 graph 모양일 때만 이김. neutral control + RAGAS가
+**프레이밍:** GraphRAG가 항상 나은 게 아님 — 질문이 graph 모양일 때만 이김. neutral control + RAGAS가
 양쪽으로 verdict를 bound하는 게 핵심.
 
 ---

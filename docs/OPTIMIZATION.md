@@ -60,7 +60,7 @@ A plan is only surfaced through the API/UI after this passes.
 1. **Greedy** (`greedy.py`) — repeatedly moves bikes from the surplus station to the deficit
    station with the highest marginal gain (`shortage_cost + overflow_cost − distance_cost·d`)
    until no positive-gain move remains or the vehicle is full. Always feasible; never worse than
-   doing nothing. Not guaranteed optimal — the honest lower bar.
+   doing nothing. Not guaranteed optimal — the lower bar.
 2. **MILP** (`milp.py`) — the exact optimum via `scipy.optimize.milp` (HiGHS). Integer flows
    `x_ij` between every ordered pair, with linearised shortage/overflow variables `s_i, o_i`; at
    the optimum they equal `max(0, target−f)` / `max(0, f−target)` because both carry positive

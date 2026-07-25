@@ -350,7 +350,7 @@ claim_status / freshness`를 담은 `ResultEnvelope`로 라벨됩니다. 완성 
 | MPC vs No-Action/Greedy/MILP/Oracle | **simulated** | ledger total_cost: NoAction 1127 / Greedy 1155 / MILP 1087 / **MPC 740** / Oracle 719 — MPC가 best feasible, regret **21.6** | `make v2-mpc` |
 | Dynamic pricing + guardrail | **simulated** | 576 zone-hour에서 guardrail 위반 **0**, A/A CI가 0 포함 (shadow quote만) | `make v2-pricing` |
 | Copilot 정확도 + grounding | **offline_benchmark** | typed-tool routing **1.0**, numeric hallucination **0**; RAGAS faithfulness **1.0**, answer_relevancy **0.985**; trip-plan faithfulness **1.0** | `make v2-copilot` |
-| Final audit (완성 판정) | **measured** | envelope honesty + completion-artifact + traceability 3 gate PASS, **31 artifacts** → **V2_COMPLETE** | `make v2-final` |
+| Final audit (완성 판정) | **measured** | envelope label consistency + completion-artifact + traceability 3 gate PASS, **31 artifacts** → **V2_COMPLETE** | `make v2-final` |
 
 ```bash
 make v2-audit             # V2-00: domain-drift + result-envelope 계약 gate (오프라인)
@@ -365,10 +365,10 @@ make v2-final             # V2-09: 최종 audit → reports/v2/final/claim_matri
 make v2-rl                # (research 전용) tabular Q-learning + PPO 재배치 정책
 ```
 
-**정직성 posture (핵심):**
+**결과 표기 원칙 (핵심):**
 - **Measured 승리** — promoted forecaster가 seasonal-naive를 이기고, structured event feed가 measured lift를
   주며, Copilot은 typed tool로 numeric hallucination **0**.
-- **정직한 null (대표 발견)** — 이 데이터에서 **LLM-from-news feature는 수요 예측을 개선하지 않습니다**. LLM
+- **Null 결과 (대표 발견)** — 이 데이터에서 **LLM-from-news feature는 수요 예측을 개선하지 않습니다**. LLM
   Feature Value metric + CI로 보고하고 root cause까지 규명(source가 dense + precise-time + precise-location +
   forward-looking이어야 하는데 news는 하나도 만족 못 함), *simulated* synthetic ceiling(+10.43%)으로 "방법
   자체는 조건을 만족하면 동작"함을 보였습니다. 전체 정리: [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).

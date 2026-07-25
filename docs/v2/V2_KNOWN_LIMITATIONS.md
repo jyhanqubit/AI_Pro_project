@@ -1,6 +1,6 @@
 # V2 Known Limitations
 
-V2의 정직한 범위 경계. V2-09에서 실제 상태를 바탕으로 갱신된다. `../KNOWN_LIMITATIONS.md`
+V2의 범위 경계. V2-09에서 실제 상태를 바탕으로 갱신된다. `../KNOWN_LIMITATIONS.md`
 (v1)를 보완한다.
 
 ## Current status

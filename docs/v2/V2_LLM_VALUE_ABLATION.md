@@ -3,13 +3,13 @@
 V2의 핵심 질문: **LLM** event 레이어가 자체 비용을 제하고도 단순 **rule** 레이어보다 가치를 더하는가?
 이를 위해서는 세 개의 feature arm을 깔끔하게 분리하고 net-of-cost lift를 보고해야 한다.
 
-> **Status: implemented + run (V2-03). Honest null.** Runner `ml/forecasting/llm_value.py`
+> **Status: implemented + run (V2-03). Null.** Runner `ml/forecasting/llm_value.py`
 > (`make v2-llm-value`). 실제 JC Citi Bike 2026 H1 + 실제 GDELT NYC 2026 news (371 articles)에서
 > 세 arm은 **통계적으로 동일**하다 (ΔWAPE = 0, 95% CI [0,0]); test window의 event coverage는
 > 0.306%이고 `arms_identical_on_test = true`이므로, verdict는
 > **`insufficient_event_overlap`** (`claim_status: blocked_data`). LLM actual cost $0 (mock),
 > estimated real $0.0061; **net LLM value −$0.01**. 이는 v1의 gap을 전체 3-arm + CI + profit + cost
-> 프레임워크로 엄밀하게 확인한 것으로 — 조작된 positive가 아니라 유효하고 정직한 결과다.
+> 프레임워크로 엄밀하게 확인한 것으로 — 조작된 positive가 아니라 유효한 결과다.
 > 전체 result + unblock path: `reports/v2/llm_value/`.
 >
 > **Borough re-measurement (NYC) — the FAIR test (`make v2-llm-value-borough`).** 입력을 바로잡았다:
@@ -88,7 +88,7 @@ direct-active / 222 graph-active zone-hours):
 | **improved LLM feature** (A2 − A1) | `NO_MEANINGFUL_EFFECT` | −0.4% | [−4.90, 1.36] |
 | **graph contribution** (A3 − A2) | `NO_MEANINGFUL_EFFECT` | −1.32% | [−3.76, 0.72] |
 
-**Honest reading:**
+**Reading:**
 - 개선은 **harm을 제거**했다: LLM feature는 `MEANINGFUL_NEGATIVE −5.52%` (old
   flat-box)에서 `NO_MEANINGFUL_EFFECT −0.4%` (이제 CI가 0을 걸침)로 이동했다. 더 나은 feature engineering ⇒ 더 이상
   forecast를 악화시키지 않는다 — 하지만 이제 **positive가 아니라 neutral**이다.
@@ -122,7 +122,7 @@ permit-quality records로 재구성했다 — 정밀한 `event_start_at`/`event_
 | permitized − raw news | `MEANINGFUL_NEGATIVE` | **−6.30%** | [−22.7, −5.8] |
 
 **가설은 반박되었다: news events에 permit-quality 정밀도를 부여하니 forecast가 *더 나빠졌다*,
-좋아지지 않았다 — vague raw news보다도 더 나쁘다.** 두 가지 정직한 메커니즘:
+좋아지지 않았다 — vague raw news보다도 더 나쁘다.** 두 가지 메커니즘:
 
 1. **Sparse + confident = confident noise.** Raw news features는 vague하고 diffuse해서 tree가
    대부분 무시했다 (≈0 effect). Permitized features는 sharp하고 confident하다 (특정 borough의
@@ -140,7 +140,7 @@ permit-quality records로 재구성했다 — 정밀한 `event_start_at`/`event_
 
 **Conclusion:** permit feed가 제공하고 news가 결여한 것은 *구조*가 *아니다* — 그것은 events의
 **volume과 consistency**다. Sparse news를 permit schema로 재구성해도 그것을 회복할 수 없으며,
-여기서는 오히려 적극적으로 해를 끼쳤다. Faked가 아닌 정직한 negative result. Artifact:
+여기서는 오히려 적극적으로 해를 끼쳤다. Faked가 아닌 negative result. Artifact:
 `reports/v2/llm_value/permitize_contribution.json`.
 
 ### (a) News as an IMPORTANCE WEIGHT on the dense permit feed — also negative (`llm_importance_weight_value.py`)
@@ -338,7 +338,7 @@ Qualifying subset은 **~비어 있다 (1/23)**, 23개 news 항목 중 21개가 *
 reliability-weighted post-correction은 *원리상* 타당하지만, 1/23 reliable subset으로는
 아무것도 아닌 것으로 줄어든다. 이것은 encoding이나 더 많은 volume으로 고칠 수 없다: forward-looking하고 precise한 events는
 retrospective news가 아니라 **schedules / permits / announcements**에서 나온다. 그러므로 LLM
-demand contribution으로 가는 정직한 경로는 LLM이 **forward-looking event source**를 A1 slot으로
+demand contribution으로 가는 경로는 LLM이 **forward-looking event source**를 A1 slot으로
 structure하게 하는 것이다 — 그것이 존재할 때 (permit feed) 이미 +2.69% / +$33k를 전달한다.
 
 ### Synthetic ceiling — the post-correction DOES work when conditions are met (`llm_synthetic_ceiling.py`, `claim_status: simulated`)
@@ -353,7 +353,7 @@ test에 적용된다. **이것은 `simulated`/`research`로 완전히 공개된 
 | **dense + forward + precise** (1372 event-cells) | 0.1106 → 0.1042 → 0.1081 | **+20.86% MEANINGFUL_POS** | **+10.43% MEANINGFUL_POS** (CI [17.6, 108.7]) |
 | sparse (news-scale, 157 cells) | 0.0953 → 0.0958 → 0.0956 | INSUFFICIENT_SUPPORT | INSUFFICIENT_SUPPORT |
 
-**두 가지 정직한 결론:**
+**두 가지 결론:**
 1. **LLM post-correction은 진짜로 forecast를 개선한다 (+10.43%, CI가 0을 배제) — event source가
    dense + precise + forward-looking일 때.** 그래서 real-news null은 **source** 문제이며
    (news가 네 조건에 실패), pipeline/method의 한계가 *아니다*. Method는 건전하다.
@@ -361,7 +361,7 @@ test에 적용된다. **이것은 `simulated`/`research`로 완전히 공개된 
    메커니즘 측면에서 density가 필요함을 재확인.
 
 이것은 ablations와 loop를 닫는다: 조건 위반 (real news) → 가치 없음; 충족
-(이 simulation, 그리고 +2.69%의 real permit feed) → 가치. LLM *demand* contribution으로 가는 정직한
+(이 simulation, 그리고 +2.69%의 real permit feed) → 가치. LLM *demand* contribution으로 가는
 real-world 경로는 LLM이 진정으로 forward-looking한 source (event
 calendars / schedules / permits)를 A1 slot으로 structure하게 하는 것이다 — retrospective news에서
 짜내는 것이 아니다.
@@ -494,7 +494,7 @@ net LLM value   : profit lift - LLM cost
 lift를 confidence interval과 함께 보고한다 (예: holdout windows에 대한 block-bootstrap). Rule과 LLM
 arms는 conflate되지 않고 attributable해야 한다.
 
-## Honesty requirements
+## Reporting requirements
 
 - **A2가 A1을 이기지 못하면**, 그것을 명료하게 보고하고 이유를 분석한다 (event overlap, extraction
   quality, propagation). Null result는 유효하고 publishable한 V2 outcome이다.

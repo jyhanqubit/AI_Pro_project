@@ -12,7 +12,7 @@ _범위: 완성된 포트폴리오를 **committed artifact 기준으로** 판정
 
 | # | Gate | 결과 | 검사 방식 |
 |---|---|---|---|
-| 1 | **Envelope honesty** — committed V2 artifact마다 result-envelope field를 갖고 `contracts.v2.ResultEnvelope`로 validate | **PASS** (31개) | artifact마다 `ResultEnvelope`를 생성; 잘못 라벨된 status(예: research 모드가 아닌데 `research`)나 값을 가진 `blocked_*` artifact는 여기서 실패 |
+| 1 | **Envelope 표기 검증** — committed V2 artifact마다 result-envelope field를 갖고 `contracts.v2.ResultEnvelope`로 validate | **PASS** (31개) | artifact마다 `ResultEnvelope`를 생성; 잘못 라벨된 status(예: research 모드가 아닌데 `research`)나 값을 가진 `blocked_*` artifact는 여기서 실패 |
 | 2 | **Completion artifact** — completion rule이 요구하는 artifact가 전부 존재 | **PASS** | 필수 artifact 7개 존재 확인 |
 | 3 | **Traceability** — artifact가 스스로 선언한 `artifact_id` 경로가 disk에 존재 | **PASS** | `#pointer`를 떼고 파일 존재 확인 |
 | 4 | **Claim matrix 생성** | **PASS** | 모든 artifact + headline metric을 `claim_matrix.json`에 mirror |
@@ -41,11 +41,11 @@ generation (faithfulness **1.0**, answer_relevancy **0.985**), trip-plan faithfu
 
 ---
 
-## 정직성 posture (이 포트폴리오가 주장하는 것과 안 하는 것)
+## 결과 표기 원칙 (이 포트폴리오가 주장하는 것과 안 하는 것)
 
 - **Measured 승리:** promoted forecaster가 rolling H3 multi-holdout에서 seasonal-naive를 이김; **structured
   event feed**가 measured accuracy lift를 줌; Copilot이 typed tool로 routing하며 **numeric hallucination 0**.
-- **정직한 null (핵심 발견):** 이 데이터에서 **LLM-from-news feature는 수요 예측을 개선하지 않음** — LLM
+- **null (핵심 발견):** 이 데이터에서 **LLM-from-news feature는 수요 예측을 개선하지 않음** — LLM
   Feature Value metric + CI로 보고하고, root cause를 규명(dense + precise-time + precise-location +
   forward-looking; news는 하나도 만족 못 함)했으며, *simulated* synthetic ceiling(+10.43%)으로 위쪽 경계를
   잡음(조건을 만족하면 방법 자체는 동작). `docs/v2/V2_WHY_LLM_FEATURES.md` 참고.
@@ -61,7 +61,7 @@ generation (faithfulness **1.0**, answer_relevancy **0.985**), trip-plan faithfu
 
 ## V2-09 acceptance 체크리스트
 
-- [x] 31개 committed artifact 전부에서 envelope honesty gate green (`make v2-final` gate 1)
+- [x] 31개 committed artifact 전부에서 envelope 표기 검증 gate green (`make v2-final` gate 1)
 - [x] completion-rule artifact 7개 전부 존재 (gate 2)
 - [x] 모든 artifact가 disk 경로로 traceable (gate 3)
 - [x] `reports/v2/final/claim_matrix.json`을 committed artifact에서 재생성

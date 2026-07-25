@@ -48,7 +48,7 @@
 | **explanation · grounding** | **measured_positive** | Copilot: routing 1.0 · **hallucination 0** · RAGAS faithfulness **1.0** · answer_relevancy 0.985 |
 | anomaly · event-window | blocked_data | event-overlap 실데이터 창 필요(data/raw/nyc 미복원) → 현재 측정 불가 |
 
-> **뉴스의 정직한 자리 = '예측 feature'가 아니라 '설명/attribution'.** 후행·광범위한 텍스트는 "왜 이런
+> **뉴스의 자리 = '예측 feature'가 아니라 '설명/attribution'.** 후행·광범위한 텍스트는 "왜 이런
 > 수요가 났나"를 근거와 함께 설명하는 데 적합하고, 그 지점에서 LLM/뉴스는 **measured positive**입니다
 > (Copilot). 예측 정확도를 원하면 §2의 forward-looking structured source가 답입니다.
 

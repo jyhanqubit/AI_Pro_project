@@ -15,7 +15,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
 - **Phases:** V2-00…V2-09 **PASSED**. RL/QAOA은 research 전용입니다(완료 조건 아님).
 - **V2-09 done (final audit):** `make v2-final` — `scripts/v2_final_audit.py`가 committed artifact를 기준으로
   포트폴리오를 판정하며, 세 개의 machine gate를 사용합니다(모든 **31**개 `reports/v2/**` artifact에 대한
-  `ResultEnvelope`를 통한 envelope honesty; completion-artifact coverage; artifact_id traceability). 또한
+  `ResultEnvelope`를 통한 envelope label consistency; completion-artifact coverage; artifact_id traceability). 또한
   claim matrix를 `reports/v2/final/claim_matrix.json`으로 미러링합니다. Verdict: **PASS — V2_COMPLETE**.
   mislabeled envelope를 잡아냅니다(test). 요약은 `reports/v2/final/v2_final_audit.md`, 알고리즘 원리 +
   metric 정의는 `docs/v2/V2_ALGORITHMS.md`.
@@ -27,7 +27,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   artifact를 인덱싱하고(run_id/claim_status/freshness/staleness → `run_manifest.json`; 0 stale),
   `ml/monitoring/delayed_labels.py`가 leakage-safe한 `pending_live_label`→`measured` loop를 실행합니다(label은
   `available_at > forecast_cutoff`인 경우에만 forecast를 마감하고, 그렇지 않으면 `leakage_rejected`). Live-traffic
-  drift = `blocked_data`(live label 없음)로 정직하게 명시됨. 5 tests. `V2_MONITORING.md` 참조.
+  drift = `blocked_data`(live label 없음)로 명시됨. 5 tests. `V2_MONITORING.md` 참조.
 - **V2-07 done:** `services/api/v2_metrics.py` + `GET /v2/cockpit/metrics` — 모든 headline cockpit
   metric은 committed된 `reports/v2/**` artifact에서 live로 읽어 `ResultEnvelope`
   (run_id/artifact_id/mode/claim_status/freshness)로 감쌉니다. hard-coded 숫자 없음; `research` 결과는 product
@@ -47,14 +47,14 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   뿐이었습니다 — 실제 graph(`make seed-graph`)에는 **2,895 events / 6 zones /
   2,808 edges**가 있습니다. 21개 as-of 질문에서, FAIR한 flat-retrieval baseline(top-3 type-matched,
   zone-agnostic) 대비: flat **6/21**(grounds, 6 OOS 모두 refuse, 0 halluc — strawman 아님) vs GraphRAG
-  **21/21**. **Honest caveat:** task가 graph-structural이므로(gold = graph edge) GraphRAG는 구조상
+  **21/21**. **Caveat:** task가 graph-structural이므로(gold = graph edge) GraphRAG는 구조상
   높습니다 — 공정한 GraphRAG-vs-RAG bakeoff가 아니며; borough-tag filter라면 동점이 됩니다. 'Event→Zone
   edge가 per-zone query를 답 가능하게 만드는 것'으로 해석하십시오. Artifact + caveat:
   `reports/v2/copilot/graphrag_benchmark.json`.
   **Neutral counterpart** (`ml/copilot/neutral_retrieval.py`): 구조적 task는 graph가 질 수 없게 만들기
   때문에, mirror도 실행했습니다 — text lookup(paraphrase→event, method-independent gold를 가진 12 Q).
   `flat_text` **0.833** top1이 `graph_boosted` **0.750**을 이깁니다(graph −0.083,
-  lift 없음; degree boost가 방해). 이 pair가 verdict를 양방향으로 정직하게 한정합니다: graph는
+  lift 없음; degree boost가 방해). 이 pair가 verdict를 양방향으로 한정합니다: graph는
   relational/per-zone query에서 이기고, plain text는 text lookup에서 이깁니다 — query type에 tool을 맞추십시오.
   Artifact: `reports/v2/copilot/neutral_retrieval_benchmark.json`.
   **RAGAS cross-check** (`ml/copilot/ragas_retrieval.py`, real ragas 0.4.3 non-LLM retrieval metric,
@@ -86,7 +86,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   bound(regret ≥ 0); 전부 feasibility-check됨. Dollars는 `simulated`. 7 tests. Artifact:
   `reports/v2/mpc/policy_comparison.json`.
 - **V2-00 done:** result envelope `contracts/v2/{enums,envelope}.py` (`ClaimStatus` 9-value +
-  `ResultEnvelope`, honesty rule을 코드로 enforce, 22 tests green); `make v2-audit` gate
+  `ResultEnvelope`, claim-labeling rule을 코드로 enforce, 22 tests green); `make v2-audit` gate
   (domain-drift + contract check, exit 0); audit report `reports/v2/final/v2_audit.md`.
   Findings: 0 domain drift; JC-vs-NYC data nuance 기록됨; test-count inconsistency와 legacy
   `v2-*` phase-number collision을 cleanup 대상으로 flag함.
@@ -102,7 +102,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   setting 전체에서 robust), regret vs Oracle는 **$218,697**. Unit count는 measured; dollars는 `simulated`(assumption
   아직 sourcing 안 됨). 8 tests(no-double-count, Oracle upper-bound). Relocation은 V2-04로 연기됨.
   Artifact: `reports/v2/ledger/profit_regret.json`.
-- **V2-03 done (honest null):** `ml/forecasting/llm_value.py` (`make v2-llm-value`) — 3개 arm
+- **V2-03 done (null result):** `ml/forecasting/llm_value.py` (`make v2-llm-value`) — 3개 arm
   (No-Event/Rule-Event/LLM-Event = B1/B2/B4), 공유 promoted model + split, block-bootstrap CI,
   ledger profit, LLM cost model. 실제 JC 2026 H1 + 실제 GDELT NYC 2026 news(371 articles). Arm들이
   **동일**(ΔWAPE=0, CI[0,0]), event coverage 0.3% → verdict **`insufficient_event_overlap`**
@@ -137,7 +137,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   −0.4%** (CI [−4.90,1.36]) — harm이 **제거됨**(−5.52%였음), 이제 positive가 아니라 neutral.
   **Graph A3−A2 = `NO_MEANINGFUL_EFFECT` −1.32%** (CI [−3.76,0.72]) — borough grain에서 graph는
   **not proven**(coarse zone 5개뿐; structured feed가 이미 dense). graph claim의 공정한 venue는
-  H3-zone grain(기존 `pipelines/features/graph_features.py`)이며, 아직 실행되지 않음. Honest null, fake 아님.
+  H3-zone grain(기존 `pipelines/features/graph_features.py`)이며, 아직 실행되지 않음. Null result, fake 아님.
   6 pure-builder unit test. Artifact: `reports/v2/llm_value/graph_contribution.json`.
 - **V2-03 "news→permit-DB" reconstruction** (`ml/forecasting/llm_permitize_value.py`, hypothesis
   REFUTED): news를 permit-schema record로 재구성하면(정확한 event_start/end +
@@ -147,7 +147,7 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   event DENSITY 때문(63,070 events → learnable coefficient); news는 ~19개를 주고, 그 sparse event를
   sharp/confident하게 만드는 것은 confident noise를 주입합니다(strike는 bike demand를 올릴 수도 내릴 수도
   있음; 그렇게 적은 수로는 unlearnable). 4개 event가 leakage-drop됨(retrospective review가 event를 post-date).
-  Honest negative, fake 아님. 8 pure-builder test. Artifact: `permitize_contribution.json`.
+  Negative result, fake 아님. 8 pure-builder test. Artifact: `permitize_contribution.json`.
 - **V2-03 (a) news-as-importance-weight** (`ml/forecasting/llm_importance_weight_value.py`): dense
   permit feed는 유지하고, news는 그것을 modulate만 하게 함 — `ev_active×(1+news_salience)`, news 없는 곳은
   unchanged. **역시 negative: `MEANINGFUL_NEGATIVE` −7.82%** (CI [−25.6,−5.9], WAPE 0.0883→0.0925). 예시
@@ -193,11 +193,11 @@ LLM/event feature가 측정 가능한 예측 lift를 더하는지, 그리고 그
   (handled, 77% right) + lag와의 redundancy. **그러나 프로젝트의 measured positive는 유효합니다:**
   structured event layer가 forecast를 개선하고(A1−A0 **+2.69%**, **+$33k** ledger — core thesis),
   LLM은 routing/grounding에서 measured value를 가집니다(V2-06 Copilot 1.0 vs keyword 0.75, halluc 3→0).
-  정직한 V2 verdict: LLM의 검증된 가치는 **structuring/routing/explanation + event layer를 구동하는 것**에
+  V2 verdict: LLM의 검증된 가치는 **structuring/routing/explanation + event layer를 구동하는 것**에
   있지, sparse retrospective news에서 demand accuracy를 짜내는 데 있지 않습니다. Pipeline은
   event-source-agnostic입니다(dense forward-looking geocoded LLM stream이라면 동일한 A1 slot에 들어감;
   GDELT news는 그런 stream이 아님).
-- **Honesty:** 모든 V2 result cell은 `pending`; v1 숫자는 어떤 것도 V2 claim에 복사되지 않았습니다. 아래의 v1
+- **결과 표기 원칙:** 모든 V2 result cell은 `pending`; v1 숫자는 어떤 것도 V2 claim에 복사되지 않았습니다. 아래의 v1
   결과는 V2 phase가 재측정하기 전까지 현재의 measured record로 유지됩니다.
 
 ## Measured results — event-aware forecasting lift (real data)
@@ -212,7 +212,7 @@ event-derived feature를 준 것과 비교합니다.
   **`measured_improvement`**, 95% CI **[0.36, 5.11]**(above zero). 재현:
   `python -m ml.forecasting.borough_event_lift`. Model-attributed, causal 아님; borough grain은
   H3 product grain의 문서화된 approximation입니다.
-- **June weather → honest negative.** NOAA Central Park weather로 동일 설계: WAPE **0.4868 →
+- **June weather → negative result.** NOAA Central Park weather로 동일 설계: WAPE **0.4868 →
   0.4893**, verdict **`negative_lift`**(CI가 0 아래). 온화한 June은 weather variance가 적음; 결과는
   숨기지 않고 있는 그대로 보고됨. 재현: `python -m ml.forecasting.weather_lift`.
 
@@ -228,7 +228,7 @@ SDK/key가 필요 없습니다:
 
 둘 다 §8/§22 guardrail을 동일하게 enforce합니다: forced structured output, verbatim evidence
 grounding, deterministic gazetteer geocoding(never model coordinate), bounded severity/confidence,
-모든 extraction의 provenance, 그리고 honest degrade(SDK/key가 없으면 raise — 절대 fabricated event 아님).
+모든 extraction의 provenance, 그리고 degrade(SDK/key가 없으면 raise — 절대 fabricated event 아님).
 `tests/unit/test_openai_provider.py`와 `test_anthropic_provider.py`로 커버됨.
 
 ## GraphRAG operator copilot (V2-08)
@@ -260,7 +260,7 @@ replay-idempotent, audit clean; portable node-link JSON snapshot이 `data/proces
 V1 위에 얹은 backward-compatible, usability 중심의 increment. Scope: consumer bike-share 앱 스타일로
 재설계된 rider home, station **search**, 더 강한 **operator statistics /
 analytics** 화면. 어떤 forecasting/pricing/experiment claim도 바뀌지 않습니다 — 모든 것이 offline이며
-`demo-heuristic-v1` demo heuristic으로 정직하게 label됩니다(measured Phase 06 model이 아님).
+`demo-heuristic-v1` demo heuristic으로 label됩니다(measured Phase 06 model이 아님).
 
 - **Rider home redesign** (`apps/web/app/page.tsx`) — 눈에 띄는 search bar, availability summary +
   filter chip(전체 / 빌리기 좋아요 / 곧 부족), 깔끔한 station list, 그리고 event-aware demand shift와
@@ -283,13 +283,13 @@ analytics** 화면. 어떤 forecasting/pricing/experiment claim도 바뀌지 않
   asymmetric objective(shortage 3 : overflow 1) 하에서 benefit을 최대화하도록 분배하며,
   dock capacity와 `Σ added ≤ M`을 존중합니다. Objective는 separable/convex이므로 greedy가 globally
   optimal입니다(brute-force enumeration에 대해 검증됨). 유익한 배치가 없는 surplus bike는 강제 배치되지 않고
-  정직하게 held back됩니다. `/rebalancing`에 M input이 있는 "추가 자전거 최적 분배" planner로 렌더링됨.
+  held back됩니다. `/rebalancing`에 M input이 있는 "추가 자전거 최적 분배" planner로 렌더링됨.
 - New code: `services/api/v2.py`, `data/fixtures/station_gazetteer.json`,
   `apps/web/app/statistics/page.tsx`; endpoint는 `services/api/app.py`에 wiring됨; typed client는
   `apps/web/lib/api.ts`.
 - Tests: `tests/integration/test_api_v2.py`의 **18 new** integration test + `tests/unit/test_allocation.py`의
   **7** unit test(search matching, live hydration, as-of boundary, statistics
-  consistency, timeline onset/monotonicity, brute force 대비 allocation optimality, honest hold-back)
+  consistency, timeline onset/monotonicity, brute force 대비 allocation optimality, hold-back)
   — 전부 pass. 전체 non-torch suite: **204 passed, 1 skipped**; web `tsc` clean, `next build` green
   (12 routes), 새 module에 ruff + mypy clean. 9개의 `torch`-dependent recsys/model test는
   여기서 실행할 수 없습니다(PyTorch wheel index가 container proxy에 의해 차단됨) — 이 변경과
@@ -329,8 +329,8 @@ analytics** 화면. 어떤 forecasting/pricing/experiment claim도 바뀌지 않
   `LocalHybridProvider`가 tested path; optional `ElasticsearchProvider`는 사용 불가 시 local로 degrade.
   `make v2-evaluate-search`가 Recall@10 / MRR / NDCG@5 / geo-valid를 report함(gold set에서 전부 1.0).
 - **Predictive lift protocol** (V2-02) — pure, tested machinery(chronological split + purge/embargo,
-  event-block bootstrap CI, honest verdict rule). Demo run(`GET /v2/model/predictive-lift`,
-  `make v2-evaluate-predictive-lift`)은 실제 coverage를 측정하여 정직하게 **`blocked_data`**를 보고함
+  event-block bootstrap CI, verdict rule). Demo run(`GET /v2/model/predictive-lift`,
+  `make v2-evaluate-predictive-lift`)은 실제 coverage를 측정하여 **`blocked_data`**를 보고함
   (demo fixture가 gate보다 훨씬 아래); measured claim에는 실제 news backfill + training이 필요합니다.
   Model Lift Lab에 노출됨.
 - **Real Citi Bike network (45 stations)** — operational fixture는 이제 GBFS
@@ -351,7 +351,7 @@ analytics** 화면. 어떤 forecasting/pricing/experiment claim도 바뀌지 않
 
 ---
 
-## Previous status — V1 complete (with honest data blocks)
+## Previous status — V1 complete (with data blocks)
 
 **v0 (Phases 00–09) complete**, 그리고 그 위에 backward-compatible increment로 **V1 (V1-00 … V1-09) 구현됨**.
 per-phase 세부는 `docs/V1_EXECUTION_LOG.md`, final audit는 `reports/v1/V1_FINAL_AUDIT.md` 참조.
@@ -362,7 +362,7 @@ per-phase 세부는 `docs/V1_EXECUTION_LOG.md`, final audit는 `reports/v1/V1_FI
   (measured retriever / simulated policy) · V1-08 clustered-switchback experiments(simulated) ·
   V1-09 UI(8 screens) + offline golden-path E2E + audit + packaging. 추가로 **FAISS news vector
   store**(accumulating news, semantic search, same-event clustering).
-- Honest blocks: **event lift** = `insufficient_event_overlap`(claim disabled); **real-news
+- Data blocks: **event lift** = `insufficient_event_overlap`(claim disabled); **real-news
   coverage** = `BLOCKED_DATA`(실제 backfill이 gate를 통과할 때까지); **recommendation / pricing /
   experiments** = `simulated`; **live-shadow** prediction = `pending`.
 - Tests: **199 passed, 1 skipped**(`make test`); web `tsc` clean; ruff clean; offline E2E green.
@@ -422,7 +422,7 @@ B0–B4 ablation, 그리고 §11.4 metric — 실제 June-2026 데이터로 실�
   scale), event-window WAPE, peak-direction accuracy, forecast-delta stability.
 - **Feature selection** (`feature_selection.py`) — test holdout에 대한 permutation importance;
   top-12 reduced model이 full 32-feature model과 일치함.
-- **Honest event ablation** — runner가 as-of event/graph feature가 June window에서 0임을 검증
+- **Event ablation** — runner가 as-of event/graph feature가 June window에서 0임을 검증
   (assume가 아님)함(curated event가 데이터를 post-date, §5.2), 따라서 B2–B4가 B1을 재현함.
   plainly report됨(§11.4, §22); interpretation과 figure는 `README.md` / `docs/`.
 
@@ -537,7 +537,7 @@ B0–B4 ablation, 그리고 §11.4 metric — 실제 June-2026 데이터로 실�
   vs dynamic 363.40 → **+0.4% revenue, 0 lost rentals, 7 surcharged**; elasticity sweep flat
   (supply-constrained); event-severity what-if ×1/×2/×3 → uplift +0.4%/+1.0%/+1.5%, tier
   1.10×/1.25×/1.25×. Report `reports/v2/pricing/revenue_sim.json`.
-- `python -m ml.forecasting.run` (no zip) — offline; crash하는 대신 정직한 **`blocked_data`**
+- `python -m ml.forecasting.run` (no zip) — offline; crash하는 대신 **`blocked_data`**
   `reports/phase06_results.json`을 씀(sample에서 7-day warm-up 후 0 usable row), 그리고 real-run command를
   print함.
 
@@ -589,7 +589,7 @@ B0–B4 ablation, 그리고 §11.4 metric — 실제 June-2026 데이터로 실�
   `docs/KNOWN_LIMITATIONS.md` 참조. `make evaluate CITIBIKE_ZIP=…`은 7-day-lag warm-up을 견디고
   rolling-origin holdout을 남길 만큼 충분히 깊은 실제 trip backfill에 대해 full B0–B4 ablation을 실행함;
   tiny sample fixture는 그 history가 없으므로, `ml/forecasting/run.py`는 이제 crash하거나 measured
-  `reports/phase06_results.json`을 clobber하는 대신 별도 파일에 정직한
+  `reports/phase06_results.json`을 clobber하는 대신 별도 파일에
   **`blocked_data`** marker(fabricated metric 없음, exact real-run command print됨)를 씀.
 - **Relational store (opt-in `[rdb]`)** — `services/db/`(SQLAlchemy Core)가 station
   network + inventory snapshot + load-audit trail을 **기본적으로 SQLite**(`make db-load`,
@@ -614,7 +614,7 @@ B0–B4 ablation, 그리고 §11.4 metric — 실제 June-2026 데이터로 실�
   `load_real_panel(source, news_source=…)` / `python -m ml.forecasting.run <trip> --news <news.jsonl>`이
   real as-of graph feature를 ablation column에 join하며, leakage-safe함(H에 first available한 event는
   H 이전의 모든 row에 0을 기여 — `tests/unit/test_dataset_event_join.py`에 pin됨).
-  `--news`가 없으면 column은 identically 0으로 유지됨(honest zero-overlap baseline). positive
+  `--news`가 없으면 column은 identically 0으로 유지됨(zero-overlap baseline). positive
   LLM-feature lift를 *measure*하려면 여전히 availability가 trip window와 overlap하고 V2-01 coverage gate를
   통과하는 news backfill이 필요함; 그 데이터는 이 offline sandbox에 없지만, code
   path는 공급되는 순간 real B2–B4 feature를 생성함.
@@ -634,6 +634,6 @@ B0–B4 ablation, 그리고 §11.4 metric — 실제 June-2026 데이터로 실�
 - documentation을 implementation에 sync함(`docs/PRD.md`, `ARCHITECTURE.md`, `DATA_CONTRACTS.md`,
   `GRAPH_SCHEMA.md`, `OPTIMIZATION.md`, `DEMO_SCRIPT.md`, `EVALUATION_PROTOCOL.md`,
   `KNOWN_LIMITATIONS.md`, `STATUS.md`, `README.md`).
-- final honesty audit를 실행함(fabricated metric 없음, feature attribution으로부터의 causal claim 없음,
+- final audit를 실행함(fabricated metric 없음, feature attribution으로부터의 causal claim 없음,
   quantum-advantage claim 없음, fixture vs live vs measured가 명확히 구분됨) with full gate
   green, §18과 §23에 따라.

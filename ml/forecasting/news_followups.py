@@ -4,13 +4,13 @@
 수요 예측(demand forecast)을 개선하지 못한다(net −$17,789, borough-hour backtest).
 
 이 runner는 새 데이터를 만들지 않고 이미 committed된 measured artifact를 읽어, 다음 3개 질문에
-대한 정직한 판정을 하나의 artifact로 모은다(`reports/v2/llm_value/news_followups.json`):
+대한 판정을 하나의 artifact로 모은다(`reports/v2/llm_value/news_followups.json`):
 
   1) 뉴스 중 forward-looking(선행) 기사만 골라내면 예측 효과가 있나?
   2) 예측에 도움이 될 다른 비정형(unstructured) source가 있나?
   3) 뉴스가 '예측'이 아닌 다른 quantity에서는 개선을 주나?
 
-핵심 규율: 측정 가능한 것은 measured로, 데이터가 없어 못 돌리는 것은 blocked_data로 정직하게 표기.
+핵심 규율: 측정 가능한 것은 measured로, 데이터가 없어 못 돌리는 것은 blocked_data로 표기.
 """
 
 # 이 모듈은 한국어 prose report 문자열이 많아 E501(line-length)만 파일 단위로 완화한다(스타일 한정).
@@ -204,7 +204,7 @@ def q3_alternate_quantity(horizon: dict, corr: dict, ragas: dict) -> dict:
             "실데이터 창 필요(data/raw/nyc 미복원 → 현재 blocked).",
         },
         "finding": (
-            "news의 정직한 자리 = '예측 feature'가 아니라 '설명/attribution'. 예측에서는 measured "
+            "news의 적합한 자리 = '예측 feature'가 아니라 '설명/attribution'. 예측에서는 measured "
             "negative, 설명에서는 measured positive(Copilot). 예측 개선을 원하면 §(2)의 forward-"
             "looking structured source가 답."
         ),

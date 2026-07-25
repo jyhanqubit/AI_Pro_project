@@ -451,7 +451,7 @@ def allocate_extra_bikes(engine: ReplayEngine, cutoff: datetime, extra: int) -> 
             "운영자가 입력한 추가 자전거를 as-of 목표 재고에 맞춰 최적 분배한 결과입니다. 비용은 "
             "비대칭 운영 목적(부족 3 : 과잉 1, config/rebalancing.py)이며, 목적이 분리·볼록이라 "
             "greedy 한계이익 배분이 전역 최적입니다(테스트에서 완전탐색과 일치 검증). 목표를 이미 "
-            "충족한 뒤의 자전거는 과잉만 늘리므로 배치하지 않고 창고 보유로 정직하게 보고합니다. "
+            "충족한 뒤의 자전거는 과잉만 늘리므로 배치하지 않고 창고 보유로 보고합니다. "
             "목표는 라벨이 붙은 데모 heuristic(demo-heuristic-v1) 예보 델타로 상향되며, 측정된 "
             "Phase 06 모델이 아닙니다."
         ),

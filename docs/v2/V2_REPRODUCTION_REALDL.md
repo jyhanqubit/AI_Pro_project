@@ -26,7 +26,7 @@
 2. **news-null 결론은 provider에 robust.** LLM 키 없이 **mock 추출**만으로도 news arm은 net **−$18,195**
    (negative_lift, LFV MEANINGFUL_NEGATIVE −3.0%) — committed real-Claude 결과(−$17,789)와 방향·크기 모두
    유사. 즉 "뉴스는 예측을 못 돕는다"는 결론은 추출기 품질 문제가 아닙니다.
-3. **구조 lift는 train 데이터 양에 민감(정직한 한계).** train을 3개월(7,780행)로 줄이면 A1−A0가
+3. **구조 lift는 train 데이터 양에 민감(한계).** train을 3개월(7,780행)로 줄이면 A1−A0가
    **inconclusive**(CI∋0)로 바뀝니다. +2.69%는 실재하지만 충분한 학습 구간을 필요로 하며, 좁은 window에서는
    유의성이 사라집니다 — CTO 보고 시 "robust한 대박"이 아니라 "조건부 measured lift"로 표현해야 정확합니다.
 

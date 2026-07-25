@@ -7,7 +7,7 @@ expanding multi-holdout**로 대체하여, lift가 운 좋은 하나의 split에
 > (`make v2-holdout`). 첫 measured run: 실제 Citi Bike **Jersey City** 2024년 3월–8월,
 > 210,042 H3 zone×hour 행 / 234 zones, 3개의 월별 rolling 윈도우. 승격된 model
 > `hist_gradient_boosting`; 집계 WAPE **0.4828 ± 0.0030**, MASE **0.7996** (B0 ~0.648을 능가).
-> 전체 결과: `reports/v2/holdout/`. 정직한 범위: JC (NYC 전역이 아님), B1 features만 사용
+> 전체 결과: `reports/v2/holdout/`. 범위: JC (NYC 전역이 아님), B1 features만 사용
 > (events = V2-03), promotion pool은 `ridge` + `hist_gradient_boosting`로 한정 (`--algos all`
 > 로 전체 zoo 사용 가능).
 
@@ -66,4 +66,4 @@ event-window 성능을 분리해 보고한다.
 - 윈도우 ≥3개, 경계 + seed 저장, random split 없음.
 - Leakage tests green.
 - 승격된 model = 비-demo 모드에서 served되는 model (`V2_MISSION.md`의 evidence #1).
-- event-aware features가 baseline 대비 개선되지 않으면, **정직하게 보고하고** 이유를 분석한다.
+- event-aware features가 baseline 대비 개선되지 않으면, **그대로 보고하고** 이유를 분석한다.

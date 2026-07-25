@@ -41,7 +41,7 @@ benchmark 됩니다.
 >
 > flat baseline은 **strawman이 아닙니다**: grounding을 하고(0 halluc) 모든 OOS를 거부합니다(6/6) —
 > 그 부분에서 GraphRAG와 동점입니다. *answerable* 부분(0/15)에서만 지는데, 이는 zone-agnostic이기
-> 때문입니다. **Honest limitation:** 이 task는 graph-structural(gold = graph의 edges)이므로, GraphRAG는
+> 때문입니다. **Limitation:** 이 task는 graph-structural(gold = graph의 edges)이므로, GraphRAG는
 > *구성상(by construction)* 높습니다 — 이것은 공정한 "GraphRAG beats RAG" bakeoff가 아닙니다(borough-tag
 > filter라면 동점이 됨). "Event→Zone edge가 per-zone queries를 애초에 answerable하게 만드는 것"으로
 > 읽으세요. 중립적 test에는 method-independent labels나 text-retrieval task가 필요합니다(artifact의
@@ -58,7 +58,7 @@ benchmark 됩니다.
 > | graph_boosted | 0.750 | 0.776 |
 >
 > **graph − flat = −0.083:** text에서는 graph가 **아무 lift도 주지 않습니다**(degree boost가 방해).
-> 두 benchmark를 합치면 정직한 판정의 경계가 정해집니다 — **graph는 relational/per-zone queries에서
+> 두 benchmark를 합치면 판정의 경계가 정해집니다 — **graph는 relational/per-zone queries에서
 > 이기고, plain text는 text lookup에서 이깁니다; query type에 tool을 맞추세요.** Artifact:
 > `reports/v2/copilot/neutral_retrieval_benchmark.json`.
 >

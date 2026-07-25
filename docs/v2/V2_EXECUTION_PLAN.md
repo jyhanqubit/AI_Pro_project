@@ -35,7 +35,7 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
   Promoted `hist_gradient_boosting`; aggregate **WAPE 0.4828 ± 0.0030, MASE 0.7996** (매 window에서
   B0 seasonal-naive ~0.648을 이김). Leakage guard + window/aggregate tests:
   `pytest tests/unit/test_v2_multiholdout.py` → 5 passed.
-- **Honest scope / carry-forward:** JC slice (NYC 전역 아님); B1 (demand+calendar) feature만
+- **Scope / carry-forward:** JC slice (NYC 전역 아님); B1 (demand+calendar) feature만
   (events B2–B4 = V2-03); promotion pool은 `ridge`+`hist_gradient_boosting`으로 제한됨
   (`--algos all` = full zoo); API serving wiring는 **V2-07**에 도착(loader contract는 지금 준비됨).
 
@@ -54,15 +54,15 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
   net함(부호는 9개 cost setting 모두에서 robust), Oracle 대비 regret **$218,697**. Units는 measured, dollars는
   `simulated`. Tests: `pytest tests/unit/test_v2_ledger.py` → 8 passed (no-double-count, Oracle
   upper-bound/regret≥0, better-forecast-earns-more).
-- **Honest scope / carry-forward:** single-period **stocking** economics만 — **relocation = 0**
+- **Scope / carry-forward:** single-period **stocking** economics만 — **relocation = 0**
   (origin→destination moves = V2-04 MPC); dollars는 assumption이 sourcing될 때까지 `simulated`로 유지.
 
 ## V2-03 — LLM Incremental Value Ablation
-- **Status:** ✅ PASSED (2026-07-20) — honest null (`insufficient_event_overlap`)
+- **Status:** ✅ PASSED (2026-07-20) — null result (`insufficient_event_overlap`)
 - **Goal:** **No-Event**, **Rule-Event**, **LLM-Event** feature set을 분리하고 각각의
   incremental predictive lift와 incremental profit을 측정 — LLM cost 차감 후.
 - **Acceptance:** 세 ablation arm이 동일한 cutoff/split을 공유; lift를 CI와 함께 보고;
-  LLM incremental token/$ cost 포함; LLM이 rule arm 대비 lift를 더하지 않으면 정직하게 보고.
+  LLM incremental token/$ cost 포함; LLM이 rule arm 대비 lift를 더하지 않으면 그대로 보고.
 - **Artifact:** `reports/v2/llm_value/incremental_value.json` + `README.md`.
 - **Command:** `make v2-llm-value`. `V2_LLM_VALUE_ABLATION.md` 참조.
 - **Delivered:** `ml/forecasting/llm_value.py` (3-arm A0=B1/A1=B2/A2=B4, shared promoted model +
@@ -82,7 +82,7 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
   (`data/fixtures/news_live/claude_events_2026h1.jsonl`; `--claude-events` path). 재실행(test May,
   336 clean news rows): A1−A0 **measured_improvement** (0.0908→0.0883, CI [1.08,6.71]); A2−A1
   **여전히 negative_lift** (0.0883→0.0905, CI [−5.32,−1.56], net LLM value −$17,789).
-- **Honest V2 answer (this data):** **structured permitted-event feed은 돈의 가치가 있음**;
+- **V2 answer (this data):** **structured permitted-event feed은 돈의 가치가 있음**;
   **news로부터의 LLM layer는 real high-quality LLM extraction으로도 net-negative** — news
   event는 sparse하고, temporally coarse하며, dense한 official permitted schedule과 redundant하여
   signal이 아니라 variance를 더함. 이 negative는 extraction-quality artifact가 아님. Caveat:
@@ -162,7 +162,7 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
   - **Rider trip planner** — `docs/screenshots/v2_rider_trip.png`: "A에서 B까지" → walk → rent → bike
     → return → walk. `services/api/trip_planner.py` (`POST /v2/rider/plan-trip`)가 가장 가까운
     rentable/returnable station을 선택하고 straight-line distance/time으로 leg를 배치함 — **모든
-    숫자는 deterministic하며, 절대 LLM에서 오지 않음**. LLM의 정직한 역할 (V2-06에 따라): NL
+    숫자는 deterministic하며, 절대 LLM에서 오지 않음**. LLM의 역할 (V2-06에 따라): NL
     request를 origin/destination으로 파싱 + narrate; 여기서는 rule-based (`answer_mode`), key가 configured되면 LLM parser가
     `resolve_endpoints`에 slot-in됨. Live 검증됨: "시청에서 뉴포트" → rent City Hall
     (6) → 🚲 5min/1173m → return Newport (10). 7 tests (`test_v2_trip_planner.py`).
@@ -183,7 +183,7 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
 - **Command:** `make web` (+ `make api`)가 V2 artifact를 구동.
 
 ## V2-08 — Persistence, Monitoring & Delayed Labels
-- **Status:** ✅ PASSED (drift = `blocked_data`, no live labels — 정직하게 명시됨)
+- **Status:** ✅ PASSED (drift = `blocked_data`, no live labels — 명시됨)
 - **Goal:** run/artifact를 persist; served model을 monitor; delayed live label을 연결하여
   `pending_live_label` → `measured` loop를 닫음.
 - **Acceptance:** run manifest와 함께 artifact persist됨 ✅; monitoring이 freshness를 표면화함 ✅ (drift는
@@ -197,7 +197,7 @@ docs가 실제 동작을 반영하고, 출력이 real일 때까지 진행하지 
 
 ## V2-09 — Final Audit & Portfolio Packaging
 - **Status:** PLANNED
-- **Goal:** final honest audit; claim matrix 생성; V2 story 패키징.
+- **Goal:** final audit; claim matrix 생성; V2 story 패키징.
 - **Acceptance:** 모든 completion-rule artifact가 존재하며 real임; `V2_CLAIMS_MATRIX.md`가
   artifact로부터 채워짐; `V2_KNOWN_LIMITATIONS.md`가 최신; README/demo가 implementation과 일치.
 - **Artifact:** `reports/v2/final/claim_matrix.json` + `reports/v2/final/run_manifest.json`.

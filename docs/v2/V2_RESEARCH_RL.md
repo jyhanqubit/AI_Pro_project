@@ -62,11 +62,11 @@ training은 **held-out demand seed**(`100..115`)를 쓰고, eval 시나리오(`s
 암기된 값이 아닙니다. training은 simulated episode 위의 닫힌 **offline** loop입니다 — live user에 대한 online
 학습도, bandit도 없습니다(둘 다 금지).
 
-## 정직한 기대치
+## 기대치
 
 여기서 MPC는 이미 near-optimal(regret ≈ 21.6 vs Oracle)이고, Oracle까지 남은 gap은 **대부분 줄일 수 없는
 forecast noise**입니다 (`realized = forecast + noise`; noise는 학습 불가이고, Oracle은 learner가 못 보는
-realized demand를 봄). 그래서 정직한 상한은 **"MPC에 근접"이지 "MPC를 이김"이 아닙니다**. runner는 verdict를
+realized demand를 봄). 그래서 상한은 **"MPC에 근접"이지 "MPC를 이김"이 아닙니다**. runner는 verdict를
 수치에서 계산합니다 (`RL_APPROACHES_MPC` / `RL_UNDERPERFORMS_MPC` / `RL_MATCHES_OR_EXCEEDS_MPC_ON_THIS_SCENARIO`) —
 단정하지 않고, 시나리오 하나에서 **일반적인 RL advantage를 주장하지 않습니다**.
 

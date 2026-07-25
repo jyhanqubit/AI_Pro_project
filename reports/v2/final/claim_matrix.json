@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-09_20260725T021738Z",
+  "run_id": "run_v2-09_20260725T102019Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-25T02:17:38.357443+00:00",
+  "freshness": "2026-07-25T10:20:19.855201+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
@@ -225,11 +225,11 @@
     },
     {
       "artifact": "reports/v2/llm_value/news_followups.json",
-      "run_id": "run_v2-03_newsfollowups_20260724T050331Z",
+      "run_id": "run_v2-03_newsfollowups_20260725T101738Z",
       "artifact_id": "reports/v2/llm_value/news_followups.json",
       "mode": "historical_replay",
       "claim_status": "measured",
-      "freshness": "2026-07-24T05:03:31.720564+00:00",
+      "freshness": "2026-07-25T10:17:38.945562+00:00",
       "headline": {}
     },
     {

@@ -54,7 +54,7 @@ make rebalance-demo
 
 greedy / MILP / exact-enumeration 일치와 QUBO 검증을 출력하므로, "Act" 단계를 UI 없이 재현할 수 있습니다.
 
-## 이 데모에서 정직한 점
+## 이 데모에서 명시하는 점
 
 - **Fixture이지 live 아님.** 뉴스와 station 재고는 curated fixture이고, live collector는 opt-in이며 기본
   off입니다. fixture 데이터를 live로 보여주지 않습니다.
