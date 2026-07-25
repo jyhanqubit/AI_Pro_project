@@ -127,7 +127,18 @@ def run(data_dir: Path, chunk: int = 300_000) -> dict:
                             s[4] += int(k_ok.size)
 
     # ---- (1) H3 zone x hour net-flow: 역 흐름을 h3로 집계 ----
-    st_h3 = {sid: zone_for(la, lo, H3_RESOLUTION) for sid, (la, lo) in st_ll.items()}
+    def _safe_zone(la: float, lo: float) -> str | None:
+        # 좌표가 유한하고 유효 범위일 때만 H3 매핑(불량 좌표: NaN·0,0·범위밖 스킵)
+        if not (np.isfinite(la) and np.isfinite(lo) and -90 <= la <= 90 and -180 <= lo <= 180):
+            return None
+        if la == 0.0 and lo == 0.0:
+            return None
+        try:
+            return zone_for(la, lo, H3_RESOLUTION)
+        except Exception:  # noqa: BLE001 — 불량 좌표는 스킵(집계에서 제외)
+            return None
+
+    st_h3 = {sid: z for sid, (la, lo) in st_ll.items() if (z := _safe_zone(la, lo))}
     zdep: dict[tuple, int] = {}
     zarr: dict[tuple, int] = {}
     for (sid, h), c in dep_h.items():
