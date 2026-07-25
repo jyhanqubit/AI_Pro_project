@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-ledger v2-llm-value v2-llm-value-borough v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final v2-news-followups v2-kpi v2-eda
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-ledger v2-llm-value v2-llm-value-borough v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final v2-news-followups v2-kpi v2-eda v2-eda-spatial
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -145,6 +145,9 @@ v2-kpi:  ## V2: 운영 KPI(사용율 등) — trip history에서 measured만 계
 
 v2-eda:  ## V2: NYC trip 실데이터 1-pass EDA(시간/공간/trip/이용자) — measured (needs data/raw/nyc)
 	python -m ml.monitoring.eda_nyc
+
+v2-eda-spatial:  ## V2: EDA backlog 1·2·3·6 — H3 시간대별 순흐름/OD corridor/세그먼트/요일×시간 (measured)
+	python -m ml.monitoring.eda_spatial
 
 v2-mpc:  ## V2-04: multi-period policy comparison No-Action/Greedy/MILP/MPC + Oracle (offline, simulated)
 	python -m optimization.mpc_run
