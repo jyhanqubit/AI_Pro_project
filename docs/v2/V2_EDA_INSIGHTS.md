@@ -58,17 +58,63 @@ borough lift가 train 3개월에서 inconclusive였다가 4개월에서 유의�
 
 ---
 
+## 6. 공간·OD·세그먼트 심화 (backlog 1·2·3·6, measured)
+
+`make v2-eda-spatial` → `reports/v2/monitoring/eda_spatial.json`. H3는 역(station) 단위로만 매핑(1,550
+H3 zone, res 9).
+
+### H3 zone × 시간대 순흐름 (backlog 1) — 재배치의 직접 신호
+
+`net_in = 유입(arrivals) − 유출(departures)`. 가장 큰 신호(절댓값순):
+
+| H3 zone | 시각 | net_in | flow |
+|---|---|---|---|
+| `892a100d2…` | **08시** | **+7,040** (순유입) | 14,622 |
+| `892a100d6…` | 17시 | −6,382 (순유출) | 10,074 |
+| `892a100d2…` | 17–18시 | −5,097 / −5,391 | ~15k |
+
+**핵심 인사이트 — commute reversal:** 같은 zone(`892a100d2`)이 **아침 8시엔 순유입(+7,040)**, **저녁 17–18시엔
+순유출(−5,097/−5,391)**. 즉 업무지구 zone이 아침에 자전거로 차고 저녁에 빈다. → **아침에 쌓인 zone에서 저녁
+피크 전에 자전거를 빼 주거지역으로 보내는 시간대별 재배치 경로**가 데이터로 직접 나온다. (period 지표로는 절대
+안 보이는 신호)
+
+### OD corridor (backlog 2)
+
+- 최다 왕복 hotspot: `6912.01`↔동일 station **4,232건** (공원·레저형 왕복).
+- top 순불균형 corridor(편도 쏠림): `6072.06→6072.11` net **+1,283**, `6753.08→6822.09` +859 등 — 특정 축으로
+  한 방향 쏠림 = **재배치 트럭 우선 경로**.
+
+### 세그먼트: member/casual × e-bike/classic (backlog 3)
+
+| 세그먼트 | share | 평균 소요 | 평균 거리 |
+|---|---|---|---|
+| member · e-bike | **60.8%** | 11.0분 | 2.09km |
+| member · classic | 24.4% | 11.0분 | 1.52km |
+| casual · e-bike | 11.4% | **17.0분** | 2.23km |
+| casual · classic | 3.4% | **20.5분** | 1.94km |
+
+**인사이트:** casual은 소요시간이 member의 **1.5–2배**(17–20분, 레저성), member는 11분(commute). e-bike가
+거리 약간 김. → 시간제 요금·casual 타깃 프로모의 근거.
+
+### 요일 × 시간 (backlog 6)
+
+- **평일 peak 17시(퇴근) vs 주말 peak 15시(오후 레저)** — commute↔leisure 전환이 요일별 첨두 이동으로 확인.
+- 요일 share: 금요일 최다(16.1%), 일요일 최소(11.5%).
+
+---
+
 ## 추가로 할 EDA (backlog)
 
-| # | 항목 | 왜 | 필요 데이터 |
+| # | 항목 | 왜 | 상태 |
 |---|---|---|---|
-| 1 | **H3 zone 단위 시간대별 순흐름 지도** | 재배치 경로/우선순위 도출 | 있음(lat/lng) |
-| 2 | **OD(origin→destination) corridor top-N** | 주요 이동 축·불균형 축 파악 | 있음 |
-| 3 | **duration/distance × (member/casual, e-bike/classic) 교차** | 세그먼트별 이용 행태 | 있음 |
-| 4 | **station capacity 대비 dock 회전율** | 병목 dock 식별(재고율 measured로 승격 시) | GBFS capacity/live |
-| 5 | **event/날씨 window와 수요 이상치 정렬** | 이상 탐지·설명(news followup과 연결) | 이벤트/날씨 join |
-| 6 | **요일×시간 heatmap, 첨두 집중도 계절 변화** | 재배치 스케줄 최적화 | 있음 |
+| 1 | **H3 zone 단위 시간대별 순흐름** | 재배치 경로/우선순위 도출 | ✅ 완료 (§6) |
+| 2 | **OD corridor top-N + 순불균형** | 주요 이동 축·불균형 축 | ✅ 완료 (§6) |
+| 3 | **member/casual × e-bike/classic 교차** | 세그먼트별 이용 행태 | ✅ 완료 (§6) |
+| 6 | **요일×시간 heatmap** | 재배치 스케줄 근거 | ✅ 완료 (§6) |
+| 4 | **station capacity 대비 dock 회전율** | 병목 dock 식별 | ⏳ GBFS capacity/live 필요 |
+| 5 | **event/날씨 window와 수요 이상치 정렬** | 이상 탐지·설명(news followup 연결) | ⏳ 이벤트/날씨 join 필요 |
+| 7 | **첨두 집중도의 계절 변화(월별)** | 재배치 스케줄 계절 조정 | ⏳ 다음 단계(현 데이터로 가능) |
 
-1–3·6은 현재 데이터로 measured 가능(다음 단계). 4·5는 GBFS live/이벤트 join 필요.
+§6에서 1·2·3·6을 measured로 완료. 4·5는 외부 데이터(GBFS live / event·weather join) 필요.
 
-_모든 수치는 `reports/v2/monitoring/eda_nyc.json`가 재현(measured)._
+_수치 재현: `reports/v2/monitoring/eda_nyc.json`(§1–5) · `reports/v2/monitoring/eda_spatial.json`(§6). 전부 measured._

@@ -1,19 +1,19 @@
 {
-  "run_id": "run_v2-09_20260724T084953Z",
+  "run_id": "run_v2-09_20260725T021738Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-24T08:49:53.895252+00:00",
+  "freshness": "2026-07-25T02:17:38.357443+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 36,
+  "n_artifacts": 37,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 1,
-    "measured": 21,
+    "measured": 22,
     "offline_benchmark": 7,
     "research": 1,
     "simulated": 5
@@ -338,6 +338,15 @@
       "mode": "historical_replay",
       "claim_status": "measured",
       "freshness": "2026-07-24T08:45:21.287477+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/monitoring/eda_spatial.json",
+      "run_id": "run_v2_edaspatial_20260725T021343Z",
+      "artifact_id": "reports/v2/monitoring/eda_spatial.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-25T02:13:43.779319+00:00",
       "headline": {}
     },
     {
