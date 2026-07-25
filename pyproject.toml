@@ -53,6 +53,11 @@ ragas = [
     "ragas>=0.4",
     "rapidfuzz>=3.0",  # string-distance backend ragas uses for NonLLM context precision/recall
 ]
+ortools = [
+    # Optional alternative rebalancing MILP backend (optimization/classical/ortools_solver.py).
+    # Default solver is scipy.optimize.milp (HiGHS); OR-Tools (CBC) is validated to match it.
+    "ortools>=9.8",
+]
 
 [tool.setuptools]
 # Explicit package list; keeps the scaffold importable under pip -e install.

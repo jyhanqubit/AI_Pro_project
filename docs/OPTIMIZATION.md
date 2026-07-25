@@ -69,10 +69,16 @@ A plan is only surfaced through the API/UI after this passes.
 3. **Enumeration oracle** (`enumeration.py`) — brute-forces the optimum over small instances
    (restricted, objective-preservingly, to surplus→deficit edges) and is the independent
    correctness check for the MILP and QUBO. Guarded by a search-space cap.
+4. **OR-Tools backend** (`ortools_solver.py`, optional `pip install -e ".[ortools]"`) — the same
+   MILP formulation solved with Google OR-Tools (`pywraplp`, CBC) instead of SciPy/HiGHS. This is
+   an *alternative engine*, not the default: the product path stays on `scipy.optimize.milp`.
+   `tests/unit/test_v2_ortools_solver.py` validates **OR-Tools cost == MILP cost == enumeration
+   cost** across instances (all reach the same optimum) and that its plans are feasible. If
+   `ortools` is absent the test skips (no fake result).
 
 Validated relationships (`tests/unit/test_rebalancing.py`): greedy is always feasible and ≤
 do-nothing; **MILP cost == enumeration cost** (optimal) and ≤ greedy; a binding vehicle capacity
-is respected.
+is respected. The OR-Tools backend matches all three (`test_v2_ortools_solver.py`).
 
 ## Quantum Research Mode (§14.2) — research only
 
