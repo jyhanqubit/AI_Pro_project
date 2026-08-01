@@ -75,14 +75,19 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 > 답변은 예시이며 실제 LLM 출력으로 교체해 다시 채점할 수 있습니다. 자세한 구분은
 > [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md)와 [docs/STATUS.md](docs/STATUS.md)에 있습니다.
 
+최신 릴리스의 측정 결과(promoted model, LLM feature 순가치, ledger·MPC·pricing·Copilot)는 아래
+**"V2 — LLM 순가치 검증"** 섹션에 정리돼 있습니다.
+
 ---
 
 ## 운영 모드
 
 모든 레코드와 응답, 화면은 자신의 모드를 명시합니다. `demo_fixture`, `historical_replay`,
-`live`, `research` 중 하나입니다. **Demo Mode는 외부 API 키 없이 완전히 오프라인으로 돌아갑니다.**
+`live`, `research` 중 하나이며, **Demo Mode는 외부 API 키 없이 완전히 오프라인으로 돌아갑니다.**
+실행 전에 `.env.example`을 `.env`로 복사하세요. 기본값은 오프라인에서 그대로 동작합니다.
 
-## 시작하기
+<details>
+<summary><b>전체 make 명령 보기</b></summary>
 
 ```bash
 make install       # .venv 생성 + 패키지(editable)와 dev 도구 설치
@@ -99,10 +104,10 @@ make api                  # 오프라인 replay API (127.0.0.1:8000, Demo Mode, 
 make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install 필요)
 ```
 
-> 윈도우에서 `make`를 쓸 수 없다면 위 명령에 대응하는 명령을 직접 실행하세요. 예를 들면
-> `python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"` 처럼요.
+윈도우에서 `make`를 쓸 수 없다면 대응 명령을 직접 실행하세요
+(예: `python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"`).
 
-실행 전에 `.env.example`을 `.env`로 복사하세요. 기본값은 안전하고 오프라인에서도 문제없이 동작합니다.
+</details>
 
 ## 저장소 구조
 
@@ -123,7 +128,13 @@ make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install �
 | `docs/` | PRD, 아키텍처, contract, 평가, 상태 |
 | `tests/` | `unit/`, `integration/`, `e2e/` |
 
-## 예측 결과 및 해석 (Phase 06)
+## 상세 기록
+
+아래 네 섹션은 단계별 측정·설계 기록입니다. 펼쳐서 보세요.
+
+<details>
+<summary><b>예측 모델링 상세 (Phase 06 — 지표 설계 · leaderboard · feature 해석)</b></summary>
+
 
 실데이터(Citi Bike JC, 2026년 6월)로 돌린 결과입니다. 목표는 `departures`(H3 Zone x 로컬 시간,
 1시간 앞 forecast). 평가는 rolling-origin — 최근 72시간을 손대지 않은 out-of-sample test로 빼고,
@@ -243,7 +254,11 @@ B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 **�
 event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_features.py`, 14:01→14:00
 회귀 포함)로 별도 검증됩니다. 한계는 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
-## 재배치 & 양자 리서치 모드 (Phase 08)
+</details>
+
+<details>
+<summary><b>재배치 & 양자 리서치 모드 (Phase 08 — MILP · QUBO 검증)</b></summary>
+
 
 예측을 실제 운영 조치로 잇는 **Act** 단계입니다(§13, §14). 각 station은 현재 재고·용량·목표(target)
 재고를 갖고, 목표를 맞추도록 이동 예산(`vehicle_capacity`) 안에서 자전거를 정수 단위로 옮깁니다.
@@ -267,7 +282,11 @@ event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_featu
 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)에 있습니다. 한계는
 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
-## V1 (모델·추천·실험·이상탐지·라이브)
+</details>
+
+<details>
+<summary><b>V1 (모델 · 추천 · 실험 · 이상탐지 · 라이브)</b></summary>
+
 
 v0 위에 backward-compatible 증분으로 V1을 구현했습니다 — 측정된 모델 스토리(B0–B4),
 어텐션 듀얼인코더 추천 + reranker + 정책, 동적 인센티브·정책 시뮬레이션, 클러스터드 스위치백 실험,
@@ -287,7 +306,11 @@ make v1-news-vectorstore      # FAISS 의미 검색 + 같은 사건 클러스터
 [docs/V1_DEMO_SCRIPT.md](docs/V1_DEMO_SCRIPT.md),
 [docs/V1_EXECUTION_LOG.md](docs/V1_EXECUTION_LOG.md), `reports/v1/V1_FINAL_AUDIT.md` 참고.
 
-## V2 사용성 업데이트 (UI·검색·운영 통계)
+</details>
+
+<details>
+<summary><b>V2 사용성 업데이트 (UI · 검색 · 운영 통계)</b></summary>
+
 
 V1 위에 backward-compatible 증분으로 사용성에 초점을 맞춘 업데이트를 더했습니다. 새 모델·가격·실험
 주장은 없으며, 모든 값은 오프라인에서 계산되고 수요 변화(Δ)는 라벨이 붙은 데모
@@ -325,6 +348,8 @@ make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig g
 
 자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화·
 Elasticsearch·LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
+
+</details>
 
 ## V2 — LLM 순가치 검증 (V2-00 … V2-09)
 
