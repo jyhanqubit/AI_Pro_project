@@ -1,0 +1,12 @@
+{
+  "provider": "local-hybrid",
+  "n_queries": 15,
+  "recall_at_10": 0.7333,
+  "mrr_at_10": 0.7333,
+  "ndcg_at_5": 0.7333,
+  "geo_valid_at_5": 1.0,
+  "n_geo_queries": 1,
+  "latency_p50_ms": 0.179,
+  "latency_p95_ms": 0.407,
+  "note": "오프라인 LocalHybridProvider(BM25 + char-n-gram 벡터 + geo, RRF 융합)에 대한 실제 측정값입니다. 인터넷/ES 없이 gold query set에서 계산되었습니다."
+}
