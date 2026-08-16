@@ -1,5 +1,9 @@
 {
-  "mode": "policy_simulation",
+  "run_id": "run_v2rev_20260816T044514Z",
+  "artifact_id": "reports/v2/pricing/revenue_sim.json",
+  "mode": "historical_replay",
+  "claim_status": "simulated",
+  "freshness": "2026-08-16T04:45:14.920192+00:00",
   "is_simulated": true,
   "disclaimer": "SIMULATED SHADOW QUOTE — NOT A LIVE PRICE (not applied to any rider)",
   "config_version": "pricing-v2",
@@ -1257,5 +1261,6 @@
       "max_tier_multiplier": 1.25,
       "fulfilled_delta": 0
     }
-  ]
+  ],
+  "source_mode_label": "policy_simulation"
 }

@@ -68,6 +68,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 이벤트 그래프 **5,770 노드 · 11,850 엣지** | `make seed-graph` | `data/processed/graph/event_graph.json` |
 | 이벤트 피처 리프트 **WAPE −1.65%** (95% CI [0.36, 5.11]) | 결과 확인: `reports/borough_event_lift.json` · 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
 | 방향별 리프트 (수요 급락 **95.2%** 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요) · 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
+| 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.481) | 라이브/로컬: `GET /v2/model/forecast` · 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
 | 전체 테스트 | `make test` | 483 passed / 2 skipped (torch 없는 환경 기준). `torch`가 필요한 v1 recsys retriever/reranker 테스트만 제외되며, torch 설치 시 함께 실행됩니다 |
 
 > **Note.** 화면의 `7/12` 수치는 라벨을 붙인 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
@@ -377,6 +378,7 @@ claim_status / freshness`를 담은 `ResultEnvelope`로 라벨됩니다. 완성 
 ```bash
 make v2-audit             # V2-00: domain-drift + result-envelope 계약 gate (오프라인)
 make v2-holdout           # V2-01: promoted model + H3 multi-holdout (원본 트립 필요)
+make v2-serving-export    # V2-07: promoted 모델의 next-hour serving feature 스냅숏
 make v2-ledger            # V2-02: profit/regret ledger
 make v2-llm-value-borough # V2-03: No-Event / Rule-Event / LLM-Event ablation + CI + LLM 비용
 make v2-mpc               # V2-04: multi-period 정책 비교 (No-Action/Greedy/MILP/MPC/Oracle)

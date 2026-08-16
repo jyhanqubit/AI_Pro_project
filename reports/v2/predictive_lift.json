@@ -1,4 +1,9 @@
 {
+  "run_id": "run_v2lift_20260816T044514Z",
+  "artifact_id": "reports/v2/predictive_lift.json",
+  "mode": "demo_fixture",
+  "claim_status": "demo_fixture",
+  "freshness": "2026-08-16T04:45:14.919372+00:00",
   "protocol": "predictive-lift-v2",
   "coverage": {
     "unique_events": 2,

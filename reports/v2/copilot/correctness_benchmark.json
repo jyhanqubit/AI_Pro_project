@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06_20260722T082522Z",
+  "run_id": "run_v2-06_20260816T052253Z",
   "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
   "mode": "research",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-07-22T08:25:22.436904+00:00",
+  "freshness": "2026-08-16T05:22:53.245607+00:00",
   "question_set": "data/fixtures/v2/copilot_questions.jsonl",
   "n_questions": 20,
   "primary_router": "claude-opus-4-8-insession",
@@ -47,7 +47,7 @@
         "claude": {
           "tool": "forecast_wape",
           "answered": true,
-          "value": 0.4828
+          "value": 0.4812
         }
       },
       {
@@ -57,7 +57,7 @@
         "keyword": {
           "tool": "forecast_wape",
           "answered": true,
-          "value": 0.4828
+          "value": 0.4812
         },
         "claude": {
           "tool": null,
@@ -117,7 +117,7 @@
       "id": "q01",
       "answered": true,
       "tool": "forecast_wape",
-      "value": 0.4828,
+      "value": 0.4812,
       "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
       "expected_tool": "forecast_wape",
       "correct": true
@@ -126,7 +126,7 @@
       "id": "q02",
       "answered": true,
       "tool": "forecast_wape",
-      "value": 0.4828,
+      "value": 0.4812,
       "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
       "expected_tool": "forecast_wape",
       "correct": true
@@ -252,7 +252,7 @@
       "id": "a01",
       "answered": true,
       "tool": "forecast_wape",
-      "value": 0.4828,
+      "value": 0.4812,
       "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
       "expected_tool": "forecast_wape",
       "correct": true

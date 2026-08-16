@@ -472,6 +472,23 @@ def create_app() -> FastAPI:
 
         return ops_copilot_answer(engine, body.query, engine.cutoff)
 
+    @app.get("/v2/model/forecast", responses={503: {"model": ErrorResponse}})
+    def model_forecast_endpoint(top: int = 20) -> dict:
+        """V2-07: 승격된 측정 모델의 실시간 next-hour 예측 (H3 zone별, provenance 포함).
+
+        데모 휴리스틱이 아니라 promoted_model.joblib이 요청 시점에 직접 예측합니다. 모델이나
+        serving feature가 없으면 503으로 정직하게 응답합니다(대체값 없음).
+        """
+        from .model_serving import ServingUnavailable, model_forecast
+
+        try:
+            return model_forecast(top=top)
+        except ServingUnavailable as exc:
+            raise HTTPException(
+                status_code=503,
+                detail={"error_code": "promoted_model_unavailable", "message": str(exc)},
+            ) from exc
+
     @app.get("/v2/operator/statistics")
     def operator_statistics_endpoint(engine: EngineDep) -> dict:
         """V2 operator analytics: real aggregate statistics of the as-of replay state."""
