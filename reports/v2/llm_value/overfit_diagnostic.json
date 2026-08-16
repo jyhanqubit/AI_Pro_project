@@ -1,0 +1,33 @@
+{
+  "run_id": "run_v2-03overfit_20260721T140126Z",
+  "artifact_id": "reports/v2/llm_value/overfit_diagnostic.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T14:01:26.334921+00:00",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train": 10655,
+  "n_test": 2975,
+  "arms": {
+    "A0_demand_calendar": {
+      "n_features": 32,
+      "train_wape": 0.0631,
+      "test_wape": 0.0908,
+      "generalization_gap": 0.0277
+    },
+    "A1_crude_count": {
+      "n_features": 36,
+      "train_wape": 0.0485,
+      "test_wape": 0.0883,
+      "generalization_gap": 0.0397
+    },
+    "A1_typed_buckets": {
+      "n_features": 40,
+      "train_wape": 0.0533,
+      "test_wape": 0.0899,
+      "generalization_gap": 0.0366
+    }
+  },
+  "reading": "If train_wape falls as features are added (info helps fit) while test_wape for the richer arm rises above the simpler arm, the harm is OVERFITTING/estimation, not a loss of information \u2014 the info is present but not usably estimable from this data.",
+  "observed_conclusion": "NOT classic overfitting (that would be typed train<crude train, test>). Observed: A1_crude beats A0 on BOTH train (0.0485<0.0631) and test (0.0883<0.0908) -> more information genuinely helps. But A1_typed is worse than A1_crude on BOTH train AND test -> the SAME information in a sparser encoding. A capacity-limited greedy boosted tree exploits ONE dense high-signal aggregate count better than 6 sparse per-type buckets (each ~0 in most active cells): splits on sparse columns are low-value and waste the fixed iteration/leaf budget (and can trip early stopping), so even train fit degrades. An infinite-data/-capacity model would tie (typed contains crude as a sum); the loss is finite-sample representation efficiency, not information. Lesson: aggregate count is the better feature ENCODING."
+}

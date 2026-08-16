@@ -1,0 +1,62 @@
+{
+  "run_id": "run_v2-03quality_20260721T115920Z",
+  "artifact_id": "reports/v2/llm_value/quality_ablation.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T11:59:20.782735+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "controls": "density held at FULL (all permit events); one quality axis degraded per mode",
+  "modes": {
+    "full": {
+      "mode": "full",
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0883,
+      "active_bh": 2600,
+      "decision": "MEANINGFUL_POSITIVE",
+      "skill_pct": 2.69,
+      "ci95": [
+        0.980734,
+        7.563584
+      ]
+    },
+    "coarse_time": {
+      "mode": "coarse_time",
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0911,
+      "active_bh": 2903,
+      "decision": "NO_MEANINGFUL_EFFECT",
+      "skill_pct": -0.33,
+      "ci95": [
+        -2.987892,
+        2.112838
+      ]
+    },
+    "citywide": {
+      "mode": "citywide",
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0903,
+      "active_bh": 2975,
+      "decision": "NO_MEANINGFUL_EFFECT",
+      "skill_pct": 0.53,
+      "ci95": [
+        -2.293812,
+        3.674067
+      ]
+    },
+    "retro": {
+      "mode": "retro",
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0898,
+      "active_bh": 2179,
+      "decision": "NO_MEANINGFUL_EFFECT",
+      "skill_pct": 1.01,
+      "ci95": [
+        -0.797125,
+        4.510645
+      ]
+    }
+  },
+  "note": "full is the control (+2.69%). A degradation that collapses the value is a necessary quality axis. coarse_time = news-like time; citywide = news-like location; retro = news-like retrospective availability."
+}

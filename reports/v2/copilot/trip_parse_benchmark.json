@@ -1,0 +1,213 @@
+{
+  "run_id": "run_v2-07tripparse_20260816T052319Z",
+  "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-08-16T05:23:19.551907+00:00",
+  "judge": "claude-opus-4-8-insession",
+  "note": "LLM parses committed to data/fixtures/v2/trip_parse_claude.jsonl (no API key; in-session, auditable). The planner's distances/times/stations remain deterministic; only the NL→(origin,destination) parse is compared here.",
+  "n": 10,
+  "rule_based_accuracy": 0.6,
+  "llm_accuracy": 1.0,
+  "rule_based_correct": 6,
+  "llm_correct": 10,
+  "hard_cases_where_llm_wins": [
+    "t07",
+    "t08",
+    "t09",
+    "t10"
+  ],
+  "per_query": [
+    {
+      "id": "t01",
+      "query": "시청에서 뉴포트 가고 싶어",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "명시적 '에서/가고 싶어'"
+    },
+    {
+      "id": "t02",
+      "query": "City Hall to Newport",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "영어 'X to Y'"
+    },
+    {
+      "id": "t03",
+      "query": "from Newport to City Hall",
+      "gold": [
+        "JC_NEWPORT",
+        "JC_CITYHALL"
+      ],
+      "rule_based": [
+        "JC_NEWPORT",
+        "JC_CITYHALL"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_NEWPORT",
+        "JC_CITYHALL"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "영어 'from X to Y' — 출발 Newport"
+    },
+    {
+      "id": "t04",
+      "query": "그로브에서 호보켄 터미널까지",
+      "gold": [
+        "JC_GROVE",
+        "JC_HOBOKEN"
+      ],
+      "rule_based": [
+        "JC_GROVE",
+        "JC_HOBOKEN"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_GROVE",
+        "JC_HOBOKEN"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "명시적 '에서/까지'"
+    },
+    {
+      "id": "t05",
+      "query": "일단 시청, 목적지는 뉴포트",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "'일단(출발)=시청', '목적지=뉴포트'"
+    },
+    {
+      "id": "t06",
+      "query": "뉴포트로 가는데 지금 시청 근처야",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_ok": true,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "'지금 ~근처야'=현위치(출발), '~로 가는데'=목적지"
+    },
+    {
+      "id": "t07",
+      "query": "뉴포트에 세우고 싶은데 출발은 시청",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_NEWPORT",
+        "JC_CITYHALL"
+      ],
+      "rule_ok": false,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "'세우고 싶은데'=반납(목적지)=뉴포트, '출발은 시청'=출발; 순서가 목적지 먼저라도 역할로 판별"
+    },
+    {
+      "id": "t08",
+      "query": "시청서 뉴포뜨",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        null,
+        "JC_CITYHALL"
+      ],
+      "rule_ok": false,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "오타 '뉴포뜨'→'뉴포트'로 정정, '시청서'='시청에서'"
+    },
+    {
+      "id": "t09",
+      "query": "시쳥에서 뉴포트",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        null,
+        "JC_NEWPORT"
+      ],
+      "rule_ok": false,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "오타 '시쳥'→'시청'으로 정정"
+    },
+    {
+      "id": "t10",
+      "query": "익스체인지 말고 시청에서 뉴포트",
+      "gold": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "rule_based": [
+        "JC_EXCHANGE",
+        "JC_CITYHALL"
+      ],
+      "rule_ok": false,
+      "llm": [
+        "JC_CITYHALL",
+        "JC_NEWPORT"
+      ],
+      "llm_ok": true,
+      "llm_rationale": "'익스체인지 말고'=제외(부정) → 출발은 시청, 목적지 뉴포트"
+    }
+  ],
+  "finding": "Rule-based substring matching handles explicit phrasings but fails on typos, negation, and origin-stated-last; the LLM parses all correctly. This is the seam where an LLM parser (when a key is configured) replaces resolve_endpoints — the measured V2-06 lesson (intent understanding is the LLM's value), applied to trips."
+}

@@ -1,0 +1,58 @@
+{
+  "run_id": "run_v2-03synth_20260721T121857Z",
+  "artifact_id": "reports/v2/llm_value/synthetic_ceiling.json",
+  "mode": "research",
+  "claim_status": "simulated",
+  "freshness": "2026-07-21T12:18:57.386147+00:00",
+  "disclaimer": "SYNTHETIC proof-of-mechanism. Event effects are injected into real demand and fully disclosed; this is NOT a real-news result and makes no measured business claim. It shows the pipeline/post-correction CAN exploit forward-looking precise dense events \u2014 the real-news null is a source problem, not a method problem.",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "synthetic_event_spec": "multiplicative shocks (surge x1.3-1.7 / suppress x0.5-0.8), exact hour+borough, forward-looking; LLM signal = correct sign + coarse magnitude only (not the exact factor); post-corr alpha fit on train.",
+  "dense_source": {
+    "n_event_cells_total": 1372,
+    "test_active_cells": 213,
+    "alpha_postcorrection": 0.0908,
+    "wape": {
+      "base": 0.1106,
+      "plus_feature": 0.1042,
+      "plus_postcorrection": 0.1081
+    },
+    "feature_value_vs_base": {
+      "decision": "MEANINGFUL_POSITIVE",
+      "llm_active_skill_pct": 20.86,
+      "active_error_gain_ci95": [
+        43.815189,
+        207.023126
+      ]
+    },
+    "postcorrection_value_vs_base": {
+      "decision": "MEANINGFUL_POSITIVE",
+      "llm_active_skill_pct": 10.43,
+      "active_error_gain_ci95": [
+        17.583457,
+        108.742069
+      ]
+    }
+  },
+  "sparse_source_newscale": {
+    "n_event_cells_total": 157,
+    "test_active_cells": 41,
+    "alpha_postcorrection": 0.2682,
+    "wape": {
+      "base": 0.0953,
+      "plus_feature": 0.0958,
+      "plus_postcorrection": 0.0956
+    },
+    "feature_value_vs_base": {
+      "decision": "INSUFFICIENT_SUPPORT",
+      "llm_active_skill_pct": null,
+      "active_error_gain_ci95": null
+    },
+    "postcorrection_value_vs_base": {
+      "decision": "INSUFFICIENT_SUPPORT",
+      "llm_active_skill_pct": null,
+      "active_error_gain_ci95": null
+    }
+  },
+  "finding": "With a DENSE forward-looking precise synthetic source, both the event feature and the LLM post-correction improve the forecast on event cells; at news-scale density the same perfect events give a negligible/again-null effect \u2014 confirming density is necessary and that the real-news null is structural, not a pipeline limitation."
+}

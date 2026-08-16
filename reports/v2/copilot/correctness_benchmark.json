@@ -1,0 +1,298 @@
+{
+  "run_id": "run_v2-06_20260816T052253Z",
+  "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
+  "mode": "research",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-08-16T05:22:53.245607+00:00",
+  "question_set": "data/fixtures/v2/copilot_questions.jsonl",
+  "n_questions": 20,
+  "primary_router": "claude-opus-4-8-insession",
+  "routing_accuracy": 1.0,
+  "correctness_accuracy": 1.0,
+  "refusal_accuracy": 1.0,
+  "grounded_ratio": 1.0,
+  "ungrounded_numeric_answers": 0,
+  "hallucinated_answers": 0,
+  "hard_gates_pass": true,
+  "router_comparison": {
+    "keyword": {
+      "routing_accuracy": 0.75,
+      "correctness_accuracy": 0.833,
+      "refusal_accuracy": 0.625,
+      "grounded_ratio": 0.727,
+      "ungrounded_numeric_answers": 0,
+      "hallucinated_answers": 3,
+      "hard_gates_pass": false
+    },
+    "claude": {
+      "routing_accuracy": 1.0,
+      "correctness_accuracy": 1.0,
+      "refusal_accuracy": 1.0,
+      "grounded_ratio": 1.0,
+      "ungrounded_numeric_answers": 0,
+      "hallucinated_answers": 0,
+      "hard_gates_pass": true
+    },
+    "n_disagreements": 5,
+    "disagreements": [
+      {
+        "id": "a01",
+        "question": "How far off are our demand predictions on the held-out data?",
+        "expected_tool": "forecast_wape",
+        "keyword": {
+          "tool": null,
+          "answered": false,
+          "value": null
+        },
+        "claude": {
+          "tool": "forecast_wape",
+          "answered": true,
+          "value": 0.4812
+        }
+      },
+      {
+        "id": "a02",
+        "question": "What WAPE should we expect on next month's live forecast?",
+        "expected_tool": null,
+        "keyword": {
+          "tool": "forecast_wape",
+          "answered": true,
+          "value": 0.4812
+        },
+        "claude": {
+          "tool": null,
+          "answered": false,
+          "value": null
+        }
+      },
+      {
+        "id": "a03",
+        "question": "What's the profit from our marketing emails?",
+        "expected_tool": null,
+        "keyword": {
+          "tool": "profit_lift",
+          "answered": true,
+          "value": 103270.9
+        },
+        "claude": {
+          "tool": null,
+          "answered": false,
+          "value": null
+        }
+      },
+      {
+        "id": "a04",
+        "question": "Between doing nothing and our smart repositioning plan, which wins on cost?",
+        "expected_tool": "best_rebalancing_policy",
+        "keyword": {
+          "tool": null,
+          "answered": false,
+          "value": null
+        },
+        "claude": {
+          "tool": "best_rebalancing_policy",
+          "answered": true,
+          "value": "mpc"
+        }
+      },
+      {
+        "id": "a05",
+        "question": "How much money will we make next quarter?",
+        "expected_tool": null,
+        "keyword": {
+          "tool": "profit_lift",
+          "answered": true,
+          "value": 103270.9
+        },
+        "claude": {
+          "tool": null,
+          "answered": false,
+          "value": null
+        }
+      }
+    ]
+  },
+  "per_question": [
+    {
+      "id": "q01",
+      "answered": true,
+      "tool": "forecast_wape",
+      "value": 0.4812,
+      "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
+      "expected_tool": "forecast_wape",
+      "correct": true
+    },
+    {
+      "id": "q02",
+      "answered": true,
+      "tool": "forecast_wape",
+      "value": 0.4812,
+      "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
+      "expected_tool": "forecast_wape",
+      "correct": true
+    },
+    {
+      "id": "q03",
+      "answered": true,
+      "tool": "promoted_model",
+      "value": "hist_gradient_boosting",
+      "artifact_id": "reports/v2/holdout/promoted_model.json#algorithm",
+      "expected_tool": "promoted_model",
+      "correct": true
+    },
+    {
+      "id": "q04",
+      "answered": true,
+      "tool": "profit_lift",
+      "value": 103270.9,
+      "artifact_id": "reports/v2/ledger/profit_regret.json#predictive_lift_to_profit.model_minus_no_action_net",
+      "expected_tool": "profit_lift",
+      "correct": true
+    },
+    {
+      "id": "q05",
+      "answered": true,
+      "tool": "profit_lift",
+      "value": 103270.9,
+      "artifact_id": "reports/v2/ledger/profit_regret.json#predictive_lift_to_profit.model_minus_no_action_net",
+      "expected_tool": "profit_lift",
+      "correct": true
+    },
+    {
+      "id": "q06",
+      "answered": true,
+      "tool": "best_rebalancing_policy",
+      "value": "mpc",
+      "artifact_id": "reports/v2/mpc/policy_comparison.json#ranking_by_total_cost",
+      "expected_tool": "best_rebalancing_policy",
+      "correct": true
+    },
+    {
+      "id": "q07",
+      "answered": true,
+      "tool": "mpc_regret",
+      "value": 21.6,
+      "artifact_id": "reports/v2/mpc/policy_comparison.json#by_policy.mpc.regret_vs_oracle",
+      "expected_tool": "mpc_regret",
+      "correct": true
+    },
+    {
+      "id": "q08",
+      "answered": true,
+      "tool": "llm_news_value",
+      "value": -17789.11,
+      "artifact_id": "reports/v2/llm_value/incremental_value_borough.json#net_llm_value_simulated",
+      "expected_tool": "llm_news_value",
+      "correct": true
+    },
+    {
+      "id": "q09",
+      "answered": true,
+      "tool": "guardrail_violations",
+      "value": 0,
+      "artifact_id": "reports/v2/pricing/guardrail_audit.json#violation_count",
+      "expected_tool": "guardrail_violations",
+      "correct": true
+    },
+    {
+      "id": "q10",
+      "answered": true,
+      "tool": "guardrail_violations",
+      "value": 0,
+      "artifact_id": "reports/v2/pricing/guardrail_audit.json#violation_count",
+      "expected_tool": "guardrail_violations",
+      "correct": true
+    },
+    {
+      "id": "r01",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "r02",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "r03",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "r04",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "r05",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "a01",
+      "answered": true,
+      "tool": "forecast_wape",
+      "value": 0.4812,
+      "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
+      "expected_tool": "forecast_wape",
+      "correct": true
+    },
+    {
+      "id": "a02",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "a03",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    },
+    {
+      "id": "a04",
+      "answered": true,
+      "tool": "best_rebalancing_policy",
+      "value": "mpc",
+      "artifact_id": "reports/v2/mpc/policy_comparison.json#ranking_by_total_cost",
+      "expected_tool": "best_rebalancing_policy",
+      "correct": true
+    },
+    {
+      "id": "a05",
+      "answered": false,
+      "tool": null,
+      "value": null,
+      "artifact_id": null,
+      "expected_tool": null,
+      "correct_refusal": true
+    }
+  ],
+  "note": "Numbers come only from typed tools (grounding by construction), so ungrounded_numeric=0 for BOTH routers. The keyword router is a stand-in for LLM tool-selection; the claude router is real in-session routing by claude-opus-4-8 (no API key in sandbox). Differences appear on paraphrase/decoy questions."
+}

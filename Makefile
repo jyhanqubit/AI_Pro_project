@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike
+.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-ledger v2-llm-value v2-llm-value-borough v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -121,3 +121,46 @@ api-lan:  ## Serve the API on all interfaces for phone/LAN viewing (offline, sam
 
 web-lan:  ## Serve the UI on the LAN. Usage: make web-lan LAN_IP=192.168.0.10
 	cd apps/web && NEXT_PUBLIC_API_BASE=http://$(LAN_IP):8000 npx next dev -H 0.0.0.0
+
+v2-audit:  ## V2-00: domain-drift gate + result-envelope contract check (offline, CI-safe)
+	python -m scripts.v2_audit
+
+v2-holdout:  ## V2-01: promote a measured model + rolling H3 multi-holdout (needs data/raw/citibike)
+	python -m ml.forecasting.h3_multiholdout --data-dir data/raw/citibike --windows 3
+
+v2-serving-export:  ## V2-07: build the next-hour serving feature snapshot for the promoted model
+	python -m ml.forecasting.export_serving --data-dir data/raw/citibike
+
+v2-ledger:  ## V2-02: profit/regret ledger over the V2-01 forecast (needs promoted_model.json)
+	python -m optimization.ledger_run
+
+v2-llm-value:  ## V2-03: No-Event/Rule-Event/LLM-Event ablation + CI + profit + LLM cost (needs data/raw/citibike_2026 + news)
+	python -m ml.forecasting.llm_value
+
+v2-llm-value-borough:  ## V2-03: borough-grain LLM value on NYC trips (structured vs LLM-news, needs data/raw/nyc + news + events)
+	python -m ml.forecasting.llm_value_borough
+
+v2-mpc:  ## V2-04: multi-period policy comparison No-Action/Greedy/MILP/MPC + Oracle (offline, simulated)
+	python -m optimization.mpc_run
+
+v2-pricing:  ## V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run (offline, SIMULATED)
+	python -m ml.pricing.pricing_v2_run
+
+v2-copilot:  ## V2-06: Copilot benchmark — typed-tool numeric grounding + GraphRAG event-graph relevance (offline)
+	python -m ml.copilot.benchmark
+	python -m ml.copilot.graphrag_scale
+	python -m ml.copilot.neutral_retrieval
+	python -m ml.copilot.ragas_retrieval
+	python -m ml.copilot.ragas_generation
+	python -m ml.copilot.trip_parse_benchmark
+	python -m ml.copilot.trip_faithfulness
+
+v2-monitor:  ## V2-08: run manifest + freshness monitoring + delayed-label loop (leakage-safe)
+	python -m ml.monitoring.run_manifest
+	python -m ml.monitoring.delayed_labels
+
+v2-rl:  ## RESEARCH: tabular Q-learning + PPO rebalancing vs No-Action/Greedy/MILP/MPC/Oracle (offline, research-only)
+	python -m optimization.rl.run
+
+v2-final:  ## V2-09: final audit — envelope honesty + completion-artifact + traceability gates -> claim_matrix.json
+	python -m scripts.v2_final_audit

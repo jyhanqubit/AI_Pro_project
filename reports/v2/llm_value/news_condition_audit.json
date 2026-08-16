@@ -1,0 +1,177 @@
+{
+  "run_id": "run_v2-03newsaudit_20260721T120939Z",
+  "artifact_id": "reports/v2/llm_value/news_condition_audit.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T12:09:39.885342+00:00",
+  "lead_min_h": 3.0,
+  "n_events": 23,
+  "forward_looking": 2,
+  "precise_location": 12,
+  "forward_and_precise": 1,
+  "density_note": "only 23 events total (\u2248 news scale); the density curve puts the value threshold well above 100 events",
+  "per_event": [
+    {
+      "d": "2026-01-24",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -12.2,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-01-29",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -2.0,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-01-31",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -2.0,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-02-02",
+      "event_type": "LARGE_VENUE_EVENT",
+      "lead_time_h": -12.0,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-02-09",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -6.4,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-02-21",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": 7.5,
+      "forward_looking": true,
+      "precise_location": false
+    },
+    {
+      "d": "2026-02-23",
+      "event_type": "ROAD_CLOSURE",
+      "lead_time_h": 2.9,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-02-24",
+      "event_type": "ROAD_CLOSURE",
+      "lead_time_h": 2.1,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-03-09",
+      "event_type": "SAFETY_INCIDENT",
+      "lead_time_h": -4.5,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-03-15",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -6.7,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-03-17",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": -4.3,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-04-11",
+      "event_type": "TRANSIT_DISRUPTION",
+      "lead_time_h": -3.3,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-01",
+      "event_type": "PUBLIC_GATHERING",
+      "lead_time_h": -3.3,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-08",
+      "event_type": "LARGE_VENUE_EVENT",
+      "lead_time_h": -19.5,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-12",
+      "event_type": "LARGE_VENUE_EVENT",
+      "lead_time_h": -66.4,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-15",
+      "event_type": "LARGE_VENUE_EVENT",
+      "lead_time_h": 3.0,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-16",
+      "event_type": "TRANSIT_DISRUPTION",
+      "lead_time_h": -7.6,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-05-19",
+      "event_type": "SAFETY_INCIDENT",
+      "lead_time_h": -16.8,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-05-25",
+      "event_type": "WEATHER_SHOCK",
+      "lead_time_h": 0.9,
+      "forward_looking": false,
+      "precise_location": false
+    },
+    {
+      "d": "2026-06-08",
+      "event_type": "SAFETY_INCIDENT",
+      "lead_time_h": -2.2,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-06-14",
+      "event_type": "PUBLIC_GATHERING",
+      "lead_time_h": 9.2,
+      "forward_looking": true,
+      "precise_location": true
+    },
+    {
+      "d": "2026-06-18",
+      "event_type": "PUBLIC_GATHERING",
+      "lead_time_h": -1.6,
+      "forward_looking": false,
+      "precise_location": true
+    },
+    {
+      "d": "2026-06-21",
+      "event_type": "LARGE_VENUE_EVENT",
+      "lead_time_h": -18.3,
+      "forward_looking": false,
+      "precise_location": true
+    }
+  ],
+  "finding": "Only 2/23 news events are forward-looking (published >3.0h before onset) and only 1/23 are BOTH forward-looking AND single-borough. The subset that could satisfy the permit feed's necessary conditions is ~empty \u2014 because news reports events coincident-or-after, at borough granularity. A 4-D feature vector cannot encode information the source does not contain; forward-looking precise events come from schedules/permits/announcements, not retrospective news."
+}

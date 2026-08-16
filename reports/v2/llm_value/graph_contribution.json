@@ -1,0 +1,83 @@
+{
+  "run_id": "run_v2-03graph_20260721T101658Z",
+  "artifact_id": "reports/v2/llm_value/graph_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T10:16:58.284415+00:00",
+  "grain": "borough-hour (nearest-centroid; approximate)",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "feature_config": {
+    "half_life_h": "6.0",
+    "span_h": "12",
+    "decay_scale_km": "10.0"
+  },
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "test_rows_direct_active": 194,
+  "test_rows_graph_active": 222,
+  "attributed_events": 23,
+  "arms": {
+    "A0_demand_calendar": {
+      "wape": 0.0908,
+      "mae": 143.218
+    },
+    "A1_plus_permitted": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A2_direct_improved": {
+      "wape": 0.0883,
+      "mae": 139.221
+    },
+    "A3_plus_graph": {
+      "wape": 0.09,
+      "mae": 141.966
+    }
+  },
+  "improved_llm_feature_value_vs_A1": {
+    "metric": "llm_feature_value",
+    "decision": "NO_MEANINGFUL_EFFECT",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.004,
+    "llm_active_skill_pct": -0.4,
+    "global_skill_score": 0.0001,
+    "significant": false,
+    "active_error_gain_mean": -0.852874,
+    "active_error_gain_ci95": [
+      -4.898832,
+      1.364556
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 194,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "No meaningful accuracy change from the LLM features (effect below threshold or CI covers 0)."
+  },
+  "graph_contribution_value_vs_direct": {
+    "metric": "llm_feature_value",
+    "decision": "NO_MEANINGFUL_EFFECT",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0132,
+    "llm_active_skill_pct": -1.32,
+    "global_skill_score": -0.0197,
+    "significant": false,
+    "active_error_gain_mean": -1.563615,
+    "active_error_gain_ci95": [
+      -3.762509,
+      0.724114
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 222,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "No meaningful accuracy change from the LLM features (effect below threshold or CI covers 0)."
+  },
+  "note": "A2_direct = IMPROVED LLM features (event-time anchored, half-life decay, type-scoped boroughs) \u2014 fixes the old flat-24h-from-publish box. A3_graph adds neighbor spillover via borough-centroid distance decay. graph_contribution_value_vs_direct is the fair graph-vs-no-graph test on REAL demand (label independent of the graph). MEANINGFUL_POSITIVE there = the graph measurably improves demand forecasting."
+}
