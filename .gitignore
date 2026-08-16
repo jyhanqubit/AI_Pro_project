@@ -37,6 +37,7 @@ reports/**
 !reports/borough_event_lift.json
 !reports/weather_lift.json
 !reports/phase06_results.json
+!reports/event_feature_ablation.json
 # V2 report scaffolding + small measured summaries (reviewer-verifiable; large binaries below still ignored)
 !reports/v2/
 !reports/v2/**

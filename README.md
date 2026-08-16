@@ -70,6 +70,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
 | 이벤트 feature lift: WAPE −1.65% (95% CI [0.36, 5.11]) | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
+| 이벤트 피처 유무 ablation (H3 단위): 희소 이벤트(3개월 5건)는 개선 없음 — WAPE 0.5091(없음) vs 0.5105(있음) | 결과와 재실행 명령: `reports/event_feature_ablation.json` | `reports/` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
 | 전체 테스트 | `make test` | 484 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
@@ -326,6 +327,8 @@ feature selection: 상위 12개만 남겨 다시 학습하면 test WAPE 0.512로
 (2026-06-30 23:00)에서 `build_graph_features`를 호출해 snapshot 0개임을 실제로 확인했고, 그래서
 B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 이벤트 효과는 이 창에서는 입증할 수
 없고, 입증하려면 curated 이벤트와 겹치는 평가 구간이 필요합니다(가짜 뉴스 생성은 §22로 금지).
+이후 2026년 5~7월 데이터로 이벤트가 학습 구간에 실제로 들어가는 조건에서 같은 ablation을 다시
+측정했고, 결과는 `reports/event_feature_ablation.json`에 있습니다(희소 이벤트로는 개선 없음).
 event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_features.py`, 14:01→14:00
 회귀 포함)가 별도로 검증합니다. 한계는 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
