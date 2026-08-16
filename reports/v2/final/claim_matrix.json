@@ -1,22 +1,22 @@
 {
-  "run_id": "run_v2-09_20260722T082728Z",
+  "run_id": "run_v2-09_20260816T062638Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-07-22T08:27:28.192871+00:00",
+  "freshness": "2026-08-16T06:26:38.675145+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 31,
+  "n_artifacts": 35,
   "by_claim_status": {
     "blocked_data": 1,
-    "demo_fixture": 1,
-    "measured": 16,
-    "offline_benchmark": 7,
+    "demo_fixture": 2,
+    "measured": 17,
+    "offline_benchmark": 8,
     "research": 1,
-    "simulated": 5
+    "simulated": 6
   },
   "completion_rule_artifacts": {
     "H3 holdout metrics": {
@@ -55,11 +55,11 @@
   "claims": [
     {
       "artifact": "reports/v2/copilot/correctness_benchmark.json",
-      "run_id": "run_v2-06_20260722T082522Z",
+      "run_id": "run_v2-06_20260816T062631Z",
       "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
       "mode": "research",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T08:25:22.436904+00:00",
+      "freshness": "2026-08-16T06:26:31.422916+00:00",
       "headline": {
         "routing_accuracy": 1.0,
         "hallucinated_answers": 0,
@@ -86,11 +86,11 @@
     },
     {
       "artifact": "reports/v2/copilot/ragas_generation_benchmark.json",
-      "run_id": "run_v2-06ragasgen_20260722T082529Z",
+      "run_id": "run_v2-06ragasgen_20260816T062240Z",
       "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T08:25:29.977843+00:00",
+      "freshness": "2026-08-16T06:22:40.471247+00:00",
       "headline": {
         "faithfulness": 1.0,
         "answer_relevancy": 0.985
@@ -107,11 +107,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_faithfulness.json",
-      "run_id": "run_v2-07faith_20260722T082556Z",
+      "run_id": "run_v2-07faith_20260816T062306Z",
       "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T08:25:56.112653+00:00",
+      "freshness": "2026-08-16T06:23:06.904768+00:00",
       "headline": {
         "mean_faithfulness": 1.0,
         "ungrounded_numbers_total": 0
@@ -119,29 +119,38 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_parse_benchmark.json",
-      "run_id": "run_v2-07tripparse_20260722T082556Z",
+      "run_id": "run_v2-07tripparse_20260816T062306Z",
       "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-07-22T08:25:56.108961+00:00",
+      "freshness": "2026-08-16T06:23:06.902417+00:00",
       "headline": {}
     },
     {
       "artifact": "reports/v2/holdout/h3_multiholdout.json",
-      "run_id": "run_v2-01_20260720T121350Z_f1a28b37",
+      "run_id": "run_v2-01_20260816T061758Z_827818f6",
       "artifact_id": "reports/v2/holdout/h3_multiholdout.json",
       "mode": "historical_replay",
       "claim_status": "measured",
-      "freshness": "2026-07-20T12:13:50.724396+00:00",
+      "freshness": "2026-08-16T06:17:58.919832+00:00",
       "headline": {}
     },
     {
       "artifact": "reports/v2/holdout/promoted_model.json",
-      "run_id": "run_v2-01_20260720T121350Z_f1a28b37",
+      "run_id": "run_v2-01_20260816T061758Z_827818f6",
       "artifact_id": "reports/v2/holdout/promoted_model.json",
       "mode": "historical_replay",
       "claim_status": "measured",
-      "freshness": "2026-07-20T12:13:50.724396+00:00",
+      "freshness": "2026-08-16T06:17:58.919832+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/serving_features.json",
+      "run_id": "run_v2-07serve_20260816T062135Z",
+      "artifact_id": "reports/v2/holdout/serving_features.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-16T06:21:35.743070+00:00",
       "headline": {}
     },
     {
@@ -326,6 +335,15 @@
       }
     },
     {
+      "artifact": "reports/v2/predictive_lift.json",
+      "run_id": "run_v2lift_20260816T044514Z",
+      "artifact_id": "reports/v2/predictive_lift.json",
+      "mode": "demo_fixture",
+      "claim_status": "demo_fixture",
+      "freshness": "2026-08-16T04:45:14.919372+00:00",
+      "headline": {}
+    },
+    {
       "artifact": "reports/v2/pricing/guardrail_audit.json",
       "run_id": "run_v2-05_20260721T034413Z",
       "artifact_id": "reports/v2/pricing/guardrail_audit.json",
@@ -336,6 +354,15 @@
         "violation_count": 0,
         "budget_respected": true
       }
+    },
+    {
+      "artifact": "reports/v2/pricing/revenue_sim.json",
+      "run_id": "run_v2rev_20260816T044514Z",
+      "artifact_id": "reports/v2/pricing/revenue_sim.json",
+      "mode": "historical_replay",
+      "claim_status": "simulated",
+      "freshness": "2026-08-16T04:45:14.920192+00:00",
+      "headline": {}
     },
     {
       "artifact": "reports/v2/pricing/sensitivity.json",
@@ -362,6 +389,15 @@
         "ppo_beats_tabular": true,
         "beats_mpc": false
       }
+    },
+    {
+      "artifact": "reports/v2/search_relevance.json",
+      "run_id": "run_v2search_20260816T044514Z",
+      "artifact_id": "reports/v2/search_relevance.json",
+      "mode": "demo_fixture",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-16T04:45:14.920192+00:00",
+      "headline": {}
     }
   ],
   "verdict": "V2_COMPLETE",

@@ -70,7 +70,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
 | 이벤트 feature lift: WAPE −1.65% (95% CI [0.36, 5.11]) | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
-| 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4812) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
+| 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
 | 전체 테스트 | `make test` | 484 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
 > Note. 화면의 `7/12` 수치는 라벨을 붙인 데모 리플레이(휴리스틱)이고, WAPE와 방향별 lift, 재배치는
@@ -92,10 +92,11 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 반영 내역:
 
 - Endpoint: `GET /v2/model/forecast?top=20` — 예측값 내림차순으로 상위 zone을 반환합니다.
-- 모델: `hist_gradient_boosting` (H3 multi-holdout에서 승격, holdout WAPE 0.4812 ± 0.0035).
-  학습 row 269,258개, 학습 구간 마지막 시각 2024-08-31 23:00 (America/New_York).
+- 모델: `hist_gradient_boosting` (H3 multi-holdout에서 승격, holdout WAPE 0.4974 ± 0.0074).
+  Citi Bike JC 2026년 1~7월 트립으로 학습했고, 학습 row 226,953개, 학습 구간 마지막 시각
+  2026-07-31 23:00 (America/New_York), serving 시점 2026-08-01 00:00입니다.
 - Serving feature: `reports/v2/holdout/serving_features.json` — 학습 데이터가 끝난 다음 1시간(T+1)의
-  feature snapshot, 활성 zone 107개. dfv1 feature는 시각 t에서 t 이전 시각의 값만 쓰므로 구조적으로
+  feature snapshot, 활성 zone 136개. dfv1 feature는 시각 t에서 t 이전 시각의 값만 쓰므로 구조적으로
   leakage가 없습니다(§5.4).
 - Provenance: 응답마다 `run_id`, `claim_status`, `freshness`, holdout WAPE를 함께 반환해, 서빙된
   수치를 measured 원본 artifact까지 추적할 수 있습니다.
@@ -108,6 +109,17 @@ curl "https://shockflow-api.onrender.com/v2/model/forecast?top=10"   # 라이브
 curl "127.0.0.1:8000/v2/model/forecast?top=10"                       # 로컬 (make api 실행 후)
 ```
 
+월간 데이터 갱신: Citi Bike는 트립 이력을 월 단위로 약 2주 지연을 두고 공개하므로, 진짜 실시간
+수요 label은 존재하지 않습니다. 대신 아래 세 명령으로 새 달이 공개될 때마다 모델과 serving 시점을
+최신으로 당길 수 있습니다. 재고(GBFS station_status)는 실시간 공개 API라서 별도로 live 폴링이
+가능하고, `ENABLE_GBFS_LIVE=true`로 켭니다(기본값은 꺼짐, 실패해도 Demo Mode는 유지).
+
+```bash
+make download-citibike MONTHS="202608" JC=1   # 새로 공개된 달 내려받기 (--jersey-city)
+make v2-holdout                                # 재학습 + H3 multi-holdout + 모델 승격
+make v2-serving-export                         # serving feature snapshot 갱신
+```
+
 ### Latency (로컬 측정)
 
 로컬 컨테이너(Linux, uvicorn single worker)에서 endpoint당 warm-up 10회 후 100회 요청으로
@@ -115,12 +127,12 @@ curl "127.0.0.1:8000/v2/model/forecast?top=10"                       # 로컬 (m
 
 | Endpoint | p50 | p95 | p99 | Payload |
 |---|---|---|---|---|
-| `GET /v2/model/forecast?top=10` | 7.3 ms | 7.9 ms | 8.2 ms | 1.8 KB |
-| `GET /v1/forecasts` | 1.6 ms | 1.9 ms | 2.1 ms | 1.1 KB |
-| `GET /v2/operator/statistics` | 2.6 ms | 2.9 ms | 3.0 ms | 14.0 KB |
-| `GET /v1/health` | 1.2 ms | 1.6 ms | 1.6 ms | 0.1 KB |
+| `GET /v2/model/forecast?top=10` | 4.2 ms | 5.7 ms | 6.5 ms | 1.8 KB |
+| `GET /v1/forecasts` | 2.1 ms | 3.0 ms | 3.2 ms | 1.1 KB |
+| `GET /v2/operator/statistics` | 3.5 ms | 4.6 ms | 4.9 ms | 14.0 KB |
+| `GET /v1/health` | 1.4 ms | 1.8 ms | 1.9 ms | 0.1 KB |
 
-모델 추론 endpoint의 Latency가 p95 기준 7.9 ms입니다. 요청마다 추론을 실제로 도는데도 한 자릿수
+모델 추론 endpoint의 Latency가 p95 기준 5.7 ms입니다. 요청마다 추론을 실제로 도는데도 한 자릿수
 ms인 이유는 serving feature snapshot을 미리 커밋해 두고, 요청 시점에는 행렬 구성과 `predict`만
 수행하기 때문입니다. Render free tier 라이브 서버는 잠든 상태에서 깨어나는 첫 요청에 30~60초가
 걸리고(cold start), 깨어난 뒤에는 위 수치에 네트워크 왕복 시간이 더해집니다. 참고로 hybrid 검색의
@@ -430,8 +442,8 @@ artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v
 
 | 결과 | claim_status | 수치 | 재현 |
 |---|---|---|---|
-| Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, rolling-origin 3-window: WAPE 0.4812 ± 0.0035, MASE 0.8492 ± 0.0227 (naive를 이김) | `make v2-holdout` |
-| 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측, Latency p95 7.9 ms (로컬) | `make v2-serving-export` |
+| Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, 2026년 1~7월 트립, rolling-origin 3-window: WAPE 0.4974 ± 0.0074, MASE 0.8708 ± 0.0094 (naive WAPE 0.65~0.69를 이김) | `make v2-holdout` |
+| 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측 (serving 시점 2026-08-01), Latency p95 5.7 ms (로컬) | `make v2-serving-export` |
 | Structured event feed lift (A1−A0) | measured | nowcast에서 `MEANINGFUL_POSITIVE` +2.69% | `make v2-llm-value-borough` |
 | LLM-from-news 증분 (A2−A1) | measured (negative) | net-negative / null, net LLM value −$17,789 — news는 structured feed 대비 redundant | `make v2-llm-value-borough` |
 | Profit / Regret ledger | simulated | no-action 대비 net +$103,271 (9개 cost 설정 모두 부호 양수); Oracle 대비 regret $218,697 | `make v2-ledger` |
