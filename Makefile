@@ -94,8 +94,8 @@ v2-evaluate-predictive-lift:  ## V2-02: predictive-lift coverage gate + honest v
 v2-evaluate-revenue:  ## V2-05: flat vs event-aware dynamic-fare revenue + elasticity/severity sweep (SIMULATED)
 	python -m ml.pricing.revenue_eval
 
-download-citibike:  ## Bulk-download real Citi Bike trip months to data/raw/citibike (needs egress). Usage: make download-citibike MONTHS="202406 202407"
-	python -m pipelines.collectors.download_citibike $(MONTHS)
+download-citibike:  ## Bulk-download real Citi Bike trip months to data/raw/citibike (needs egress). Usage: make download-citibike MONTHS="202606 202607" [JC=1 for the Jersey City variant]
+	python -m pipelines.collectors.download_citibike $(if $(JC),--jersey-city) $(MONTHS)
 
 v2-import-stations:  ## V2: import the REAL Citi Bike network from GBFS into the fixtures (needs egress)
 	python -m pipelines.collectors.import_gbfs_stations --limit 40
