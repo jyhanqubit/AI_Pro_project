@@ -1,15 +1,15 @@
 {
-  "run_id": "run_v2-03r_20260819T135845Z",
+  "run_id": "run_v2-03r_20260819T141038Z",
   "artifact_id": "reports/v2/llm_value/rolling_origin_ablation.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-08-19T13:58:45.200594+00:00",
+  "freshness": "2026-08-19T14:10:38.303273+00:00",
   "grain": "borough-hour (nearest-centroid; approximate)",
   "target": "departures",
   "extraction_provider": "claude-opus-4-8-insession",
   "data_source": "data/raw/nyc",
   "design": "Rolling-origin repetition of the A0/A1/A2 ablation: each window refits every arm on the expanding span strictly before it, then bootstraps the paired gain over day blocks inside that window. Adds the training-side variability a single split omits.",
-  "n_windows": 3,
+  "n_windows": 6,
   "news_attribution": {
     "events": 23,
     "attributed_events": 23,
@@ -17,6 +17,156 @@
     "precomputed": true
   },
   "windows": [
+    {
+      "window": "2026-02-01..2026-03-01",
+      "n_train_rows": 2269,
+      "n_test_rows": 2539,
+      "n_day_blocks": 27,
+      "test_rows_with_permitted_event": 1601,
+      "test_rows_with_llm_news_event": 306,
+      "arms": {
+        "A0_demand_calendar": {
+          "wape": 0.1469,
+          "mae": 70.501
+        },
+        "A1_plus_permitted": {
+          "wape": 0.1458,
+          "mae": 69.979
+        },
+        "A2_plus_llm_news": {
+          "wape": 0.1478,
+          "mae": 70.939
+        }
+      },
+      "A1_minus_A0": {
+        "n": 2539,
+        "n_blocks": 27,
+        "mean_loss_m0": 70.501228,
+        "mean_loss_m1": 69.979245,
+        "verdict": "inconclusive",
+        "claim_enabled": false,
+        "mean_gain": 0.521983,
+        "ci_95": [
+          -0.403085,
+          1.472762
+        ],
+        "coverage_ok": true
+      },
+      "A2_minus_A1": {
+        "n": 2539,
+        "n_blocks": 27,
+        "mean_loss_m0": 69.979245,
+        "mean_loss_m1": 70.938596,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -0.959351,
+        "ci_95": [
+          -1.527479,
+          -0.420889
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-03-01..2026-04-01",
+      "n_train_rows": 4808,
+      "n_test_rows": 2967,
+      "n_day_blocks": 31,
+      "test_rows_with_permitted_event": 2100,
+      "test_rows_with_llm_news_event": 215,
+      "arms": {
+        "A0_demand_calendar": {
+          "wape": 0.1467,
+          "mae": 145.542
+        },
+        "A1_plus_permitted": {
+          "wape": 0.1488,
+          "mae": 147.606
+        },
+        "A2_plus_llm_news": {
+          "wape": 0.1496,
+          "mae": 148.464
+        }
+      },
+      "A1_minus_A0": {
+        "n": 2967,
+        "n_blocks": 31,
+        "mean_loss_m0": 145.542342,
+        "mean_loss_m1": 147.606065,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -2.063723,
+        "ci_95": [
+          -3.468579,
+          -0.63054
+        ],
+        "coverage_ok": true
+      },
+      "A2_minus_A1": {
+        "n": 2967,
+        "n_blocks": 31,
+        "mean_loss_m0": 147.606065,
+        "mean_loss_m1": 148.463958,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -0.857893,
+        "ci_95": [
+          -1.40063,
+          -0.282625
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-04-01..2026-05-01",
+      "n_train_rows": 7775,
+      "n_test_rows": 2880,
+      "n_day_blocks": 30,
+      "test_rows_with_permitted_event": 1990,
+      "test_rows_with_llm_news_event": 24,
+      "arms": {
+        "A0_demand_calendar": {
+          "wape": 0.1085,
+          "mae": 145.341
+        },
+        "A1_plus_permitted": {
+          "wape": 0.1091,
+          "mae": 146.173
+        },
+        "A2_plus_llm_news": {
+          "wape": 0.1097,
+          "mae": 146.995
+        }
+      },
+      "A1_minus_A0": {
+        "n": 2880,
+        "n_blocks": 30,
+        "mean_loss_m0": 145.340798,
+        "mean_loss_m1": 146.173338,
+        "verdict": "inconclusive",
+        "claim_enabled": false,
+        "mean_gain": -0.83254,
+        "ci_95": [
+          -2.765377,
+          1.042646
+        ],
+        "coverage_ok": true
+      },
+      "A2_minus_A1": {
+        "n": 2880,
+        "n_blocks": 30,
+        "mean_loss_m0": 146.173338,
+        "mean_loss_m1": 146.994999,
+        "verdict": "blocked_data",
+        "claim_enabled": false,
+        "mean_gain": -0.821661,
+        "ci_95": [
+          -1.929942,
+          0.340658
+        ],
+        "coverage_ok": false
+      }
+    },
     {
       "window": "2026-05-01..2026-06-01",
       "n_train_rows": 10655,
@@ -169,13 +319,16 @@
     }
   ],
   "stability_A1_minus_A0": {
-    "n_windows": 3,
-    "n_informative_windows": 2,
+    "n_windows": 6,
+    "n_informative_windows": 5,
     "windows_blocked_low_coverage": 1,
     "windows_ci_above_zero": 0,
-    "windows_ci_below_zero": 0,
-    "windows_inconclusive": 2,
+    "windows_ci_below_zero": 1,
+    "windows_inconclusive": 4,
     "mean_gain_per_window": [
+      0.521983,
+      -2.063723,
+      -0.83254,
       0.418863,
       1.905925,
       -0.380129
@@ -183,18 +336,21 @@
     "stability": "mixed_with_inconclusive"
   },
   "stability_A2_minus_A1": {
-    "n_windows": 3,
-    "n_informative_windows": 2,
-    "windows_blocked_low_coverage": 1,
+    "n_windows": 6,
+    "n_informative_windows": 4,
+    "windows_blocked_low_coverage": 2,
     "windows_ci_above_zero": 1,
-    "windows_ci_below_zero": 0,
+    "windows_ci_below_zero": 2,
     "windows_inconclusive": 1,
     "mean_gain_per_window": [
+      -0.959351,
+      -0.857893,
+      -0.821661,
       -0.575438,
       2.226075,
       -0.514585
     ],
-    "stability": "mixed_with_inconclusive"
+    "stability": "sign_flips"
   },
   "note": "A per-window CI is conditional on that window's fit; the stability block is the cross-origin claim. Verdicts are reported as measured whichever way they fall."
 }
