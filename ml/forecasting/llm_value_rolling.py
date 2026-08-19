@@ -248,9 +248,11 @@ def main(argv: list[str] | None = None) -> int:
         results.append(res)
         a1, a2 = res["A1_minus_A0"], res["A2_minus_A1"]
         print(
-            f"  {res['window']}  n_test={res['n_test_rows']:>5} blocks={res['n_day_blocks']:>2}  "
-            f"A1-A0 {a1['mean_gain']:+.3f} CI{a1['ci_95']} {a1['verdict']}  |  "
-            f"A2-A1 {a2['mean_gain']:+.3f} CI{a2['ci_95']} {a2['verdict']}"
+            f"  {res['window']}  n_test={res['n_test_rows']:>5} blocks={res['n_day_blocks']:>2} "
+            f"permit={res['test_rows_with_permitted_event']:>5} "
+            f"news={res['test_rows_with_llm_news_event']:>4}\n"
+            f"      A1-A0 {a1['mean_gain']:+.3f} CI{a1['ci_95']} {a1['verdict']}\n"
+            f"      A2-A1 {a2['mean_gain']:+.3f} CI{a2['ci_95']} {a2['verdict']}"
         )
     if not results:
         raise SystemExit("every window was empty")

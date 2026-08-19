@@ -1,6 +1,31 @@
 # Project Status
 
-_Last updated: 2026-07-20_
+_Last updated: 2026-08-19_
+
+## 정정 (2026-08-19) — structured event feed의 A1−A0 개선은 재현되지 않습니다
+
+아래 문서 곳곳에 `A1−A0 = MEANINGFUL_POSITIVE +2.69%`로 기록된 structured-event-feed lift는
+**단일 train/test 분할에서 얻은 결과이고, rolling origin에서 재현되지 않았습니다.** 새 검증
+(`make v2-llm-value-rolling` → `reports/v2/llm_value/rolling_origin_ablation.json`)에서 월별 창마다
+A0/A1/A2를 다시 학습해 측정한 결과는 다음과 같습니다.
+
+| 창 | permit-active 행 | A1−A0 | A2−A1 |
+|---|---|---|---|
+| 2026-05 | 2,600 | **+3.96** CI [1.02, 6.68] `measured_improvement` | −3.50 CI [−5.27, −1.54] `negative_lift` |
+| 2026-06 | 2,612 | **−3.46** CI [−6.10, −0.92] `negative_lift` | −1.82 CI [−2.73, −0.95] `negative_lift` |
+| 2026-07 | 56 | `blocked_data` (커버리지 게이트) | `blocked_data` (news 0행) |
+
+- **A1−A0: `sign_flips`** — 커버리지가 비슷한 두 창에서 부호가 정반대이므로 표본 부족이 아니라 실제
+  불안정성입니다. **개선 주장을 철회합니다.**
+- **A2−A1: `consistently_negative`** — LLM 뉴스가 도움이 되지 않는다는 부정적 결론은 측정 가능한 두 창
+  모두에서 유지됩니다. 이 결론은 그대로 둡니다.
+- 기존 단일 분할 artifact(`incremental_value_borough.json`)의 test 구간은 `n=2,975 / 31 day-blocks`로,
+  이번 5월 창과 정확히 일치합니다. 즉 **원래 결과는 사실상 2026년 5월 한 달 평가**였습니다.
+- 그 단일 분할 위에 세워진 density curve와 quality ablation의 해석도 같은 조건부입니다. 두 분석은
+  "그 창 안에서의 민감도"로는 유효하지만, 베이스가 되는 +2.69% 자체가 안정적 효과가 아닙니다.
+- 기존 artifact는 삭제하지 않았습니다. 재현 실패를 나란히 기록하는 편이 기록으로서 정확합니다.
+
+아래 V2 섹션의 +2.69% 서술은 이 정정과 함께 읽어야 합니다.
 
 ## V2 kickoff — LLM net-business-value verification (scaffolding)
 

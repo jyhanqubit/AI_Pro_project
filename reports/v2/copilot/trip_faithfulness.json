@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-07faith_20260816T062727Z",
+  "run_id": "run_v2-07faith_20260819T092915Z",
   "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-08-16T06:27:27.195441+00:00",
+  "freshness": "2026-08-19T09:29:15.847144+00:00",
   "metric": "numeric faithfulness (RAGAS-style): every number in the answer must appear as a value in the typed plan; distances are haversine-computed from real station coordinates, never LLM-generated",
   "n_plans": 5,
   "mean_faithfulness": 1.0,

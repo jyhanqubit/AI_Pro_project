@@ -447,8 +447,9 @@ artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v
 |---|---|---|---|
 | Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, 2026년 1~7월 트립, rolling-origin 3-window: WAPE 0.4974 ± 0.0074, MASE 0.8708 ± 0.0094 (naive WAPE 0.65~0.69를 이김) | `make v2-holdout` |
 | 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측 (serving 시점 2026-08-01), Latency p95 5.7 ms (로컬) | `make v2-serving-export` |
-| Structured event feed lift (A1−A0) | measured | nowcast에서 `MEANINGFUL_POSITIVE` +2.69% | `make v2-llm-value-borough` |
-| LLM-from-news 증분 (A2−A1) | measured (negative) | net-negative / null, net LLM value −$17,789 — news는 structured feed 대비 redundant | `make v2-llm-value-borough` |
+| Structured event feed lift (A1−A0) | measured, **재현 실패** | 단일 분할(2026-05)에서는 `MEANINGFUL_POSITIVE` +2.69%였으나, rolling origin으로 재검증하니 부호가 뒤집힘(5월 +3.96 / 6월 −3.46). 개선 주장을 철회합니다 | `make v2-llm-value-rolling` |
+| LLM-from-news 증분 (A2−A1) | measured (negative) | 측정 가능한 두 창 모두에서 음수(`consistently_negative`), net LLM value −$17,789 — news는 structured feed 대비 redundant | `make v2-llm-value-rolling` |
+| Rolling-origin 재현성 검증 | measured | 3개 월별 창에서 A0/A1/A2를 각각 재학습: A1−A0 `sign_flips`, A2−A1 `consistently_negative`, 2026-07은 permit 56행으로 `blocked_data` | `make v2-llm-value-rolling` |
 | Profit / Regret ledger | simulated | no-action 대비 net +$103,271 (9개 cost 설정 모두 부호 양수); Oracle 대비 regret $218,697 | `make v2-ledger` |
 | MPC vs No-Action/Greedy/MILP/Oracle | simulated | ledger total_cost: NoAction 1127 / Greedy 1155 / MILP 1087 / MPC 740 / Oracle 719 — MPC가 best feasible, regret 21.6 | `make v2-mpc` |
 | Dynamic pricing + guardrail | simulated | 576 zone-hour에서 guardrail 위반 0, A/A CI가 0 포함 (shadow quote만) | `make v2-pricing` |
@@ -461,6 +462,7 @@ make v2-holdout           # V2-01: promoted model + H3 multi-holdout (원본 트
 make v2-serving-export    # V2-07: promoted 모델의 next-hour serving feature 스냅숏
 make v2-ledger            # V2-02: profit/regret ledger
 make v2-llm-value-borough # V2-03: No-Event / Rule-Event / LLM-Event ablation + CI + LLM 비용
+make v2-llm-value-rolling # V2-03: 같은 ablation을 월별 rolling origin에서 반복 (창마다 재학습, 부호 일관성)
 make v2-mpc               # V2-04: multi-period 정책 비교 (No-Action/Greedy/MILP/MPC/Oracle)
 make v2-pricing           # V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run
 make v2-copilot           # V2-06: typed-tool grounding + GraphRAG + RAGAS 벤치마크
@@ -470,13 +472,21 @@ make v2-rl                # (research 전용) tabular Q-learning + PPO 재배치
 ```
 
 결과를 읽는 기준:
-- Measured 성과 — promoted forecaster가 seasonal naive를 이기고, structured event feed가 measured
-  lift를 보였으며, Copilot은 typed tool 덕분에 numeric hallucination이 0입니다.
+- Measured 성과 — promoted forecaster가 seasonal naive를 세 holdout 창 모두에서 이기고, Copilot은
+  typed tool 덕분에 numeric hallucination이 0입니다.
+- 철회한 주장 (중요) — structured event feed의 A1−A0 개선(+2.69%)은 **단일 분할에서만 성립했고
+  재현되지 않았습니다.** 월별 rolling origin으로 다시 측정하니 2026-05는 +3.96 (CI [1.02, 6.68]),
+  2026-06은 −3.46 (CI [−6.10, −0.92])으로 부호가 뒤집혔습니다. 원래 결과의 test 구간이 사실상
+  2026년 5월 한 달이었다는 것도 이 과정에서 드러났습니다(n=2,975 / 31 day-blocks가 정확히 일치).
+  기존 artifact는 지우지 않고 남겨 두었고, 재현 실패를 나란히 기록했습니다:
+  `reports/v2/llm_value/rolling_origin_ablation.json`. 이 단일 분할 위에 세운 density curve와
+  quality ablation도 같은 조건부라는 점을 함께 밝힙니다.
 - 개선 없음도 그대로 보고 (대표 발견) — 이 데이터에서 LLM-from-news feature는 수요 예측을 개선하지
-  않습니다. LLM Feature Value metric + CI로 보고하고 root cause까지 규명했습니다(source가 dense +
-  precise-time + precise-location + forward-looking이어야 하는데 news는 하나도 만족하지 못함).
-  simulated synthetic ceiling(+10.43%)으로 "방법 자체는 조건을 만족하면 동작"함을 보였습니다.
-  전체 정리: [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
+  않습니다. 이 부정적 결론은 rolling origin에서도 유지됐습니다(측정 가능한 두 창 모두 음수,
+  `consistently_negative`). LLM Feature Value metric + CI로 보고하고 root cause까지 규명했습니다
+  (source가 dense + precise-time + precise-location + forward-looking이어야 하는데 news는 하나도
+  만족하지 못함). simulated synthetic ceiling(+10.43%)으로 "방법 자체는 조건을 만족하면 동작"함을
+  보였습니다. 전체 정리: [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
 - Simulated는 measured가 아님 — 모든 금액(ledger, MPC, pricing)은 assumption에 조건부라 `simulated`로
   라벨을 붙였습니다. 단위 수량만 measured입니다.
 - Research 전용, 완성 조건 아님 — RL(tabular Q-learning + PPO)과 QAOA. RL은 같은 ledger로 채점하면

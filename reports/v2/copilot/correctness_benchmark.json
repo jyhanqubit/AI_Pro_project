@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06_20260816T062701Z",
+  "run_id": "run_v2-06_20260819T092848Z",
   "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
   "mode": "research",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-08-16T06:27:01.029342+00:00",
+  "freshness": "2026-08-19T09:28:48.084345+00:00",
   "question_set": "data/fixtures/v2/copilot_questions.jsonl",
   "n_questions": 20,
   "primary_router": "claude-opus-4-8-insession",

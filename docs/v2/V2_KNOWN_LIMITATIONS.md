@@ -11,6 +11,18 @@ measured artifact를 생성하지 않았으므로, V2 docs의 모든 result는 `
 
 ## Known / expected limitations
 
+- **단일 origin 결과는 재현되지 않았다 (2026-08-19 정정, 가장 중요):** structured event feed의
+  A1−A0 개선(`MEANINGFUL_POSITIVE +2.69%`)은 하나의 train/test 분할에서 얻은 값이다. 월별 rolling
+  origin으로 창마다 재학습해 다시 측정하니 **부호가 뒤집혔다** (2026-05 +3.96 CI [1.02, 6.68] /
+  2026-06 −3.46 CI [−6.10, −0.92] → `sign_flips`). 개선 주장은 철회한다. 반면 A2−A1의 부정적
+  결론은 측정 가능한 두 창 모두에서 유지되어(`consistently_negative`) 그대로 둔다. 검증:
+  `make v2-llm-value-rolling` → `reports/v2/llm_value/rolling_origin_ablation.json`.
+  이 사건의 일반 교훈은 **단일 분할의 block-bootstrap CI는 평가 기간의 표본 변동만 담고 학습
+  변동은 담지 않는다**는 것이다. 앞으로 lift 주장을 추가할 때는 rolling origin 재현을 함께 요구한다.
+- **단일 origin 위에 세운 파생 분석도 같은 조건부:** density curve와 quality ablation은 +2.69%가
+  성립하던 창 안에서의 민감도 분석이다. 창 안의 상대 비교로는 유효하지만, 베이스가 되는 효과 자체가
+  안정적이지 않다는 점을 함께 읽어야 한다.
+
 - **Event overlap (v1에서 이어짐):** v1은 `insufficient_event_overlap`을 발견했다 — 큐레이션된
   events가 6월 evaluation 윈도우 바깥에 있어 LLM event lift가 0으로 측정되었다. V2-03은 충분한
   real event overlap에 의존한다; collection이 계속 막혀 있으면 LLM-vs-rule 결과는
