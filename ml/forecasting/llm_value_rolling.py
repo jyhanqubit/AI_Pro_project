@@ -42,6 +42,7 @@ from ml.forecasting.borough_event_lift import (
     build_event_index,
     stream_borough_cells,
 )
+from ml.forecasting.llm_feature_value import MIN_ACTIVE
 from ml.forecasting.llm_value_borough import (
     _NEWS_COLS,
     build_news_llm_index,
@@ -144,12 +145,15 @@ def evaluate_window(
         x = df[b1_cols + list(extra)].to_numpy(dtype=float)
         preds[arm] = _fit_eval(x[dev_mask], y[dev_mask], x[test_mask], 0)
 
-    def paired(a: str, b: str) -> dict[str, Any]:
+    def paired(a: str, b: str, active_rows: int) -> dict[str, Any]:
+        # Same coverage gate the rest of V2-03 uses (llm_feature_value.MIN_ACTIVE): a window whose
+        # extra features are almost never on cannot separate the arms, so it returns blocked_data
+        # instead of a spurious "inconclusive" that would dilute the sign-consistency count.
         return run_predictive_lift(
             np.abs(y_test - preds[a]).tolist(),
             np.abs(y_test - preds[b]).tolist(),
             blocks,
-            coverage_ok=True,
+            coverage_ok=active_rows >= MIN_ACTIVE,
         )
 
     news_rows = int((df.loc[test_mask, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0).sum())
@@ -166,27 +170,38 @@ def evaluate_window(
             a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
             for a, p in preds.items()
         },
-        "A1_minus_A0": paired("A0_demand_calendar", "A1_plus_permitted"),
-        "A2_minus_A1": paired("A1_plus_permitted", "A2_plus_llm_news"),
+        "A1_minus_A0": paired("A0_demand_calendar", "A1_plus_permitted", perm_rows),
+        "A2_minus_A1": paired("A1_plus_permitted", "A2_plus_llm_news", news_rows),
     }
 
 
 def summarise(results: list[dict[str, Any]], key: str) -> dict[str, Any]:
-    """Sign-consistency of one comparison across windows — the point of the whole exercise."""
+    """Sign-consistency of one comparison across windows — the point of the whole exercise.
+
+    Windows the coverage gate blocked carry no evidence either way, so they are counted and named
+    but excluded from the stability verdict; a verdict over zero informative windows is
+    ``no_informative_window`` rather than a manufactured agreement.
+    """
     lifts = [r[key] for r in results]
-    positive = sum(1 for lift in lifts if lift["ci_95"][0] > 0)
-    negative = sum(1 for lift in lifts if lift["ci_95"][1] < 0)
-    inconclusive = len(lifts) - positive - negative
-    if positive == len(lifts):
-        stability = "consistently_positive"
-    elif negative == len(lifts):
-        stability = "consistently_negative"
+    blocked = [lift for lift in lifts if lift["verdict"] == "blocked_data"]
+    usable = [lift for lift in lifts if lift["verdict"] != "blocked_data"]
+    positive = sum(1 for lift in usable if lift["ci_95"][0] > 0)
+    negative = sum(1 for lift in usable if lift["ci_95"][1] < 0)
+    inconclusive = len(usable) - positive - negative
+    if not usable:
+        stability = "no_informative_window"
     elif positive and negative:
         stability = "sign_flips"
+    elif positive == len(usable):
+        stability = "consistently_positive"
+    elif negative == len(usable):
+        stability = "consistently_negative"
     else:
         stability = "mixed_with_inconclusive"
     return {
         "n_windows": len(lifts),
+        "n_informative_windows": len(usable),
+        "windows_blocked_low_coverage": len(blocked),
         "windows_ci_above_zero": positive,
         "windows_ci_below_zero": negative,
         "windows_inconclusive": inconclusive,
