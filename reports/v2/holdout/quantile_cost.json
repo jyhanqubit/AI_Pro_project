@@ -1,0 +1,355 @@
+{
+  "run_id": "run_v2-01q_20260819T152729Z",
+  "artifact_id": "reports/v2/holdout/quantile_cost.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-08-19T15:27:29.649300+00:00",
+  "grain": "H3 zone x local hour",
+  "target": "departures",
+  "algorithm": "hist_gradient_boosting",
+  "params": {
+    "learning_rate": 0.1,
+    "max_iter": 300,
+    "max_depth": 8
+  },
+  "cost_weights": {
+    "shortage": 2.0,
+    "overflow": 1.0
+  },
+  "newsvendor_q_star": 0.6667,
+  "prediction_registered": "Newsvendor theory puts the cost-minimising point forecast at q* = c_s/(c_s+c_o); WAPE should worsen slightly while OCS improves, with the OCS minimum near q*.",
+  "arms": [
+    {
+      "loss": "squared_error",
+      "quantile": null,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.5004,
+          "mae": 1.2368,
+          "ocs": 0.7655,
+          "shortage_units": 25183.5,
+          "overflow_units": 22347.5,
+          "bias": -0.0738
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.4872,
+          "mae": 1.3193,
+          "ocs": 0.7368,
+          "shortage_units": 27326.6,
+          "overflow_units": 26029.9,
+          "bias": -0.0321
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.5045,
+          "mae": 1.3331,
+          "ocs": 0.7552,
+          "shortage_units": 27262.3,
+          "overflow_units": 27604.4,
+          "bias": 0.0083
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.4974,
+          "std": 0.0074
+        },
+        "ocs": {
+          "mean": 0.7525,
+          "std": 0.0119
+        },
+        "mae": {
+          "mean": 1.2964,
+          "std": 0.0425
+        },
+        "bias": {
+          "mean": -0.0325,
+          "std": 0.0335
+        }
+      }
+    },
+    {
+      "loss": "quantile",
+      "quantile": 0.5,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.4939,
+          "mae": 1.2207,
+          "ocs": 0.8055,
+          "shortage_units": 29598.3,
+          "overflow_units": 17311.4,
+          "bias": -0.3197
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.4817,
+          "mae": 1.3045,
+          "ocs": 0.7741,
+          "shortage_units": 32016.1,
+          "overflow_units": 20738.8,
+          "bias": -0.2789
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.4954,
+          "mae": 1.3091,
+          "ocs": 0.789,
+          "shortage_units": 31935.4,
+          "overflow_units": 21942.1,
+          "bias": -0.2428
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.4903,
+          "std": 0.0061
+        },
+        "ocs": {
+          "mean": 0.7895,
+          "std": 0.0128
+        },
+        "mae": {
+          "mean": 1.2781,
+          "std": 0.0406
+        },
+        "bias": {
+          "mean": -0.2805,
+          "std": 0.0314
+        }
+      }
+    },
+    {
+      "loss": "quantile",
+      "quantile": 0.6,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.504,
+          "mae": 1.2456,
+          "ocs": 0.7493,
+          "shortage_units": 23301.1,
+          "overflow_units": 24568.2,
+          "bias": 0.033
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.5085,
+          "mae": 1.3769,
+          "ocs": 0.734,
+          "shortage_units": 24698.3,
+          "overflow_units": 30986.3,
+          "bias": 0.1555
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.5246,
+          "mae": 1.3861,
+          "ocs": 0.7508,
+          "shortage_units": 24605.7,
+          "overflow_units": 32442.8,
+          "bias": 0.1904
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.5124,
+          "std": 0.0088
+        },
+        "ocs": {
+          "mean": 0.7447,
+          "std": 0.0076
+        },
+        "mae": {
+          "mean": 1.3362,
+          "std": 0.0642
+        },
+        "bias": {
+          "mean": 0.1263,
+          "std": 0.0675
+        }
+      }
+    },
+    {
+      "loss": "quantile",
+      "quantile": 0.667,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.5346,
+          "mae": 1.3213,
+          "ocs": 0.7315,
+          "shortage_units": 18704.2,
+          "overflow_units": 32072.9,
+          "bias": 0.3479
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.5339,
+          "mae": 1.4456,
+          "ocs": 0.7152,
+          "shortage_units": 19854.3,
+          "overflow_units": 38610.7,
+          "bias": 0.4638
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.5489,
+          "mae": 1.4504,
+          "ocs": 0.7337,
+          "shortage_units": 20104.7,
+          "overflow_units": 39587.5,
+          "bias": 0.4734
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.5391,
+          "std": 0.0069
+        },
+        "ocs": {
+          "mean": 0.7268,
+          "std": 0.0083
+        },
+        "mae": {
+          "mean": 1.4058,
+          "std": 0.0598
+        },
+        "bias": {
+          "mean": 0.4284,
+          "std": 0.057
+        }
+      }
+    },
+    {
+      "loss": "quantile",
+      "quantile": 0.75,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.5942,
+          "mae": 1.4686,
+          "ocs": 0.7376,
+          "shortage_units": 13623.4,
+          "overflow_units": 42816.5,
+          "bias": 0.7596
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.5874,
+          "mae": 1.5907,
+          "ocs": 0.7212,
+          "shortage_units": 14649.7,
+          "overflow_units": 49680.0,
+          "bias": 0.8662
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.6121,
+          "mae": 1.6176,
+          "ocs": 0.7496,
+          "shortage_units": 14947.0,
+          "overflow_units": 51627.3,
+          "bias": 0.8912
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.5979,
+          "std": 0.0104
+        },
+        "ocs": {
+          "mean": 0.7361,
+          "std": 0.0116
+        },
+        "mae": {
+          "mean": 1.559,
+          "std": 0.0648
+        },
+        "bias": {
+          "mean": 0.839,
+          "std": 0.0571
+        }
+      }
+    },
+    {
+      "loss": "quantile",
+      "quantile": 0.8,
+      "windows": [
+        {
+          "window": "2026-05",
+          "n_test": 38430,
+          "wape": 0.6524,
+          "mae": 1.6124,
+          "ocs": 0.7672,
+          "shortage_units": 10904.3,
+          "overflow_units": 51059.6,
+          "bias": 1.0449
+        },
+        {
+          "window": "2026-06",
+          "n_test": 40442,
+          "wape": 0.6492,
+          "mae": 1.7579,
+          "ocs": 0.7561,
+          "shortage_units": 11707.5,
+          "overflow_units": 59384.1,
+          "bias": 1.1789
+        },
+        {
+          "window": "2026-07",
+          "n_test": 41157,
+          "wape": 0.6691,
+          "mae": 1.768,
+          "ocs": 0.7805,
+          "shortage_units": 12114.9,
+          "overflow_units": 60649.8,
+          "bias": 1.1793
+        }
+      ],
+      "aggregate": {
+        "wape": {
+          "mean": 0.6569,
+          "std": 0.0087
+        },
+        "ocs": {
+          "mean": 0.7679,
+          "std": 0.01
+        },
+        "mae": {
+          "mean": 1.7128,
+          "std": 0.0711
+        },
+        "bias": {
+          "mean": 1.1344,
+          "std": 0.0633
+        }
+      }
+    }
+  ],
+  "best_by_ocs": {
+    "loss": "quantile",
+    "quantile": 0.667
+  },
+  "ocs_improvement_pct": 3.42,
+  "wape_cost_pct": 8.38,
+  "verdict": "ocs_improved",
+  "note": "Only the loss changes; algorithm, hyperparameters, features, windows and seed stay fixed. WAPE and OCS are reported together because trading one for the other is the whole point — a single metric would hide the tradeoff."
+}

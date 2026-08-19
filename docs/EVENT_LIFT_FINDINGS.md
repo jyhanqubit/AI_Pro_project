@@ -1,5 +1,55 @@
 # Do event-aware features improve demand forecasting? — measured findings
 
+> ## 정정 (2026-08-19): 이 문서의 긍정적 결론은 철회되었습니다
+>
+> 아래 본문은 2026년 6월 홀드아웃에서 이벤트 피처가 WAPE를 1.65% 낮췄다고(0.1013 → 0.0996,
+> CI [0.36, 5.11]) 보고합니다. **현재 저장소의 데이터로 같은 명령을 그대로 재실행하면 이 결과가
+> 재현되지 않습니다.**
+>
+> | 항목 | 원본 artifact | 현재 데이터 재현 |
+> |---|---|---|
+> | train / test 행 | 14,759 / 3,366 | 13,630 / 2,881 |
+> | 이벤트 없음 WAPE | 0.1013 | 0.0946 |
+> | 이벤트 포함 WAPE | 0.0996 | 0.0964 |
+> | 상대 변화 | **+1.65% 개선** | **-1.94% 악화** |
+> | 95% CI | [0.36, 5.11] | **[-6.09, -0.86]** |
+> | 판정 | measured_improvement | **negative_lift** |
+>
+> 재현 명령: `python -m ml.forecasting.borough_event_lift --data-dir <NYC 2026-01..06>
+> --events data/fixtures/nyc_permitted_events_filtered.jsonl.gz --test-from 2026-06-01`
+>
+> ### 원인: Jersey City 트립이 Staten Island로 오배정되어 패널에 섞였습니다
+>
+> 행 수 차이(원본 18,125 vs 재현 16,511)를 추적한 결과, 원본은 **NYC 아카이브와 Jersey City
+> 아카이브를 같은 디렉터리에 넣고** 실행한 것으로 확인됩니다.
+>
+> `stream_borough_cells`는 트립 좌표에서 **가장 가까운 borough 중심점**을 찾아 배정합니다.
+> Jersey City(약 40.72, -74.04)는 허드슨강 건너 **뉴저지**인데, NYC 5개 중심점 중 가장 가까운 것이
+> 유일하게 서쪽에 있는 **Staten Island(40.579, -74.15)**입니다. 그 결과 JC 트립이 통째로 Staten
+> Island 수요로 기록됩니다.
+>
+> | 2026-06 borough별 시간 셀 | NYC만 | NYC + JC |
+> |---|---|---|
+> | Manhattan / Bronx / Brooklyn / Queens | 735 / 732 / 731 / 722 | 동일 |
+> | **Staten Island** | **1** | **486** |
+>
+> 이 486이 원본과 재현의 6월 test 행 차이(3,366 - 2,881 = 485)와 일치합니다. 즉 원본 test set의
+> 약 14%가 **뉴저지 수요에 "Staten Island" 라벨이 붙은 행**이었습니다.
+>
+> 문제는 여기서 그치지 않습니다. 이벤트 피처는 **NYC permitted events**에서 오므로, 그 행들은
+> **뉴저지에서 발생한 수요에 실제 Staten Island의 행사 정보를 결합**한 것이 됩니다. 서로 인과관계가
+> 없는 두 데이터가 같은 행에 묶여 있었습니다.
+>
+> 따라서 원본의 `+1.65%`는 이벤트 신호의 효과가 아니라 **데이터 오배정의 산물**로 보아야 합니다.
+> 오배정된 행을 제거하면(NYC만 사용) 같은 6월 홀드아웃에서 -1.94% 악화가 나옵니다.
+>
+> 재현 결과는 독립적으로 수행한 rolling-origin 검증의 6월 창과 일치합니다(행 수 13,630 / 2,881 /
+> 이벤트 2,612가 정확히 같고, mean_gain -3.42 vs -3.46). 즉 두 검증이 서로를 뒷받침합니다.
+> 전체 경위는 `reports/v2/llm_value/rolling_origin_ablation.json`과 `docs/STATUS.md` 참고.
+>
+> 아래 본문은 **당시 기록으로 보존**합니다. 지우지 않는 편이 기록으로서 정확하기 때문이며,
+> 현재 유효한 결론이 아닙니다. 날씨 피처에 대한 부정적 결론(개선 없음)은 그대로 유지됩니다.
+
 This note records a real experiment, run end-to-end on real data, that asks the central product
 question of ShockFlow AI in the plainest possible way: **if we add features derived from timestamped
 real-world events to a demand-only forecaster, does the forecast actually get more accurate?** The

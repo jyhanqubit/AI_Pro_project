@@ -1,40 +1,221 @@
 {
   "grain": "borough-hour (nearest-centroid; approximate)",
   "target": "departures",
-  "n_train_rows": 14759,
-  "n_test_rows": 3366,
-  "test_rows_with_event": 2718,
+  "n_train_rows": 13630,
+  "n_test_rows": 2880,
+  "test_rows_with_event": 2612,
   "boroughs": [
     "Bronx",
     "Brooklyn",
     "Manhattan",
-    "Queens",
-    "Staten Island"
+    "Queens"
   ],
   "test_from": "2026-06-01",
   "test_days": "2026-06-01..2026-06-30",
   "baseline_demand_calendar": {
-    "wape": 0.1013,
-    "mae": 165.2266
+    "wape": 0.098,
+    "mae": 183.0037
   },
   "plus_events": {
-    "wape": 0.0996,
-    "mae": 162.4983
+    "wape": 0.0969,
+    "mae": 181.1105
   },
-  "wape_abs_reduction": 0.0017,
-  "wape_rel_reduction_pct": 1.65,
+  "wape_abs_reduction": 0.001,
+  "wape_rel_reduction_pct": 1.03,
   "predictive_lift": {
-    "n": 3366,
+    "n": 2880,
     "n_blocks": 30,
-    "mean_loss_m0": 165.22663,
-    "mean_loss_m1": 162.498333,
-    "verdict": "measured_improvement",
-    "claim_enabled": true,
-    "mean_gain": 2.728296,
+    "mean_loss_m0": 183.003691,
+    "mean_loss_m1": 181.110496,
+    "verdict": "inconclusive",
+    "claim_enabled": false,
+    "mean_gain": 1.893194,
     "ci_95": [
-      0.362984,
-      5.106939
+      -0.23766,
+      3.897532
     ],
     "coverage_ok": true
-  }
+  },
+  "daily_series": [
+    {
+      "date": "2026-06-01",
+      "actual": 163728.0,
+      "pred_b1": 160838.5,
+      "pred_events": 160451.2
+    },
+    {
+      "date": "2026-06-02",
+      "actual": 186440.0,
+      "pred_b1": 182645.6,
+      "pred_events": 184162.4
+    },
+    {
+      "date": "2026-06-03",
+      "actual": 204697.0,
+      "pred_b1": 194080.8,
+      "pred_events": 194515.4
+    },
+    {
+      "date": "2026-06-04",
+      "actual": 194027.0,
+      "pred_b1": 199985.5,
+      "pred_events": 199960.9
+    },
+    {
+      "date": "2026-06-05",
+      "actual": 197911.0,
+      "pred_b1": 197125.2,
+      "pred_events": 196963.6
+    },
+    {
+      "date": "2026-06-06",
+      "actual": 169883.0,
+      "pred_b1": 179243.8,
+      "pred_events": 178886.0
+    },
+    {
+      "date": "2026-06-07",
+      "actual": 169906.0,
+      "pred_b1": 169798.1,
+      "pred_events": 168967.2
+    },
+    {
+      "date": "2026-06-08",
+      "actual": 191810.0,
+      "pred_b1": 182068.3,
+      "pred_events": 180556.9
+    },
+    {
+      "date": "2026-06-09",
+      "actual": 194815.0,
+      "pred_b1": 200549.4,
+      "pred_events": 201479.7
+    },
+    {
+      "date": "2026-06-10",
+      "actual": 197988.0,
+      "pred_b1": 192527.3,
+      "pred_events": 193206.0
+    },
+    {
+      "date": "2026-06-11",
+      "actual": 192586.0,
+      "pred_b1": 197375.8,
+      "pred_events": 197741.7
+    },
+    {
+      "date": "2026-06-12",
+      "actual": 174363.0,
+      "pred_b1": 181576.3,
+      "pred_events": 181396.2
+    },
+    {
+      "date": "2026-06-13",
+      "actual": 201996.0,
+      "pred_b1": 195047.6,
+      "pred_events": 194414.4
+    },
+    {
+      "date": "2026-06-14",
+      "actual": 187993.0,
+      "pred_b1": 194534.4,
+      "pred_events": 192774.7
+    },
+    {
+      "date": "2026-06-15",
+      "actual": 173365.0,
+      "pred_b1": 177001.5,
+      "pred_events": 175932.0
+    },
+    {
+      "date": "2026-06-16",
+      "actual": 191584.0,
+      "pred_b1": 188986.9,
+      "pred_events": 190181.0
+    },
+    {
+      "date": "2026-06-17",
+      "actual": 189964.0,
+      "pred_b1": 191140.8,
+      "pred_events": 191355.2
+    },
+    {
+      "date": "2026-06-18",
+      "actual": 202847.0,
+      "pred_b1": 199717.7,
+      "pred_events": 199612.2
+    },
+    {
+      "date": "2026-06-19",
+      "actual": 184195.0,
+      "pred_b1": 185909.0,
+      "pred_events": 185970.3
+    },
+    {
+      "date": "2026-06-20",
+      "actual": 175092.0,
+      "pred_b1": 181219.0,
+      "pred_events": 181075.9
+    },
+    {
+      "date": "2026-06-21",
+      "actual": 158121.0,
+      "pred_b1": 159849.4,
+      "pred_events": 159832.7
+    },
+    {
+      "date": "2026-06-22",
+      "actual": 105498.0,
+      "pred_b1": 117436.2,
+      "pred_events": 115439.2
+    },
+    {
+      "date": "2026-06-23",
+      "actual": 134473.0,
+      "pred_b1": 139632.8,
+      "pred_events": 141486.7
+    },
+    {
+      "date": "2026-06-24",
+      "actual": 200458.0,
+      "pred_b1": 186881.8,
+      "pred_events": 187572.7
+    },
+    {
+      "date": "2026-06-25",
+      "actual": 195452.0,
+      "pred_b1": 196544.1,
+      "pred_events": 197063.4
+    },
+    {
+      "date": "2026-06-26",
+      "actual": 188592.0,
+      "pred_b1": 192652.6,
+      "pred_events": 193005.3
+    },
+    {
+      "date": "2026-06-27",
+      "actual": 129306.0,
+      "pred_b1": 136753.0,
+      "pred_events": 135815.3
+    },
+    {
+      "date": "2026-06-28",
+      "actual": 166554.0,
+      "pred_b1": 160285.6,
+      "pred_events": 160591.0
+    },
+    {
+      "date": "2026-06-29",
+      "actual": 172947.0,
+      "pred_b1": 168447.5,
+      "pred_events": 166848.9
+    },
+    {
+      "date": "2026-06-30",
+      "actual": 184088.0,
+      "pred_b1": 180728.1,
+      "pred_events": 182449.6
+    }
+  ]
 }

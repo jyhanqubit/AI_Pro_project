@@ -65,9 +65,26 @@ _ALL_BOROUGHS = tuple(_BOROUGH_CENTROIDS)
 # borough) is attributed to ALL boroughs. This is a documented domain rule, not fabrication — it
 # encodes that citywide mobility shocks are, in fact, citywide. Toggle with --no-citywide.
 _CITYWIDE_CUES = (
-    "subway", "mta", "path train", "nj transit", "ferry", "citywide", "city-wide",
-    "metrocard", "omny", "storm", "flooding", "flood", "snow", "blizzard", "heat wave",
-    "hurricane", "transit strike", "service change", "signal problem", "signal failure",
+    "subway",
+    "mta",
+    "path train",
+    "nj transit",
+    "ferry",
+    "citywide",
+    "city-wide",
+    "metrocard",
+    "omny",
+    "storm",
+    "flooding",
+    "flood",
+    "snow",
+    "blizzard",
+    "heat wave",
+    "hurricane",
+    "transit strike",
+    "service change",
+    "signal problem",
+    "signal failure",
 )
 
 
@@ -101,11 +118,13 @@ def build_news_llm_index(
     articles = NewsFixtureCollector(news_path).collect().records
     events, _ = extract_events(articles, build_provider(provider))
     art = {a.article_id: a for a in articles}
-    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(
-        lambda: {c: 0.0 for c in _NEWS_COLS}
-    )
-    diag = {"events": len(events), "attributed_events": 0, "attributed_articles": 0,
-            "citywide": citywide}
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in _NEWS_COLS})
+    diag = {
+        "events": len(events),
+        "attributed_events": 0,
+        "attributed_articles": 0,
+        "citywide": citywide,
+    }
     attributed_articles: set[str] = set()
 
     for ev in events:
@@ -141,7 +160,11 @@ def build_news_llm_index(
 
 
 def build_news_llm_index_precomputed(
-    news_path: Path, events_path: Path, *, window_h: int = 24
+    news_path: Path,
+    events_path: Path,
+    *,
+    window_h: int = 24,
+    max_boroughs: int | None = None,
 ) -> tuple[dict[tuple[str, str], dict[str, float]], dict[str, int]]:
     """Build the borough-hour news index from a PRECOMPUTED events file (leakage-safe).
 
@@ -149,10 +172,22 @@ def build_news_llm_index_precomputed(
     ``severity``; availability comes from the source article's ``available_at`` in ``news_path``,
     so features never precede the moment the news was public. This is how a competent LLM's output
     (which filters non-NYC / false-positive events the keyword mock does not) enters the ablation.
+
+    ``max_boroughs`` drops events spanning more than that many boroughs. A weather shock attributed
+    to all five turns the feature on everywhere at once, so it carries no spatial information the
+    calendar features do not already have — it is a time dummy wearing a location feature's clothes.
+    The V2-03 "precise-location" condition predicts such events dilute the signal; this knob makes
+    that testable rather than assumed. ``None`` keeps every event (the default, unchanged).
     """
     articles = {a.article_id: a for a in NewsFixtureCollector(news_path).collect().records}
     idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in _NEWS_COLS})
-    diag = {"events": 0, "attributed_events": 0, "attributed_articles": 0, "precomputed": True}
+    diag = {
+        "events": 0,
+        "attributed_events": 0,
+        "attributed_articles": 0,
+        "dropped_too_many_boroughs": 0,
+        "precomputed": True,
+    }
     seen: set[str] = set()
     for line in Path(events_path).read_text(encoding="utf-8").splitlines():
         if not line.strip():
@@ -162,6 +197,9 @@ def build_news_llm_index_precomputed(
         a = articles.get(e["article_id"])
         boroughs = [b for b in e.get("boroughs", []) if b in _BOROUGH_CENTROIDS]
         if a is None or not boroughs:
+            continue
+        if max_boroughs is not None and len(boroughs) > max_boroughs:
+            diag["dropped_too_many_boroughs"] += 1
             continue
         diag["attributed_events"] += 1
         seen.add(e["article_id"])
@@ -191,9 +229,16 @@ def _paired(y_test, pa, pb, blocks) -> dict[str, Any]:
     return run_predictive_lift(err_a, err_b, blocks, coverage_ok=True)
 
 
-def run(data_dir: str, events_path: str, news_path: str, test_from: str,
-        target: str = PRIMARY_TARGET, provider: str = "mock", citywide: bool = True,
-        claude_events: str | None = None) -> dict[str, Any]:
+def run(
+    data_dir: str,
+    events_path: str,
+    news_path: str,
+    test_from: str,
+    target: str = PRIMARY_TARGET,
+    provider: str = "mock",
+    citywide: bool = True,
+    claude_events: str | None = None,
+) -> dict[str, Any]:
     test_start = datetime.fromisoformat(test_from).replace(tzinfo=_NY)
     paths = sorted(Path(data_dir).glob("*.zip"))
     if not paths:
@@ -208,14 +253,22 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         news_idx, news_diag = build_news_llm_index_precomputed(Path(news_path), Path(claude_events))
         provider = "claude-opus-4-8-insession"
     else:
-        news_idx, news_diag = build_news_llm_index(Path(news_path), provider=provider, citywide=citywide)
-    print(f"news events={news_diag['events']} attributed={news_diag['attributed_events']} "
-          f"(articles {news_diag['attributed_articles']})")
+        news_idx, news_diag = build_news_llm_index(
+            Path(news_path), provider=provider, citywide=citywide
+        )
+    print(
+        f"news events={news_diag['events']} attributed={news_diag['attributed_events']} "
+        f"(articles {news_diag['attributed_articles']})"
+    )
 
     b1_cols = sorted({k for r in rows for k in r.features})
     recs: list[dict[str, Any]] = []
     for r in rows:
-        rec: dict[str, Any] = {"borough": r.zone_id, "hour_start": r.hour_start, target: r.targets[target]}
+        rec: dict[str, Any] = {
+            "borough": r.zone_id,
+            "hour_start": r.hour_start,
+            target: r.targets[target],
+        }
         for k in b1_cols:
             rec[k] = r.features.get(k)
         hk = r.hour_start.strftime("%Y-%m-%d %H")
@@ -226,7 +279,11 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
         for c in _NEWS_COLS:
             rec[c] = ne[c] if ne else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -255,26 +312,46 @@ def run(data_dir: str, events_path: str, news_path: str, test_from: str,
     def net(p):
         return account(np.rint(p), y_test, baseline_stock=np.rint(p), assumptions=A).net
 
-    arms = {a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3),
-                "net_profit_simulated": round(net(p), 2)} for a, p in preds.items()}
+    arms = {
+        a: {
+            "wape": round(float(wape(y_test, p)), 4),
+            "mae": round(float(mae(y_test, p)), 3),
+            "net_profit_simulated": round(net(p), 2),
+        }
+        for a, p in preds.items()
+    }
 
-    lift_permitted = _paired(y_test, preds["A0_demand_calendar"], preds["A1_plus_permitted"], blocks)
+    lift_permitted = _paired(
+        y_test, preds["A0_demand_calendar"], preds["A1_plus_permitted"], blocks
+    )
     lift_llm = _paired(y_test, preds["A1_plus_permitted"], preds["A2_plus_llm_news"], blocks)
 
     # LLM Feature Value metric: relative WAPE reduction on the LLM-active subset + CI-backed decision.
     llm_active_mask = df.loc[test_pos, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0
-    lfv = llm_feature_value(y_test, preds["A1_plus_permitted"], preds["A2_plus_llm_news"],
-                            llm_active_mask, blocks)
+    lfv = llm_feature_value(
+        y_test, preds["A1_plus_permitted"], preds["A2_plus_llm_news"], llm_active_mask, blocks
+    )
 
-    news_test_rows = int((df.loc[test_pos, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0).sum())
-    perm_test_rows = int((df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0).sum())
+    news_test_rows = int(
+        (df.loc[test_pos, list(_NEWS_COLS)].abs().sum(axis=1).to_numpy() > 0).sum()
+    )
+    perm_test_rows = int(
+        (df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0).sum()
+    )
     cost = _llm_cost(Path(news_path))
-    profit_lift_llm = round(arms["A2_plus_llm_news"]["net_profit_simulated"]
-                            - arms["A1_plus_permitted"]["net_profit_simulated"], 2)
+    profit_lift_llm = round(
+        arms["A2_plus_llm_news"]["net_profit_simulated"]
+        - arms["A1_plus_permitted"]["net_profit_simulated"],
+        2,
+    )
     net_llm_value = round(profit_lift_llm - cost["estimated_real_usd"], 2)
 
     llm_identical = bool(np.allclose(preds["A2_plus_llm_news"], preds["A1_plus_permitted"]))
-    headline = "insufficient_event_overlap" if (llm_identical or news_test_rows == 0) else lift_llm["verdict"]
+    headline = (
+        "insufficient_event_overlap"
+        if (llm_identical or news_test_rows == 0)
+        else lift_llm["verdict"]
+    )
 
     return {
         "run_id": f"run_v2-03b_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
@@ -318,34 +395,63 @@ def main(argv: list[str] | None = None) -> int:
     # Default test = May: the June window has 0 attributable news borough-hours, so testing on
     # June cannot fairly evaluate the LLM-news arm. May carries real news signal (216 test rows).
     ap.add_argument("--test-from", default="2026-05-01")
-    ap.add_argument("--provider", choices=("mock", "anthropic", "openai"), default="mock",
-                    help="event extractor: mock (offline keyword) or a real LLM (needs API key)")
-    ap.add_argument("--no-citywide", action="store_true",
-                    help="disable the citywide news-attribution rule (borough-name match only)")
-    ap.add_argument("--claude-events", default=None,
-                    help="precomputed real-LLM events JSONL (e.g. claude_events_2026h1.jsonl); "
-                         "overrides --provider with in-session Claude extraction")
+    ap.add_argument(
+        "--provider",
+        choices=("mock", "anthropic", "openai"),
+        default="mock",
+        help="event extractor: mock (offline keyword) or a real LLM (needs API key)",
+    )
+    ap.add_argument(
+        "--no-citywide",
+        action="store_true",
+        help="disable the citywide news-attribution rule (borough-name match only)",
+    )
+    ap.add_argument(
+        "--claude-events",
+        default=None,
+        help="precomputed real-LLM events JSONL (e.g. claude_events_2026h1.jsonl); "
+        "overrides --provider with in-session Claude extraction",
+    )
     ns = ap.parse_args(argv)
 
-    res = run(ns.data_dir, ns.events, ns.news, ns.test_from,
-              provider=ns.provider, citywide=not ns.no_citywide, claude_events=ns.claude_events)
+    res = run(
+        ns.data_dir,
+        ns.events,
+        ns.news,
+        ns.test_from,
+        provider=ns.provider,
+        citywide=not ns.no_citywide,
+        claude_events=ns.claude_events,
+    )
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "incremental_value_borough.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    (OUT_DIR / "incremental_value_borough.json").write_text(
+        json.dumps(res, indent=2), encoding="utf-8"
+    )
 
     print(f"\ngrain={res['grain']}  train={res['n_train_rows']} test={res['n_test_rows']}")
-    print(f"test rows with: permitted={res['test_rows_with_permitted_event']} "
-          f"llm_news={res['test_rows_with_llm_news_event']}")
+    print(
+        f"test rows with: permitted={res['test_rows_with_permitted_event']} "
+        f"llm_news={res['test_rows_with_llm_news_event']}"
+    )
     for a, s in res["arms"].items():
         print(f"  {a:20s} WAPE={s['wape']:.4f}  net(sim)={s['net_profit_simulated']:.0f}")
     lp, ll = res["structured_event_lift_A1_minus_A0"], res["llm_news_increment_A2_minus_A1"]
-    print(f"A1-A0 structured lift: {lp['verdict']}  mean_gain={lp['mean_gain']:.4f} CI95={lp['ci_95']}")
-    print(f"A2-A1 LLM increment  : {ll['verdict']}  mean_gain={ll['mean_gain']:.4f} CI95={ll['ci_95']}")
-    print(f"HEADLINE (LLM increment): {res['headline_verdict_llm_increment']}  "
-          f"net LLM value(sim)={res['net_llm_value_simulated']}")
+    print(
+        f"A1-A0 structured lift: {lp['verdict']}  mean_gain={lp['mean_gain']:.4f} CI95={lp['ci_95']}"
+    )
+    print(
+        f"A2-A1 LLM increment  : {ll['verdict']}  mean_gain={ll['mean_gain']:.4f} CI95={ll['ci_95']}"
+    )
+    print(
+        f"HEADLINE (LLM increment): {res['headline_verdict_llm_increment']}  "
+        f"net LLM value(sim)={res['net_llm_value_simulated']}"
+    )
     lfv = res["llm_feature_value_metric"]
-    print(f"LLM FEATURE VALUE metric : {lfv['decision']}  "
-          f"active_skill={lfv['llm_active_skill_pct']}%  CI95={lfv['active_error_gain_ci95']}  "
-          f"(n_active={lfv['n_llm_active_rows']})")
+    print(
+        f"LLM FEATURE VALUE metric : {lfv['decision']}  "
+        f"active_skill={lfv['llm_active_skill_pct']}%  CI95={lfv['active_error_gain_ci95']}  "
+        f"(n_active={lfv['n_llm_active_rows']})"
+    )
     print(f"report -> {OUT_DIR}/incremental_value_borough.json")
     return 0
 

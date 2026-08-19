@@ -1,19 +1,19 @@
 {
-  "run_id": "run_v2-09_20260819T092826Z",
+  "run_id": "run_v2-09_20260819T153151Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-08-19T09:28:26.642860+00:00",
+  "freshness": "2026-08-19T15:31:51.733435+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 36,
+  "n_artifacts": 38,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 2,
-    "measured": 18,
+    "measured": 20,
     "offline_benchmark": 8,
     "research": 1,
     "simulated": 6
@@ -55,11 +55,11 @@
   "claims": [
     {
       "artifact": "reports/v2/copilot/correctness_benchmark.json",
-      "run_id": "run_v2-06_20260816T062701Z",
+      "run_id": "run_v2-06_20260819T153050Z",
       "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
       "mode": "research",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-16T06:27:01.029342+00:00",
+      "freshness": "2026-08-19T15:30:50.905920+00:00",
       "headline": {
         "routing_accuracy": 1.0,
         "hallucinated_answers": 0,
@@ -86,11 +86,11 @@
     },
     {
       "artifact": "reports/v2/copilot/ragas_generation_benchmark.json",
-      "run_id": "run_v2-06ragasgen_20260816T062701Z",
+      "run_id": "run_v2-06ragasgen_20260819T153050Z",
       "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-16T06:27:01.035181+00:00",
+      "freshness": "2026-08-19T15:30:50.912661+00:00",
       "headline": {
         "faithfulness": 1.0,
         "answer_relevancy": 0.985
@@ -107,11 +107,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_faithfulness.json",
-      "run_id": "run_v2-07faith_20260816T062727Z",
+      "run_id": "run_v2-07faith_20260819T153119Z",
       "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-16T06:27:27.195441+00:00",
+      "freshness": "2026-08-19T15:31:19.211201+00:00",
       "headline": {
         "mean_faithfulness": 1.0,
         "ungrounded_numbers_total": 0
@@ -119,11 +119,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_parse_benchmark.json",
-      "run_id": "run_v2-07tripparse_20260816T062727Z",
+      "run_id": "run_v2-07tripparse_20260819T153119Z",
       "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-16T06:27:27.192870+00:00",
+      "freshness": "2026-08-19T15:31:19.208073+00:00",
       "headline": {}
     },
     {
@@ -142,6 +142,15 @@
       "mode": "historical_replay",
       "claim_status": "measured",
       "freshness": "2026-08-16T06:17:58.919832+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/quantile_cost.json",
+      "run_id": "run_v2-01q_20260819T152729Z",
+      "artifact_id": "reports/v2/holdout/quantile_cost.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-19T15:27:29.649300+00:00",
       "headline": {}
     },
     {
@@ -288,11 +297,20 @@
     },
     {
       "artifact": "reports/v2/llm_value/rolling_origin_ablation.json",
-      "run_id": "run_v2-03r_20260819T092554Z",
+      "run_id": "run_v2-03r_20260819T141038Z",
       "artifact_id": "reports/v2/llm_value/rolling_origin_ablation.json",
       "mode": "historical_replay",
       "claim_status": "measured",
-      "freshness": "2026-08-19T09:25:54.615316+00:00",
+      "freshness": "2026-08-19T14:10:38.303273+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/rolling_origin_localized.json",
+      "run_id": "run_v2-03r_20260819T142309Z",
+      "artifact_id": "reports/v2/llm_value/rolling_origin_localized.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-19T14:23:09.817327+00:00",
       "headline": {}
     },
     {

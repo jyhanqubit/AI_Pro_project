@@ -17,7 +17,7 @@ verdict that flips is reported as unstable rather than quietly dropped (section 
 The panel (trips -> borough-hour cells -> features -> event/news joins) is built once and reused
 for every window, so the extra cost over a single run is only the refits.
 
-    python -m ml.forecasting.llm_value_rolling --windows 3
+    python -m ml.forecasting.llm_value_rolling --windows 6
     make v2-llm-value-rolling
 
 Output: ``reports/v2/llm_value/rolling_origin_ablation.json``.
@@ -70,6 +70,7 @@ def build_panel(
     target: str = PRIMARY_TARGET,
     provider: str = "mock",
     claude_events: str | None = None,
+    max_event_boroughs: int | None = None,
 ) -> tuple[pd.DataFrame, list[str], dict[str, Any]]:
     """Borough-hour panel with demand/calendar features plus permitted-event and news columns."""
     paths = sorted(Path(data_dir).glob("*.zip"))
@@ -81,7 +82,9 @@ def build_panel(
 
     permitted = build_event_index(Path(events_path))
     if claude_events:
-        news_idx, news_diag = build_news_llm_index_precomputed(Path(news_path), Path(claude_events))
+        news_idx, news_diag = build_news_llm_index_precomputed(
+            Path(news_path), Path(claude_events), max_boroughs=max_event_boroughs
+        )
     else:
         news_idx, news_diag = build_news_llm_index(Path(news_path), provider=provider)
 
@@ -217,7 +220,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl")
     ap.add_argument("--claude-events", default="data/fixtures/news_live/claude_events_2026h1.jsonl")
     ap.add_argument("--provider", choices=("mock", "anthropic", "openai"), default="mock")
-    ap.add_argument("--windows", type=int, default=3)
+    ap.add_argument("--windows", type=int, default=6)
+    ap.add_argument(
+        "--max-event-boroughs",
+        type=int,
+        default=None,
+        help="drop news events spanning more than N boroughs (tests the precise-location "
+        "condition: a citywide event switches the feature on everywhere and adds no spatial "
+        "information). Omit to keep every event.",
+    )
     ap.add_argument("--out", type=Path, default=OUT_PATH)
     ns = ap.parse_args(argv)
 
@@ -227,7 +238,12 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"building panel from {ns.data_dir} ...")
     df, b1_cols, news_diag = build_panel(
-        ns.data_dir, ns.events, ns.news, provider=ns.provider, claude_events=claude_events
+        ns.data_dir,
+        ns.events,
+        ns.news,
+        provider=ns.provider,
+        claude_events=claude_events,
+        max_event_boroughs=ns.max_event_boroughs,
     )
     print(
         f"panel rows={len(df)} boroughs={df['borough'].nunique()} "
@@ -275,6 +291,7 @@ def main(argv: list[str] | None = None) -> int:
             "the expanding span strictly before it, then bootstraps the paired gain over day "
             "blocks inside that window. Adds the training-side variability a single split omits."
         ),
+        "max_event_boroughs": ns.max_event_boroughs,
         "n_windows": len(results),
         "news_attribution": news_diag,
         "windows": results,

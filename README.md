@@ -68,9 +68,10 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 재배치 부족 146→78(−47%), MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 출력 (오프라인) |
 | GraphRAG: 검색 없는 raw LLM은 hallucination 10/10 → 근거 응답 0, 정답률 40%→100% | `python -m scripts.graphrag_eval` | 콘솔 출력 (오프라인) |
 | 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
-| 이벤트 feature lift: WAPE −1.65% (95% CI [0.36, 5.11]) | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
+| 이벤트 feature lift: **철회** — 원래의 +1.65%는 Jersey City 트립이 Staten Island로 오배정돼 섞인 결과였고, NYC 데이터만으로 다시 돌리면 −1.94%(CI [−6.09, −0.86])로 악화합니다 | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/`, [경위](docs/EVENT_LIFT_FINDINGS.md) |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
 | 이벤트 피처 유무 ablation (H3 단위): 희소 이벤트(3개월 5건)는 개선 없음 — WAPE 0.5091(없음) vs 0.5105(있음) | 결과와 재실행 명령: `reports/event_feature_ablation.json` | `reports/` |
+| 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
 | 전체 테스트 | `make test` | 484 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
@@ -265,6 +266,37 @@ WAPE를 재배치 목적함수 쪽으로 굽힌 원리적 일반화이고, Phase
 (0.857). knn이 더 심하게 과소예측(bias −0.451, 부족 3,730대)하는 반면, tree 계열은 덜 과소예측
 (extra_trees bias −0.231, 부족 3,157대 → OCS 0.781로 최고)하기 때문입니다. 모든 모델이 과소예측
 (음의 bias)이라 품절 위험이 구조적으로 존재하고, B0는 특히 심합니다(bias −0.867, OCS 1.147).
+### 비대칭 비용을 손실함수까지 반영하기 (측정 결과)
+
+OCS는 오랫동안 **지표**로만 쓰였습니다. 모델은 대칭 squared_error로 학습해 조건부 평균을 맞추고,
+비대칭성은 평가와 재배치 목적함수에서만 반영됐습니다. 뉴스벤더 정리는 그 간극을 정확히 지목합니다 —
+부족 비용 $c_s$, 과잉 비용 $c_o$일 때 비용을 최소화하는 점 예측은 평균도 중앙값도 아닌
+
+$$q^* = \frac{c_s}{c_s + c_o}$$
+
+분위수이고, OCS 가중치(2:1)에서는 **0.667**입니다. 실행 전에 이 예측을 artifact에 기록하고
+(`newsvendor_q_star`), 손실함수만 바꿔가며 같은 rolling-origin 창에서 측정했습니다.
+
+| loss | WAPE | OCS | bias | OCS 변화 |
+|---|---|---|---|---|
+| squared_error (기준) | 0.4974 | 0.7525 | −0.033 | — |
+| quantile q=0.5 | **0.4903** | 0.7895 | −0.281 | +4.92% |
+| quantile q=0.6 | 0.5124 | 0.7447 | +0.126 | −1.04% |
+| **quantile q=0.667** | 0.5391 | **0.7268** | +0.428 | **−3.42%** |
+| quantile q=0.75 | 0.5979 | 0.7361 | +0.839 | −2.18% |
+| quantile q=0.8 | 0.6569 | 0.7679 | +1.134 | +2.05% |
+
+**OCS 곡선은 q=0.667에서 최소인 U자**로, 이론이 지목한 지점과 일치합니다. 3개 홀드아웃 창
+**전부**에서 q=0.667이 최적이었고, 부족 대수가 창별로 25,184→18,704 / 27,327→19,854 /
+27,262→20,105으로 **평균 26% 감소**했습니다.
+
+대가는 명시합니다 — **WAPE는 0.4974에서 0.5391로 8.4% 나빠집니다.** 정확도를 내주고 운영 비용을
+얻은 것이므로 두 지표를 항상 나란히 보고합니다. 중앙값(q=0.5)이 WAPE는 가장 좋지만(0.4903) OCS는
+기준보다 나쁘다는 점(+4.92%)이, 정확도 지표만 보면 운영상 잘못된 모델을 고르게 된다는 위의 발견을
+다시 확인해 줍니다.
+
+재현: `make v2-quantile-cost` → `reports/v2/holdout/quantile_cost.json`
+
 즉 정확도(WAPE)만 보면 knn이지만, 품절 비용까지 보면 extra_trees가 운영상 더 낫습니다 — 이것이 이
 데이터에 맞춘 지표를 따로 둔 이유입니다. (선택 자체는 프로토콜대로 CV WAPE로 하되, 운영 관점의
 재순위를 함께 보고합니다.)
@@ -446,6 +478,7 @@ artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v
 | 결과 | claim_status | 수치 | 재현 |
 |---|---|---|---|
 | Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, 2026년 1~7월 트립, rolling-origin 3-window: WAPE 0.4974 ± 0.0074, MASE 0.8708 ± 0.0094 (naive WAPE 0.65~0.69를 이김) | `make v2-holdout` |
+| **비대칭 비용 최적화 (뉴스벤더 q\*)** | **measured** | 손실함수를 0.667분위로 바꿔 OCS 0.7525 → 0.7268 (**−3.42%**), 품절 대수 **−26%**, 3개 창 전부에서 q=0.667이 최적. 대가로 WAPE +8.4%. 예측을 실행 전에 artifact에 기록 | `make v2-quantile-cost` |
 | 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측 (serving 시점 2026-08-01), Latency p95 5.7 ms (로컬) | `make v2-serving-export` |
 | Structured event feed lift (A1−A0) | measured, **재현 실패** | 단일 분할(2026-05)에서는 `MEANINGFUL_POSITIVE` +2.69%였으나, rolling origin으로 재검증하니 부호가 뒤집힘(5월 +3.96 / 6월 −3.46). 개선 주장을 철회합니다 | `make v2-llm-value-rolling` |
 | LLM-from-news 증분 (A2−A1) | measured (negative) | 측정 가능한 두 창 모두에서 음수(`consistently_negative`), net LLM value −$17,789 — news는 structured feed 대비 redundant | `make v2-llm-value-rolling` |
@@ -460,6 +493,7 @@ artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v
 make v2-audit             # V2-00: domain-drift + result-envelope 계약 gate (오프라인)
 make v2-holdout           # V2-01: promoted model + H3 multi-holdout (원본 트립 필요)
 make v2-serving-export    # V2-07: promoted 모델의 next-hour serving feature 스냅숏
+make v2-quantile-cost     # V2-01: 비대칭 비용 분위수 sweep (뉴스벤더 q* 검증)
 make v2-ledger            # V2-02: profit/regret ledger
 make v2-llm-value-borough # V2-03: No-Event / Rule-Event / LLM-Event ablation + CI + LLM 비용
 make v2-llm-value-rolling # V2-03: 같은 ablation을 월별 rolling origin에서 반복 (창마다 재학습, 부호 일관성)
