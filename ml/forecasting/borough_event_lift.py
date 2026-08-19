@@ -15,7 +15,7 @@ Model-attributed, not causal. A single fast model (HistGradientBoostingRegressor
 set and the paired improvement is bootstrapped over day blocks for an honest CI + verdict.
 
     python -m ml.forecasting.borough_event_lift \
-        --data-dir data/raw/citibike \
+        --data-dir data/raw/nyc \
         --events data/fixtures/nyc_permitted_events_filtered.jsonl.gz \
         --test-from 2026-06-01
 """
@@ -192,10 +192,12 @@ def stream_borough_cells(
                                         dep_mem[key] += 1
                                     elif row[i_mc] == "casual":
                                         dep_cas[key] += 1
-                        # arrivals at destination borough
+                        # Arrivals are resolved from the destination independently: a trip that
+                        # starts outside the city still delivers a bike to a real NYC borough, so
+                        # the arrival counts even when the departure was rejected (and vice versa).
                         if i_et is not None and i_ela is not None and i_elo is not None:
                             try:
-                                eb = borough_of(float(row[i_ela]), float(row[i_elo]))
+                                eb = borough_of(float(row[i_ela]), float(row[i_elo]), rejected)
                             except (ValueError, IndexError):
                                 eb = None
                             if eb:
