@@ -13,22 +13,25 @@ measured artifact를 생성하지 않았으므로, V2 docs의 모든 result는 `
 
 - **단일 origin 결과는 재현되지 않았다 (2026-08-19 정정, 가장 중요):** structured event feed의
   A1−A0 개선(`MEANINGFUL_POSITIVE +2.69%`)은 하나의 train/test 분할에서 얻은 값이다. 월별 rolling
-  origin으로 창마다 재학습해 다시 측정하니 **부호가 뒤집혔다** (2026-05 +3.96 CI [1.02, 6.68] /
-  2026-06 −3.46 CI [−6.10, −0.92] → `sign_flips`). 개선 주장은 철회한다. 반면 A2−A1의 부정적
-  결론은 측정 가능한 두 창 모두에서 유지되어(`consistently_negative`) 그대로 둔다. 검증:
+  origin으로 창마다 재학습해 다시 측정하니 유의성이 사라진다 (borough 패널의 데이터 결함을 고친 뒤:
+  2026-05 +0.42 CI [−2.00, 2.71] / 2026-06 +1.91 CI [−0.24, 3.92], 둘 다 `inconclusive`).
+  개선 주장은 철회한다. A2−A1의 부정적 결론도 같은 결함의 산물이어서 함께 철회했다(수정 후
+  2026-06은 +2.23 CI [1.10, 3.35]로 오히려 유의한 개선). 검증:
   `make v2-llm-value-rolling` → `reports/v2/llm_value/rolling_origin_ablation.json`.
   이 사건의 일반 교훈은 **단일 분할의 block-bootstrap CI는 평가 기간의 표본 변동만 담고 학습
   변동은 담지 않는다**는 것이다. 앞으로 lift 주장을 추가할 때는 rolling origin 재현을 함께 요구한다.
-- **v1의 `-1.65%` 이벤트 lift는 borough 오배정의 산물이었다 (2026-08-19):** 같은 명령을 NYC 데이터만으로
-  다시 돌리면 2026-06 홀드아웃에서 +1.65% 개선이 아니라 **-1.94% 악화**(CI [-6.09, -0.86])가 나온다.
-  원인은 원본이 **Jersey City 아카이브를 NYC와 함께** 넣고 실행한 데 있다. borough 배정이
+- **v1의 `-1.65%` 이벤트 lift는 borough 오배정의 산물이었다 (2026-08-19):** 원본은 **Jersey City
+  아카이브를 NYC와 함께** 넣고 실행한 것이다. 경계 검사를 넣고 NYC 데이터만으로 다시 돌리면 같은
+  2026-06 홀드아웃에서 **+1.03%, CI [-0.24, 3.90] `inconclusive`** 로, 개선도 악화도 주장할 수 없다. borough 배정이
   nearest-centroid라 뉴저지 트립이 전부 **Staten Island**로 들어간다(2026-06 SI 시간 셀: NYC만 **1**
   → NYC+JC **486**, test 행 차이 485와 일치). 그 행들은 **뉴저지 수요 + 실제 Staten Island의 NYC
   permit 이벤트**라는 무관한 조합이었다. 경위는 `docs/EVENT_LIFT_FINDINGS.md` 상단 정정 블록 참고.
-  **결과적으로 이 저장소에 이벤트 피처의 예측 개선 주장은 남아 있지 않다.**
-- **nearest-centroid 배정에 경계 검사가 없다 (원인 제공):** 입력 좌표가 NYC 밖이어도 가장 가까운
-  borough로 조용히 배정된다. 경계 밖 좌표를 거부하거나 중심점까지의 거리 상한을 두는 검사가 필요하다.
-  또한 artifact에 **입력 파일 목록과 borough별 행 수**를 기록해야 이런 혼입이 리뷰에서 드러난다(§7.1).
+  **결과적으로 이 저장소는 이벤트 피처의 예측 개선을 주장하지 않는다(악화도 주장하지 않는다).**
+- **nearest-centroid 배정의 경계 검사 (2026-08-19 수정됨):** 입력 좌표가 NYC 밖이어도 가장 가까운
+  borough로 조용히 배정되던 문제를 `borough_of()`에서 막았다(허드슨강 서쪽 거부 + 15 km 상한 +
+  사유별 거부 집계, 회귀 테스트 7개). 같은 결함의 두 번째 갈래로, **NYC에서 출발해 뉴저지에서 끝나는
+  트립이 '맨해튼 도착'으로 집계**되어 `arr_*` 피처를 부풀리고 있었고 이것도 함께 고쳤다. 남은 과제는
+  artifact에 **입력 파일 목록과 borough별 행 수**를 기록해 이런 혼입이 리뷰에서 드러나게 하는 것이다(§7.1).
 - **단일 origin 위에 세운 파생 분석도 같은 조건부:** density curve와 quality ablation은 +2.69%가
   성립하던 창 안에서의 민감도 분석이다. 창 안의 상대 비교로는 유효하지만, 베이스가 되는 효과 자체가
   안정적이지 않다는 점을 함께 읽어야 한다.
@@ -39,11 +42,12 @@ measured artifact를 생성하지 않았으므로, V2 docs의 모든 result는 `
   `blocked_data`로 남을 수 있으며, 그럴 경우 조작하지 않고 그대로 보고해야 한다.
 - **WAPE-lift attribution (LLM을 과대 주장하지 말 것):** measured forecast lift는 **structured
   event feed** (NYC permits)에 속하며, LLM에 속하지 않는다. V2-03은 일곱 가지 접근을 통해
-  LLM-from-news가 **어떤 incremental WAPE lift도 추가하지 않음**을 검증했다 (근본 원인: news가 네
-  가지 조건 — dense, precise-time, precise-location, forward-looking — 을 충족하지 못함; events의
-  2/23만 forward-looking). "LLM features improved WAPE"라고 주장하지 말 것. 올바른 표현: *structured
-  event features improved WAPE (measured); the LLM's measured value is in GraphRAG grounding /
-  routing / explanation, not demand accuracy.* unstructured하면서 forward-looking한 source (event
+  LLM-from-news가 incremental WAPE lift를 추가하지 않는다고 보고했다 (근본 원인: news가 네 가지 조건 —
+  dense, precise-time, precise-location, forward-looking — 을 충족하지 못함; events의 2/23만
+  forward-looking). **2026-08-19 정정:** 그 측정들은 결함 있는 borough 패널에서 나왔다. 수정 후
+  rolling origin에서는 permit lift가 `inconclusive`가 되고 LLM-news 증분은 2026-06에서 오히려
+  **유의한 개선**(+2.23, CI [1.10, 3.35])으로 나온다. 따라서 지금은 **어느 방향도 주장하지 않는다**.
+  LLM의 확립된 measured value는 여전히 GraphRAG grounding / routing / explanation 쪽이다. unstructured하면서 forward-looking한 source (event
   previews / announcements)가 LLM의 아직 실현되지 않은 demand niche이다 — 여기서는 미검증
   (`blocked_data`)이며 주장하지 않는다. `V2_LLM_VALUE_ABLATION.md` 참조.
 - **External collection (`blocked_external`):** GDELT bulk collection이 공유 sandbox IP에서

@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-03r_20260819T092554Z",
+  "run_id": "run_v2-03r_20260819T135845Z",
   "artifact_id": "reports/v2/llm_value/rolling_origin_ablation.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-08-19T09:25:54.615316+00:00",
+  "freshness": "2026-08-19T13:58:45.200594+00:00",
   "grain": "borough-hour (nearest-centroid; approximate)",
   "target": "departures",
   "extraction_provider": "claude-opus-4-8-insession",
@@ -26,43 +26,43 @@
       "test_rows_with_llm_news_event": 336,
       "arms": {
         "A0_demand_calendar": {
-          "wape": 0.0907,
-          "mae": 143.048
+          "wape": 0.0903,
+          "mae": 142.431
         },
         "A1_plus_permitted": {
-          "wape": 0.0882,
-          "mae": 139.092
+          "wape": 0.09,
+          "mae": 142.012
         },
         "A2_plus_llm_news": {
           "wape": 0.0904,
-          "mae": 142.592
+          "mae": 142.587
         }
       },
       "A1_minus_A0": {
         "n": 2975,
         "n_blocks": 31,
-        "mean_loss_m0": 143.048076,
-        "mean_loss_m1": 139.092048,
-        "verdict": "measured_improvement",
-        "claim_enabled": true,
-        "mean_gain": 3.956028,
+        "mean_loss_m0": 142.430546,
+        "mean_loss_m1": 142.011683,
+        "verdict": "inconclusive",
+        "claim_enabled": false,
+        "mean_gain": 0.418863,
         "ci_95": [
-          1.017471,
-          6.675711
+          -1.99897,
+          2.710966
         ],
         "coverage_ok": true
       },
       "A2_minus_A1": {
         "n": 2975,
         "n_blocks": 31,
-        "mean_loss_m0": 139.092048,
-        "mean_loss_m1": 142.592084,
-        "verdict": "negative_lift",
+        "mean_loss_m0": 142.011683,
+        "mean_loss_m1": 142.587121,
+        "verdict": "inconclusive",
         "claim_enabled": false,
-        "mean_gain": -3.500036,
+        "mean_gain": -0.575438,
         "ci_95": [
-          -5.268222,
-          -1.537532
+          -1.716242,
+          0.585825
         ],
         "coverage_ok": true
       }
@@ -70,99 +70,99 @@
     {
       "window": "2026-06-01..2026-07-01",
       "n_train_rows": 13630,
-      "n_test_rows": 2881,
+      "n_test_rows": 2880,
       "n_day_blocks": 30,
       "test_rows_with_permitted_event": 2612,
       "test_rows_with_llm_news_event": 168,
       "arms": {
         "A0_demand_calendar": {
-          "wape": 0.0945,
-          "mae": 176.467
+          "wape": 0.0978,
+          "mae": 182.806
         },
         "A1_plus_permitted": {
-          "wape": 0.0963,
-          "mae": 179.931
+          "wape": 0.0968,
+          "mae": 180.9
         },
         "A2_plus_llm_news": {
-          "wape": 0.0973,
-          "mae": 181.755
+          "wape": 0.0956,
+          "mae": 178.674
         }
       },
       "A1_minus_A0": {
-        "n": 2881,
+        "n": 2880,
         "n_blocks": 30,
-        "mean_loss_m0": 176.467124,
-        "mean_loss_m1": 179.930795,
-        "verdict": "negative_lift",
+        "mean_loss_m0": 182.806034,
+        "mean_loss_m1": 180.900109,
+        "verdict": "inconclusive",
         "claim_enabled": false,
-        "mean_gain": -3.463671,
+        "mean_gain": 1.905925,
         "ci_95": [
-          -6.096518,
-          -0.91552
+          -0.2375,
+          3.922675
         ],
         "coverage_ok": true
       },
       "A2_minus_A1": {
-        "n": 2881,
+        "n": 2880,
         "n_blocks": 30,
-        "mean_loss_m0": 179.930795,
-        "mean_loss_m1": 181.755229,
-        "verdict": "negative_lift",
-        "claim_enabled": false,
-        "mean_gain": -1.824434,
+        "mean_loss_m0": 180.900109,
+        "mean_loss_m1": 178.674034,
+        "verdict": "measured_improvement",
+        "claim_enabled": true,
+        "mean_gain": 2.226075,
         "ci_95": [
-          -2.733608,
-          -0.954871
+          1.095907,
+          3.345927
         ],
         "coverage_ok": true
       }
     },
     {
       "window": "2026-07-01..2026-08-01",
-      "n_train_rows": 16511,
+      "n_train_rows": 16510,
       "n_test_rows": 2976,
       "n_day_blocks": 31,
       "test_rows_with_permitted_event": 56,
       "test_rows_with_llm_news_event": 0,
       "arms": {
         "A0_demand_calendar": {
-          "wape": 0.1031,
-          "mae": 172.901
+          "wape": 0.103,
+          "mae": 172.737
         },
         "A1_plus_permitted": {
-          "wape": 0.1042,
-          "mae": 174.756
+          "wape": 0.1033,
+          "mae": 173.117
         },
         "A2_plus_llm_news": {
-          "wape": 0.1046,
-          "mae": 175.415
+          "wape": 0.1036,
+          "mae": 173.632
         }
       },
       "A1_minus_A0": {
         "n": 2976,
         "n_blocks": 31,
-        "mean_loss_m0": 172.900755,
-        "mean_loss_m1": 174.75593,
+        "mean_loss_m0": 172.737278,
+        "mean_loss_m1": 173.117407,
         "verdict": "blocked_data",
         "claim_enabled": false,
-        "mean_gain": -1.855175,
+        "mean_gain": -0.380129,
         "ci_95": [
-          -7.112362,
-          2.88336
+          -3.462841,
+          2.606502
         ],
         "coverage_ok": false
       },
       "A2_minus_A1": {
         "n": 2976,
         "n_blocks": 31,
-        "mean_loss_m0": 174.75593,
-        "mean_loss_m1": 175.414572,
+        "mean_loss_m0": 173.117407,
+        "mean_loss_m1": 173.631992,
         "verdict": "blocked_data",
         "claim_enabled": false,
-        "mean_gain": -0.658642,
+        "mean_gain": -0.514585,
         "ci_95": [
-          -1.769592,
-          0.473675
+          -2.040753,
+          1.016586
         ],
         "coverage_ok": false
       }
@@ -172,29 +172,29 @@
     "n_windows": 3,
     "n_informative_windows": 2,
     "windows_blocked_low_coverage": 1,
-    "windows_ci_above_zero": 1,
-    "windows_ci_below_zero": 1,
-    "windows_inconclusive": 0,
+    "windows_ci_above_zero": 0,
+    "windows_ci_below_zero": 0,
+    "windows_inconclusive": 2,
     "mean_gain_per_window": [
-      3.956028,
-      -3.463671,
-      -1.855175
+      0.418863,
+      1.905925,
+      -0.380129
     ],
-    "stability": "sign_flips"
+    "stability": "mixed_with_inconclusive"
   },
   "stability_A2_minus_A1": {
     "n_windows": 3,
     "n_informative_windows": 2,
     "windows_blocked_low_coverage": 1,
-    "windows_ci_above_zero": 0,
-    "windows_ci_below_zero": 2,
-    "windows_inconclusive": 0,
+    "windows_ci_above_zero": 1,
+    "windows_ci_below_zero": 0,
+    "windows_inconclusive": 1,
     "mean_gain_per_window": [
-      -3.500036,
-      -1.824434,
-      -0.658642
+      -0.575438,
+      2.226075,
+      -0.514585
     ],
-    "stability": "consistently_negative"
+    "stability": "mixed_with_inconclusive"
   },
   "note": "A per-window CI is conditional on that window's fit; the stability block is the cross-origin claim. Verdicts are reported as measured whichever way they fall."
 }
