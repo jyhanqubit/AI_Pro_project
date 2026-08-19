@@ -19,6 +19,16 @@ measured artifact를 생성하지 않았으므로, V2 docs의 모든 result는 `
   `make v2-llm-value-rolling` → `reports/v2/llm_value/rolling_origin_ablation.json`.
   이 사건의 일반 교훈은 **단일 분할의 block-bootstrap CI는 평가 기간의 표본 변동만 담고 학습
   변동은 담지 않는다**는 것이다. 앞으로 lift 주장을 추가할 때는 rolling origin 재현을 함께 요구한다.
+- **v1의 `-1.65%` 이벤트 lift는 borough 오배정의 산물이었다 (2026-08-19):** 같은 명령을 NYC 데이터만으로
+  다시 돌리면 2026-06 홀드아웃에서 +1.65% 개선이 아니라 **-1.94% 악화**(CI [-6.09, -0.86])가 나온다.
+  원인은 원본이 **Jersey City 아카이브를 NYC와 함께** 넣고 실행한 데 있다. borough 배정이
+  nearest-centroid라 뉴저지 트립이 전부 **Staten Island**로 들어간다(2026-06 SI 시간 셀: NYC만 **1**
+  → NYC+JC **486**, test 행 차이 485와 일치). 그 행들은 **뉴저지 수요 + 실제 Staten Island의 NYC
+  permit 이벤트**라는 무관한 조합이었다. 경위는 `docs/EVENT_LIFT_FINDINGS.md` 상단 정정 블록 참고.
+  **결과적으로 이 저장소에 이벤트 피처의 예측 개선 주장은 남아 있지 않다.**
+- **nearest-centroid 배정에 경계 검사가 없다 (원인 제공):** 입력 좌표가 NYC 밖이어도 가장 가까운
+  borough로 조용히 배정된다. 경계 밖 좌표를 거부하거나 중심점까지의 거리 상한을 두는 검사가 필요하다.
+  또한 artifact에 **입력 파일 목록과 borough별 행 수**를 기록해야 이런 혼입이 리뷰에서 드러난다(§7.1).
 - **단일 origin 위에 세운 파생 분석도 같은 조건부:** density curve와 quality ablation은 +2.69%가
   성립하던 창 안에서의 민감도 분석이다. 창 안의 상대 비교로는 유효하지만, 베이스가 되는 효과 자체가
   안정적이지 않다는 점을 함께 읽어야 한다.

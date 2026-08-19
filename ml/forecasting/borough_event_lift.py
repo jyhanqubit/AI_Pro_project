@@ -27,6 +27,7 @@ import csv
 import gzip
 import io
 import json
+import math
 import sys
 import zipfile
 from collections import Counter, defaultdict
@@ -73,15 +74,58 @@ _CROWD_TYPES = {
 }
 
 
-def borough_of(lat: float, lng: float) -> str | None:
-    """Nearest-centroid borough for a point (approximate). None if coords are implausible."""
+# --- Out-of-city rejection (added 2026-08-19 after a measured defect) -------------------------
+# Nearest-centroid assignment has no notion of a city boundary: a New Jersey trip is silently
+# handed to whichever NYC centroid happens to be closest. Feeding the Jersey City archives into
+# this panel put ~110k JC/Hoboken trips into the NYC boroughs -- most into Manhattan, and enough
+# into Staten Island (whose centroid is the only one west of the others) to fabricate 486 of the
+# 720 June "Staten Island" hours. Those rows paired New Jersey demand with real NYC permit events
+# and produced a spurious event lift. See docs/EVENT_LIFT_FINDINGS.md.
+#
+# The two guards below are empirical, not guessed (measured on 2026-06, 5.38M NYC + 110k JC trips):
+#   * NYC trips west of the Hudson reach at most lat 40.6851 (Bay Ridge / Red Hook).
+#   * Jersey City / Hoboken trips start at lat 40.6922.
+# The 780 m gap between them is where the boundary is drawn, so the rule rejected 100% of JC trips
+# and 0 NYC trips on that month.
+_NJ_MIN_LAT = 40.688  # north of Staten Island / Bay Ridge...
+_NJ_MAX_LNG = -74.020  # ...and west of the Hudson => New Jersey, not a borough.
+# Second, independent net for gross misassignment from any other out-of-area source: NYC trips sit
+# at most 8.6 km from their centroid, so 15 km rejects far-away points without touching real data.
+_MAX_CENTROID_KM = 15.0
+_KM_PER_DEG_LAT = 111.0
+_KM_PER_DEG_LNG = 84.6  # at ~40.7 N
+
+REJECT_IMPLAUSIBLE = "implausible_coords"
+REJECT_NEW_JERSEY = "west_of_hudson_new_jersey"
+REJECT_FAR_FROM_CENTROID = "far_from_any_centroid"
+
+
+def borough_of(lat: float, lng: float, reasons: Counter[str] | None = None) -> str | None:
+    """Nearest-centroid borough for a point (approximate), or None when the point is not NYC.
+
+    Rejections are counted into ``reasons`` when given, so callers can report exclusions instead of
+    dropping rows silently (section 6.1).
+    """
     if not (40.0 < lat < 41.2 and -74.6 < lng < -73.4):
+        if reasons is not None:
+            reasons[REJECT_IMPLAUSIBLE] += 1
+        return None
+    if lat > _NJ_MIN_LAT and lng < _NJ_MAX_LNG:
+        if reasons is not None:
+            reasons[REJECT_NEW_JERSEY] += 1
         return None
     best, best_d = None, 1e9
     for name, (blat, blng) in _B_ITEMS:
         d = (lat - blat) ** 2 + (lng - blng) ** 2
         if d < best_d:
             best, best_d = name, d
+    if best is not None:
+        blat, blng = _BOROUGH_CENTROIDS[best]
+        km = math.hypot((lat - blat) * _KM_PER_DEG_LAT, (lng - blng) * _KM_PER_DEG_LNG)
+        if km > _MAX_CENTROID_KM:
+            if reasons is not None:
+                reasons[REJECT_FAR_FROM_CENTROID] += 1
+            return None
     return best
 
 
@@ -96,8 +140,16 @@ def _hour_key(ts: str) -> tuple[str, datetime] | None:
         return None
 
 
-def stream_borough_cells(paths: list[Path]) -> list[DemandCell]:
-    """Stream trip zips -> departures/arrivals by (borough, local hour). Bounded memory."""
+def stream_borough_cells(
+    paths: list[Path], reasons: Counter[str] | None = None
+) -> list[DemandCell]:
+    """Stream trip zips -> departures/arrivals by (borough, local hour). Bounded memory.
+
+    Trips outside NYC are rejected by ``borough_of`` and counted by reason; the tally is printed and
+    also written into ``reasons`` when the caller supplies a counter (section 6.1: excluded rows are
+    reported, never dropped silently).
+    """
+    rejected: Counter[str] = Counter() if reasons is None else reasons
     dep: Counter[tuple[str, str]] = Counter()
     arr: Counter[tuple[str, str]] = Counter()
     dep_mem: Counter[tuple[str, str]] = Counter()
@@ -126,7 +178,7 @@ def stream_borough_cells(paths: list[Path]) -> list[DemandCell]:
                     for row in reader:
                         n += 1
                         try:
-                            b = borough_of(float(row[i_la]), float(row[i_lo]))
+                            b = borough_of(float(row[i_la]), float(row[i_lo]), rejected)
                         except (ValueError, IndexError):
                             b = None
                         if b:
@@ -152,6 +204,11 @@ def stream_borough_cells(paths: list[Path]) -> list[DemandCell]:
                                     arr[(eb, ehk[0])] += 1
                                     hour_by_key[ehk[0]] = ehk[1]
     print(f"  streamed {n:,} trips -> {len(dep)} borough-hour departure cells", file=sys.stderr)
+    if rejected:
+        detail = ", ".join(f"{k}={v:,}" for k, v in sorted(rejected.items()))
+        print(
+            f"  rejected {sum(rejected.values()):,} out-of-city trips ({detail})", file=sys.stderr
+        )
 
     cells: list[DemandCell] = []
     for key in dep.keys() | arr.keys():
@@ -285,7 +342,7 @@ def run(data_dir: str, events_path: str, test_from: str, target: str = PRIMARY_T
     lift = run_predictive_lift(err0, err1, blocks, coverage_ok=True)
 
     # How many test rows actually carry an event signal (for honest event-window reading).
-    ev_test = (df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0)
+    ev_test = df.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0
     days = sorted({h.date().isoformat() for h in np.array(hours, dtype=object)[test_pos]})
 
     # City-wide daily series over the test window: actual vs baseline vs +events (for plotting).
@@ -298,7 +355,12 @@ def run(data_dir: str, events_path: str, test_from: str, target: str = PRIMARY_T
         acc[1] += float(pred_b1[i])
         acc[2] += float(pred_be[i])
     daily_series = [
-        {"date": d, "actual": round(v[0], 1), "pred_b1": round(v[1], 1), "pred_events": round(v[2], 1)}
+        {
+            "date": d,
+            "actual": round(v[0], 1),
+            "pred_b1": round(v[1], 1),
+            "pred_events": round(v[2], 1),
+        }
         for d, v in sorted(by_day.items())
     ]
 
@@ -338,14 +400,20 @@ def main(argv: list[str] | None = None) -> int:
     b1, be, lift = res["baseline_demand_calendar"], res["plus_events"], res["predictive_lift"]
     lo, hi = lift["ci_95"]
     print(f"\ngrain: {res['grain']}  boroughs={res['boroughs']}")
-    print(f"train rows={res['n_train_rows']}  test rows={res['n_test_rows']}  "
-          f"(with event signal: {res['test_rows_with_event']})  test={res['test_days']}")
+    print(
+        f"train rows={res['n_train_rows']}  test rows={res['n_test_rows']}  "
+        f"(with event signal: {res['test_rows_with_event']})  test={res['test_days']}"
+    )
     print(f"B1  demand+calendar : WAPE={b1['wape']:.4f}  MAE={b1['mae']:.3f}")
     print(f"B1 + events         : WAPE={be['wape']:.4f}  MAE={be['mae']:.3f}")
-    print(f"WAPE reduction      : {res['wape_abs_reduction']:+.4f}  "
-          f"({res['wape_rel_reduction_pct']:+.2f}% relative)")
-    print(f"paired lift verdict : {lift['verdict']}  mean_gain={lift['mean_gain']:.4f}  "
-          f"CI95=[{lo:.4f}, {hi:.4f}]  ({lift['n_blocks']} day-blocks)")
+    print(
+        f"WAPE reduction      : {res['wape_abs_reduction']:+.4f}  "
+        f"({res['wape_rel_reduction_pct']:+.2f}% relative)"
+    )
+    print(
+        f"paired lift verdict : {lift['verdict']}  mean_gain={lift['mean_gain']:.4f}  "
+        f"CI95=[{lo:.4f}, {hi:.4f}]  ({lift['n_blocks']} day-blocks)"
+    )
     print(f"report -> {out}")
     return 0
 

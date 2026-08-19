@@ -68,7 +68,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 재배치 부족 146→78(−47%), MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 출력 (오프라인) |
 | GraphRAG: 검색 없는 raw LLM은 hallucination 10/10 → 근거 응답 0, 정답률 40%→100% | `python -m scripts.graphrag_eval` | 콘솔 출력 (오프라인) |
 | 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
-| 이벤트 feature lift: WAPE −1.65% (95% CI [0.36, 5.11]) | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
+| 이벤트 feature lift: **철회** — 원래의 +1.65%는 Jersey City 트립이 Staten Island로 오배정돼 섞인 결과였고, NYC 데이터만으로 다시 돌리면 −1.94%(CI [−6.09, −0.86])로 악화합니다 | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/`, [경위](docs/EVENT_LIFT_FINDINGS.md) |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
 | 이벤트 피처 유무 ablation (H3 단위): 희소 이벤트(3개월 5건)는 개선 없음 — WAPE 0.5091(없음) vs 0.5105(있음) | 결과와 재실행 명령: `reports/event_feature_ablation.json` | `reports/` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
