@@ -1,0 +1,81 @@
+{
+  "run_id": "run_v2-03permittyped_20260721T125958Z",
+  "artifact_id": "reports/v2/llm_value/permit_typed_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T12:59:58.174502+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "buckets": [
+    "surge",
+    "gather",
+    "openstreet",
+    "market",
+    "production",
+    "civic"
+  ],
+  "llm_role": "factual categorization of permit event_type into demand-relevant buckets (NO demand sign imposed); the model learns each bucket's response from data",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "test_active_cells": 2600,
+  "arms": {
+    "A0_demand_calendar": {
+      "wape": 0.0908,
+      "mae": 143.218
+    },
+    "A1_crude_counts": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A1_typed_buckets": {
+      "wape": 0.0899,
+      "mae": 141.851
+    }
+  },
+  "typed_vs_A0": {
+    "metric": "llm_feature_value",
+    "decision": "NO_MEANINGFUL_EFFECT",
+    "claim_status": "measured",
+    "llm_active_skill_score": 0.0084,
+    "llm_active_skill_pct": 0.84,
+    "global_skill_score": 0.0095,
+    "significant": false,
+    "active_error_gain_mean": 1.334369,
+    "active_error_gain_ci95": [
+      -2.01221,
+      4.521225
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 2600,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "No meaningful accuracy change from the LLM features (effect below threshold or CI covers 0)."
+  },
+  "typed_vs_crude": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.019,
+    "llm_active_skill_pct": -1.9,
+    "global_skill_score": -0.0188,
+    "significant": true,
+    "active_error_gain_mean": -2.94979,
+    "active_error_gain_ci95": [
+      -5.424762,
+      -0.474852
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 2600,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 1.9% on active zone-hours (CI excludes 0)."
+  },
+  "note": "typed disaggregation vs the aggregate count: does letting the model learn per-type responses (LLM structures the type facts) beat lumping all permits into one count?"
+}

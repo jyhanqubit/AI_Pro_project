@@ -36,8 +36,15 @@ reports/**
 # small measured-result summaries kept for reviewer verification (no 3GB download needed)
 !reports/borough_event_lift.json
 !reports/weather_lift.json
+!reports/phase06_results.json
+!reports/event_feature_ablation.json
+# V2 report scaffolding + small measured summaries (reviewer-verifiable; large binaries below still ignored)
+!reports/v2/
+!reports/v2/**
 *.parquet
 *.joblib
+# intentional small versioned serving artifact (§15) — the promoted measured model
+!reports/v2/holdout/promoted_model.joblib
 *.pkl
 *.onnx
 

@@ -1,0 +1,139 @@
+{
+  "run_id": "run_v2-02_20260720T124240Z",
+  "artifact_id": "reports/v2/ledger/profit_regret.json",
+  "mode": "historical_replay",
+  "claim_status": "simulated",
+  "freshness": "2026-07-20T12:42:40.221787+00:00",
+  "assumption_set_version": "v2-assumptions-1",
+  "assumptions_sourced": false,
+  "model_grain": "h3_zone_x_local_hour",
+  "target": "departures",
+  "scope_note": "single-period stocking economics; relocation=0 (deferred to V2-04)",
+  "promoted_model": {
+    "algorithm": "hist_gradient_boosting",
+    "run_id": "run_v2-01_20260720T121350Z_f1a28b37"
+  },
+  "n_decisions": 114079,
+  "by_policy": {
+    "no_action": {
+      "realized_rentals": 211301.0,
+      "shortage_units": 117321.0,
+      "overflow_units": 95552.0,
+      "moved_units": 0.0,
+      "contribution_margin": 316951.5,
+      "shortage_cost": 117321.0,
+      "overflow_cost": 28665.6,
+      "relocation_cost": 0.0,
+      "net": 170964.9,
+      "policy": "no_action",
+      "regret_vs_oracle": 321968.1
+    },
+    "promoted_model": {
+      "realized_rentals": 250470.0,
+      "shortage_units": 78152.0,
+      "overflow_units": 77724.0,
+      "moved_units": 0.0,
+      "contribution_margin": 375705.0,
+      "shortage_cost": 78152.0,
+      "overflow_cost": 23317.2,
+      "relocation_cost": 0.0,
+      "net": 274235.8,
+      "policy": "promoted_model",
+      "regret_vs_oracle": 218697.2
+    },
+    "oracle": {
+      "realized_rentals": 328622.0,
+      "shortage_units": 0.0,
+      "overflow_units": 0.0,
+      "moved_units": 0.0,
+      "contribution_margin": 492933.0,
+      "shortage_cost": 0.0,
+      "overflow_cost": 0.0,
+      "relocation_cost": 0.0,
+      "net": 492933.0,
+      "policy": "oracle",
+      "regret_vs_oracle": 0.0
+    }
+  },
+  "predictive_lift_to_profit": {
+    "model_minus_no_action_net": 103270.9,
+    "model_regret_vs_oracle": 218697.2,
+    "interpretation": "positive model_minus_no_action_net = the promoted forecast is worth money vs the seasonal-naive status quo; model_regret_vs_oracle = remaining headroom to perfect foresight"
+  },
+  "per_window": [
+    {
+      "window_id": 0,
+      "test_start": "2024-06-01T00:00:00-04:00",
+      "model_net": 90600.1,
+      "no_action_net": 56201.4,
+      "oracle_net": 165922.5,
+      "model_lift_net": 34398.7,
+      "model_regret": 75322.4
+    },
+    {
+      "window_id": 1,
+      "test_start": "2024-07-01T00:00:00-04:00",
+      "model_net": 92065.5,
+      "no_action_net": 56224.4,
+      "oracle_net": 167926.5,
+      "model_lift_net": 35841.1,
+      "model_regret": 75861.0
+    },
+    {
+      "window_id": 2,
+      "test_start": "2024-08-01T00:00:00-04:00",
+      "model_net": 91570.2,
+      "no_action_net": 58539.1,
+      "oracle_net": 159084.0,
+      "model_lift_net": 33031.1,
+      "model_regret": 67513.8
+    }
+  ],
+  "sensitivity_model_minus_no_action_net": [
+    {
+      "shortage_externality": 0.5,
+      "overflow_penalty": 0.15,
+      "model_minus_no_action_net": 81012.2
+    },
+    {
+      "shortage_externality": 0.5,
+      "overflow_penalty": 0.3,
+      "model_minus_no_action_net": 83686.4
+    },
+    {
+      "shortage_externality": 0.5,
+      "overflow_penalty": 0.6,
+      "model_minus_no_action_net": 89034.8
+    },
+    {
+      "shortage_externality": 1.0,
+      "overflow_penalty": 0.15,
+      "model_minus_no_action_net": 100596.7
+    },
+    {
+      "shortage_externality": 1.0,
+      "overflow_penalty": 0.3,
+      "model_minus_no_action_net": 103270.9
+    },
+    {
+      "shortage_externality": 1.0,
+      "overflow_penalty": 0.6,
+      "model_minus_no_action_net": 108619.3
+    },
+    {
+      "shortage_externality": 2.0,
+      "overflow_penalty": 0.15,
+      "model_minus_no_action_net": 139765.7
+    },
+    {
+      "shortage_externality": 2.0,
+      "overflow_penalty": 0.3,
+      "model_minus_no_action_net": 142439.9
+    },
+    {
+      "shortage_externality": 2.0,
+      "overflow_penalty": 0.6,
+      "model_minus_no_action_net": 147788.3
+    }
+  ]
+}
