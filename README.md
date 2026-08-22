@@ -71,6 +71,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 이벤트 feature lift: **철회** — 원래의 +1.65%는 Jersey City 트립이 Staten Island로 오배정돼 섞인 결과였고, NYC 데이터만으로 다시 돌리면 −1.94%(CI [−6.09, −0.86])로 악화합니다 | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/`, [경위](docs/EVENT_LIFT_FINDINGS.md) |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
 | 이벤트 피처 유무 ablation (H3 단위): 희소 이벤트(3개월 5건)는 개선 없음 — WAPE 0.5091(없음) vs 0.5105(있음) | 결과와 재실행 명령: `reports/event_feature_ablation.json` | `reports/` |
+| **LLM 뉴스 피처의 조건부 기여**: 이벤트가 지역 특정적일수록 개선 — 평균 borough 4.2개 −0.96 → 2.0개 **+1.24 (CI [0.83, 1.64])**, 단조 관계 | `make v2-news-conditions` | `reports/v2/llm_value/news_feature_conditions.json` |
 | 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
 | 전체 테스트 | `make test` | 484 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
@@ -480,9 +481,9 @@ artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v
 | Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, 2026년 1~7월 트립, rolling-origin 3-window: WAPE 0.4974 ± 0.0074, MASE 0.8708 ± 0.0094 (naive WAPE 0.65~0.69를 이김) | `make v2-holdout` |
 | **비대칭 비용 최적화 (뉴스벤더 q\*)** | **measured** | 손실함수를 0.667분위로 바꿔 OCS 0.7525 → 0.7268 (**−3.42%**), 품절 대수 **−26%**, 3개 창 전부에서 q=0.667이 최적. 대가로 WAPE +8.4%. 예측을 실행 전에 artifact에 기록 | `make v2-quantile-cost` |
 | 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측 (serving 시점 2026-08-01), Latency p95 5.7 ms (로컬) | `make v2-serving-export` |
-| Structured event feed lift (A1−A0) | measured, **재현 실패** | 단일 분할(2026-05)에서는 `MEANINGFUL_POSITIVE` +2.69%였으나, rolling origin으로 재검증하니 부호가 뒤집힘(5월 +3.96 / 6월 −3.46). 개선 주장을 철회합니다 | `make v2-llm-value-rolling` |
-| LLM-from-news 증분 (A2−A1) | measured (negative) | 측정 가능한 두 창 모두에서 음수(`consistently_negative`), net LLM value −$17,789 — news는 structured feed 대비 redundant | `make v2-llm-value-rolling` |
-| Rolling-origin 재현성 검증 | measured | 3개 월별 창에서 A0/A1/A2를 각각 재학습: A1−A0 `sign_flips`, A2−A1 `consistently_negative`, 2026-07은 permit 56행으로 `blocked_data` | `make v2-llm-value-rolling` |
+| Structured event feed lift (A1−A0) | measured, **재현 실패** | 단일 분할(2026-05)에서는 `MEANINGFUL_POSITIVE` +2.69%였으나, rolling origin 6창에서 유의한 양수가 0개. 개선 주장을 철회합니다 | `make v2-llm-value-rolling` |
+| **LLM 뉴스 피처의 조건부 기여 (A2−A1)** | **measured (조건부)** | 이벤트의 **공간 해상도에 따라 방향이 갈림.** 시드 10 앙상블 기준 이벤트당 평균 borough 수로 정렬하면 gain이 **단조 상승**: 4.2개 −0.96 / 3.7개 −0.86 / 2.3개 −0.76 / **2.0개 +1.24 (CI [0.83, 1.64])**. 2개 borough 부근에서 부호가 바뀝니다 | `make v2-news-conditions` |
+| 조건부 결과의 메커니즘 검증 | measured | 학습량 가설 기각(테스트셋 고정 시 6월 −0.32→+1.24, 5월 0.00→−0.76으로 **반대 방향**). 단일 시드는 난수가 지배(같은 창이 +2.23 ↔ −2.26) → 앙상블 필요 | `make v2-news-conditions` |
 | Profit / Regret ledger | simulated | no-action 대비 net +$103,271 (9개 cost 설정 모두 부호 양수); Oracle 대비 regret $218,697 | `make v2-ledger` |
 | MPC vs No-Action/Greedy/MILP/Oracle | simulated | ledger total_cost: NoAction 1127 / Greedy 1155 / MILP 1087 / MPC 740 / Oracle 719 — MPC가 best feasible, regret 21.6 | `make v2-mpc` |
 | Dynamic pricing + guardrail | simulated | 576 zone-hour에서 guardrail 위반 0, A/A CI가 0 포함 (shadow quote만) | `make v2-pricing` |

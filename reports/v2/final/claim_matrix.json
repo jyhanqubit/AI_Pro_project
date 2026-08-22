@@ -1,19 +1,19 @@
 {
-  "run_id": "run_v2-09_20260819T153151Z",
+  "run_id": "run_v2-09_20260822T110152Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-08-19T15:31:51.733435+00:00",
+  "freshness": "2026-08-22T11:01:52.974567+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 38,
+  "n_artifacts": 39,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 2,
-    "measured": 20,
+    "measured": 21,
     "offline_benchmark": 8,
     "research": 1,
     "simulated": 6
@@ -239,6 +239,15 @@
       "mode": "historical_replay",
       "claim_status": "measured",
       "freshness": "2026-07-21T12:09:39.885342+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/news_feature_conditions.json",
+      "run_id": "run_v2-03c_20260822T110001Z",
+      "artifact_id": "reports/v2/llm_value/news_feature_conditions.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-22T11:00:01.701733+00:00",
       "headline": {}
     },
     {
