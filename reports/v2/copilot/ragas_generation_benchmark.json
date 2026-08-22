@@ -1,9 +1,9 @@
 {
-  "run_id": "run_v2-06ragasgen_20260819T153050Z",
+  "run_id": "run_v2-06ragasgen_20260822T110206Z",
   "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
   "mode": "historical_replay",
   "claim_status": "offline_benchmark",
-  "freshness": "2026-08-19T15:30:50.912661+00:00",
+  "freshness": "2026-08-22T11:02:06.207244+00:00",
   "judge": "claude-opus-4-8-insession",
   "judge_note": "No LLM API key in sandbox; the model judged in-session (as in V2-03 extraction and V2-06 routing). Every verdict is committed in data/fixtures/v2/copilot_ragas_judgments.jsonl for audit.",
   "metric_definitions": {
