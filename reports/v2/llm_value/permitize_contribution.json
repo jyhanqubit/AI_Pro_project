@@ -1,0 +1,82 @@
+{
+  "run_id": "run_v2-03permitize_20260721T103418Z",
+  "artifact_id": "reports/v2/llm_value/permitize_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T10:34:18.459589+00:00",
+  "grain": "borough-hour (nearest-centroid; approximate)",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "raw_news_diag": {
+    "events": 23,
+    "attributed_events": 23
+  },
+  "permitized_diag": {
+    "events": 23,
+    "attributed_events": 19,
+    "leakage_dropped": 4
+  },
+  "test_rows_raw_active": 194,
+  "test_rows_perm_active": 191,
+  "arms": {
+    "A1_plus_permitted": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A2_news_raw": {
+      "wape": 0.0883,
+      "mae": 139.221
+    },
+    "A2_news_perm": {
+      "wape": 0.094,
+      "mae": 148.206
+    }
+  },
+  "permitized_value_vs_A1": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0631,
+    "llm_active_skill_pct": -6.31,
+    "global_skill_score": -0.0645,
+    "significant": true,
+    "active_error_gain_mean": -11.721298,
+    "active_error_gain_ci95": [
+      -25.249499,
+      -5.478854
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 191,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 6.31% on active zone-hours (CI excludes 0)."
+  },
+  "permitized_value_vs_raw_news": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.063,
+    "llm_active_skill_pct": -6.3,
+    "global_skill_score": -0.0645,
+    "significant": true,
+    "active_error_gain_mean": -11.689644,
+    "active_error_gain_ci95": [
+      -22.74253,
+      -5.81804
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 191,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 6.3% on active zone-hours (CI excludes 0)."
+  },
+  "note": "A2_news_perm = LLM reconstruction of news into permit-schema records (precise event_start/end + specific borough), availability-gated. permitized_diag.leakage_dropped counts events dropped because the news post-dates the event (retrospective reviews) \u2014 the structural timing gap between advance permits and coincident/after news."
+}

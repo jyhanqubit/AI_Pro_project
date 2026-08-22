@@ -1,0 +1,96 @@
+{
+  "run_id": "run_v2-03permitenrich_20260721T125526Z",
+  "artifact_id": "reports/v2/llm_value/permit_enrich_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T12:55:26.073088+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "source": "REAL NYC permit feed (satisfies all 4 conditions); LLM adds signed direction + scale",
+  "llm_enrichment": "in-session semantic judgment: event_type + closure + name-keywords -> (signed demand_effect, scale); committed in this module for audit",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "test_active_cells": 2600,
+  "arms": {
+    "A0_demand_calendar": {
+      "wape": 0.0908,
+      "mae": 143.218
+    },
+    "A1_crude_counts": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A1_llm_enriched": {
+      "wape": 0.0914,
+      "mae": 144.071
+    }
+  },
+  "crude_counts_vs_A0": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_POSITIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": 0.0269,
+    "llm_active_skill_pct": 2.69,
+    "global_skill_score": 0.0278,
+    "significant": true,
+    "active_error_gain_mean": 4.284159,
+    "active_error_gain_ci95": [
+      0.980734,
+      7.563584
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 2600,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features cut error 2.69% on active zone-hours (CI excludes 0)."
+  },
+  "llm_enriched_vs_A0": {
+    "metric": "llm_feature_value",
+    "decision": "NO_MEANINGFUL_EFFECT",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0061,
+    "llm_active_skill_pct": -0.61,
+    "global_skill_score": -0.006,
+    "significant": false,
+    "active_error_gain_mean": -0.965342,
+    "active_error_gain_ci95": [
+      -4.085476,
+      2.125507
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 2600,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "No meaningful accuracy change from the LLM features (effect below threshold or CI covers 0)."
+  },
+  "llm_enrichment_value_vs_crude": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0339,
+    "llm_active_skill_pct": -3.39,
+    "global_skill_score": -0.0348,
+    "significant": true,
+    "active_error_gain_mean": -5.249502,
+    "active_error_gain_ci95": [
+      -8.360342,
+      -2.471349
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 2600,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 3.39% on active zone-hours (CI excludes 0)."
+  },
+  "note": "The source is real and forward-looking; the LLM contribution is the SEMANTIC structuring (direction+magnitude) that crude counts lack. enrich_vs_crude is the measured incremental LLM value on top of the counting baseline."
+}

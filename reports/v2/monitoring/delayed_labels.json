@@ -1,0 +1,44 @@
+{
+  "run_id": "run_v2-08labels_20260722T032428Z",
+  "artifact_id": "reports/v2/monitoring/delayed_labels.json",
+  "mode": "demo_fixture",
+  "claim_status": "demo_fixture",
+  "freshness": "2026-07-22T03:24:28.247326+00:00",
+  "rule": "a label closes a forecast only if label.available_at > forecast.forecast_cutoff (base-contract \u00a75.2); otherwise leakage_rejected and the forecast stays pending",
+  "note": "Demonstrates the leakage-safe pending_live_label -> measured loop on a fixture; a real close requires the live shadow-forecast stream (blocked here). The mechanism, not the numbers, is the deliverable.",
+  "n_pending_in": 3,
+  "n_closed_measured": 1,
+  "n_still_pending": 2,
+  "n_leakage_rejected": 1,
+  "closed_wape": 0.0909,
+  "closed": [
+    {
+      "zone_id": "JC-A",
+      "target_hour": "2026-05-01T18:00:00+00:00",
+      "predicted": 30.0,
+      "actual": 33.0,
+      "abs_error": 3.0,
+      "claim_status": "measured"
+    }
+  ],
+  "still_pending": [
+    {
+      "zone_id": "JC-B",
+      "target_hour": "2026-05-01T18:00:00+00:00",
+      "reason": "leakage_rejected"
+    },
+    {
+      "zone_id": "JC-C",
+      "target_hour": "2026-05-01T18:00:00+00:00",
+      "reason": "no_label_yet"
+    }
+  ],
+  "leakage_rejected": [
+    {
+      "zone_id": "JC-B",
+      "target_hour": "2026-05-01T18:00:00+00:00",
+      "forecast_cutoff": "2026-05-01T14:00:00+00:00",
+      "label_available_at": "2026-05-01T13:00:00+00:00"
+    }
+  ]
+}

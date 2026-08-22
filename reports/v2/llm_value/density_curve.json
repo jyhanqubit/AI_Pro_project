@@ -1,0 +1,115 @@
+{
+  "run_id": "run_v2-03density_20260721T115343Z",
+  "artifact_id": "reports/v2/llm_value/density_curve.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T11:53:43.088438+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "controls": "precision + forward-looking timing held at PERMIT quality; only event COUNT varies",
+  "curve": [
+    {
+      "n_events_sampled": 20,
+      "n_events_requested": 20,
+      "test_active_borough_hours": 85,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0896,
+      "permit_value_decision": "INSUFFICIENT_SUPPORT",
+      "permit_skill_pct": null,
+      "permit_ci95": null
+    },
+    {
+      "n_events_sampled": 50,
+      "n_events_requested": 50,
+      "test_active_borough_hours": 205,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0912,
+      "permit_value_decision": "NO_MEANINGFUL_EFFECT",
+      "permit_skill_pct": -3.02,
+      "permit_ci95": [
+        -17.947608,
+        0.411893
+      ]
+    },
+    {
+      "n_events_sampled": 100,
+      "n_events_requested": 100,
+      "test_active_borough_hours": 364,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.09,
+      "permit_value_decision": "NO_MEANINGFUL_EFFECT",
+      "permit_skill_pct": 0.25,
+      "permit_ci95": [
+        -5.567502,
+        7.000612
+      ]
+    },
+    {
+      "n_events_sampled": 300,
+      "n_events_requested": 300,
+      "test_active_borough_hours": 677,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0888,
+      "permit_value_decision": "MEANINGFUL_POSITIVE",
+      "permit_skill_pct": 2.03,
+      "permit_ci95": [
+        0.095367,
+        10.027251
+      ]
+    },
+    {
+      "n_events_sampled": 1000,
+      "n_events_requested": 1000,
+      "test_active_borough_hours": 1379,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.091,
+      "permit_value_decision": "NO_MEANINGFUL_EFFECT",
+      "permit_skill_pct": 0.16,
+      "permit_ci95": [
+        -2.04464,
+        2.592481
+      ]
+    },
+    {
+      "n_events_sampled": 3000,
+      "n_events_requested": 3000,
+      "test_active_borough_hours": 2063,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0917,
+      "permit_value_decision": "NO_MEANINGFUL_EFFECT",
+      "permit_skill_pct": -0.99,
+      "permit_ci95": [
+        -4.203319,
+        0.530546
+      ]
+    },
+    {
+      "n_events_sampled": 10000,
+      "n_events_requested": 10000,
+      "test_active_borough_hours": 2451,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0907,
+      "permit_value_decision": "NO_MEANINGFUL_EFFECT",
+      "permit_skill_pct": 0.06,
+      "permit_ci95": [
+        -2.389909,
+        2.842687
+      ]
+    },
+    {
+      "n_events_sampled": 63070,
+      "n_events_requested": null,
+      "test_active_borough_hours": 2600,
+      "wape_A0": 0.0908,
+      "wape_A1": 0.0883,
+      "permit_value_decision": "MEANINGFUL_POSITIVE",
+      "permit_skill_pct": 2.69,
+      "permit_ci95": [
+        0.980734,
+        7.563584
+      ]
+    }
+  ],
+  "note": "If MEANINGFUL_POSITIVE only appears at large N, density is the bottleneck (news's ~19 events are hopeless). If it appears at small N, density is NOT the cause and the news null is about quality (coarse/retrospective), which more news data would not fix."
+}

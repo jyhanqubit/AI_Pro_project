@@ -1,0 +1,10 @@
+{"id": "t01", "query": "시청에서 뉴포트 가고 싶어", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t02", "query": "City Hall to Newport", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t03", "query": "from Newport to City Hall", "origin": "JC_NEWPORT", "destination": "JC_CITYHALL"}
+{"id": "t04", "query": "그로브에서 호보켄 터미널까지", "origin": "JC_GROVE", "destination": "JC_HOBOKEN"}
+{"id": "t05", "query": "일단 시청, 목적지는 뉴포트", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t06", "query": "뉴포트로 가는데 지금 시청 근처야", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t07", "query": "뉴포트에 세우고 싶은데 출발은 시청", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t08", "query": "시청서 뉴포뜨", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t09", "query": "시쳥에서 뉴포트", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
+{"id": "t10", "query": "익스체인지 말고 시청에서 뉴포트", "origin": "JC_CITYHALL", "destination": "JC_NEWPORT"}
