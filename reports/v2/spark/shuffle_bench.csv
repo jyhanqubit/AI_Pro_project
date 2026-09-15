@@ -1,0 +1,15 @@
+engine,variant,workload,partitions,seconds,shuffle_read_mb,shuffle_write_mb
+pandas,single_process,groupby,,11.26,,
+pandas,single_process,join,,14.76,,
+pyspark,default,groupby,8,13.61,95.7,95.7
+pyspark,default,join,8,10.84,369.3,369.3
+pyspark,pre_repartitioned,groupby,8,7.64,288.7,288.7
+pyspark,pre_repartitioned,join,8,8.14,369.3,369.3
+pyspark,default,groupby,32,6.02,97.7,97.7
+pyspark,default,join,32,8.52,354.7,354.7
+pyspark,pre_repartitioned,groupby,32,6.81,275.9,275.9
+pyspark,pre_repartitioned,join,32,7.62,354.7,354.7
+pyspark,default,groupby,200,6.28,100.3,100.3
+pyspark,default,join,200,8.63,348.2,348.2
+pyspark,pre_repartitioned,groupby,200,7.23,258.8,258.8
+pyspark,pre_repartitioned,join,200,7.77,348.2,348.2
