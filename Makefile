@@ -179,3 +179,6 @@ v2-loadtest:  ## EXTRA: concurrency load test of the serving endpoint (needs `ma
 
 v2-spark-bench:  ## EXTRA: pandas vs PySpark shuffle-cost benchmark (needs data/processed/spark_bench Parquet); writes reports/v2/spark/shuffle_bench.*
 	python -m scripts.spark_shuffle_bench
+
+v2-abc-plot:  ## EXTRA: forest plot of the A/B/C ablation from rolling_origin_ablation.json; writes reports/v2/llm_value/abc_forest.png
+	python -m scripts.abc_experiment_plot
