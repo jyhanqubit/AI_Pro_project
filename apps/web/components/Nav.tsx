@@ -8,7 +8,9 @@ import { useRole } from "@/app/role";
 // ever sees the home screen plus, when drilled into "why is this busy?", a back link.
 const OPERATOR_TABS = [
   { href: "/control", label: "관제탑" },
+  { href: "/cockpit", label: "측정 지표" },
   { href: "/statistics", label: "운영 통계" },
+  { href: "/ask", label: "운영 도우미" },
   { href: "/why", label: "수요 급증 원인" },
   { href: "/news", label: "뉴스 검색" },
   { href: "/scenario", label: "시나리오 비교" },

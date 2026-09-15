@@ -1,0 +1,117 @@
+{
+  "run_id": "run_v2-03signed_20260721T111042Z",
+  "artifact_id": "reports/v2/llm_value/signed_demand_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T11:10:42.934498+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "signed_diag": {
+    "events": 23,
+    "attributed_events": 19,
+    "leakage_dropped": 4
+  },
+  "test_rows_signal_active": 191,
+  "example_signed_values": [
+    {
+      "borough": "Bronx",
+      "hour": "2026-01-24 19",
+      "news_demand_signal": -0.81,
+      "actual_departures": 86.0
+    },
+    {
+      "borough": "Brooklyn",
+      "hour": "2026-01-24 19",
+      "news_demand_signal": -0.81,
+      "actual_departures": 490.0
+    },
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 19",
+      "news_demand_signal": -0.81,
+      "actual_departures": 1495.0
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 19",
+      "news_demand_signal": -0.81,
+      "actual_departures": 14.0
+    },
+    {
+      "borough": "Bronx",
+      "hour": "2026-01-24 20",
+      "news_demand_signal": -0.81,
+      "actual_departures": 66.0
+    },
+    {
+      "borough": "Brooklyn",
+      "hour": "2026-01-24 20",
+      "news_demand_signal": -0.81,
+      "actual_departures": 453.0
+    },
+    {
+      "borough": "Manhattan",
+      "hour": "2026-01-24 20",
+      "news_demand_signal": -0.81,
+      "actual_departures": 1070.0
+    },
+    {
+      "borough": "Queens",
+      "hour": "2026-01-24 20",
+      "news_demand_signal": -0.81,
+      "actual_departures": 11.0
+    },
+    {
+      "borough": "Bronx",
+      "hour": "2026-01-24 21",
+      "news_demand_signal": -0.81,
+      "actual_departures": 56.0
+    },
+    {
+      "borough": "Brooklyn",
+      "hour": "2026-01-24 21",
+      "news_demand_signal": -0.81,
+      "actual_departures": 324.0
+    }
+  ],
+  "sign_correctness_vs_seasonal_naive": {
+    "n": 191,
+    "sign_agreement": 0.77
+  },
+  "arms": {
+    "A1_plus_permitted": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A_plus_signed_demand": {
+      "wape": 0.0906,
+      "mae": 142.851
+    }
+  },
+  "signed_demand_value_vs_A1": {
+    "metric": "llm_feature_value",
+    "decision": "NO_MEANINGFUL_EFFECT",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.0204,
+    "llm_active_skill_pct": -2.04,
+    "global_skill_score": -0.026,
+    "significant": false,
+    "active_error_gain_mean": -3.786577,
+    "active_error_gain_ci95": [
+      -7.258265,
+      1.437536
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 191,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "No meaningful accuracy change from the LLM features (effect below threshold or CI covers 0)."
+  },
+  "note": "news_demand_signal = LLM demand_effect (signed) x severity x decay. Direction comes from the LLM (blizzard<0, festival/substitution>0), not learned from sparse data."
+}

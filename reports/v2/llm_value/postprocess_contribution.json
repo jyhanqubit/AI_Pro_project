@@ -1,0 +1,54 @@
+{
+  "run_id": "run_v2-03postproc_20260721T112241Z",
+  "artifact_id": "reports/v2/llm_value/postprocess_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T11:22:41.000826+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "method": "post-processing: pred_corrected = pred_base + sum_channel alpha_channel * signal_channel; alpha calibrated on dev residuals (in-sample, conservative), applied out-of-sample to test",
+  "calibrated_factors": {
+    "weather": 20.322,
+    "gather": -470.599,
+    "transit": -477.842,
+    "safety": 155.946
+  },
+  "dev_active_cells": 746,
+  "test_active_cells": 191,
+  "arms": {
+    "A1_base": {
+      "wape": 0.0883,
+      "mae": 139.231
+    },
+    "A1_postprocessed": {
+      "wape": 0.0899,
+      "mae": 141.777
+    }
+  },
+  "postprocess_value_vs_base": {
+    "metric": "llm_feature_value",
+    "decision": "MEANINGFUL_NEGATIVE",
+    "claim_status": "measured",
+    "llm_active_skill_score": -0.2136,
+    "llm_active_skill_pct": -21.36,
+    "global_skill_score": -0.0183,
+    "significant": true,
+    "active_error_gain_mean": -39.659603,
+    "active_error_gain_ci95": [
+      -102.588731,
+      -4.950692
+    ],
+    "n_test_rows": 2975,
+    "n_llm_active_rows": 191,
+    "thresholds": {
+      "rel_threshold": 0.01,
+      "min_active": 100
+    },
+    "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+    "interpretation": "LLM features raised error 21.36% on active zone-hours (CI excludes 0)."
+  },
+  "calibration_caveat": "alpha is fit on in-sample dev residuals so it is biased toward 0 (conservative); a nonzero alpha that still helps test is real value, alpha~0 is consistent with lag-redundancy."
+}

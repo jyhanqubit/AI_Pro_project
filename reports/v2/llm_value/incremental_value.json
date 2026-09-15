@@ -1,0 +1,121 @@
+{
+  "run_id": "run_v2-03_20260720T132931Z",
+  "artifact_id": "reports/v2/llm_value/incremental_value.json",
+  "mode": "historical_replay",
+  "claim_status": "blocked_data",
+  "freshness": "2026-07-20T13:29:31.489055+00:00",
+  "target": "departures",
+  "grain": "h3_zone_x_local_hour",
+  "promoted_model": {
+    "algorithm": "hist_gradient_boosting",
+    "run_id": "run_v2-01_20260720T121350Z_f1a28b37"
+  },
+  "arms": {
+    "A0_no_event": {
+      "wape": 0.5030042003865831,
+      "event_window_wape": NaN,
+      "net_profit_simulated": 228992.3
+    },
+    "A1_rule_event": {
+      "wape": 0.5030042003865831,
+      "event_window_wape": NaN,
+      "net_profit_simulated": 228992.3
+    },
+    "A2_llm_event": {
+      "wape": 0.5030042003865831,
+      "event_window_wape": NaN,
+      "net_profit_simulated": 228992.3
+    }
+  },
+  "n_decisions": 114885,
+  "event_window_rows": 352,
+  "event_coverage_fraction": 0.003064,
+  "arms_identical_on_test": true,
+  "incremental_lift_wape": {
+    "rule_over_none_A1_minus_A0": {
+      "delta_wape": 0.0,
+      "ci_lo": 0.0,
+      "ci_hi": 0.0,
+      "verdict": "no_measurable_lift"
+    },
+    "llm_over_rule_A2_minus_A1": {
+      "delta_wape": 0.0,
+      "ci_lo": 0.0,
+      "ci_hi": 0.0,
+      "verdict": "no_measurable_lift"
+    },
+    "llm_over_none_A2_minus_A0": {
+      "delta_wape": 0.0,
+      "ci_lo": 0.0,
+      "ci_hi": 0.0,
+      "verdict": "no_measurable_lift"
+    }
+  },
+  "llm_cost": {
+    "provider": "mock",
+    "actual_usd": 0.0,
+    "n_articles": 371,
+    "estimated_input_tokens": 20228,
+    "price_per_mtok_assumption": 0.3,
+    "estimated_real_usd": 0.0061,
+    "basis": "chars/4 tokens * assumed cheap-tier input price; real cost depends on provider/model"
+  },
+  "profit_lift_llm_over_rule_simulated": 0.0,
+  "net_llm_value_simulated": -0.01,
+  "assumption_set_version": "v2-assumptions-1",
+  "per_window": [
+    {
+      "window_id": 0,
+      "test_start": "2026-04-01T00:00:00-04:00",
+      "n_test": 36016,
+      "A0_no_event": {
+        "wape": 0.5295191792068343,
+        "n_features": 32
+      },
+      "A1_rule_event": {
+        "wape": 0.5295191792068343,
+        "n_features": 34
+      },
+      "A2_llm_event": {
+        "wape": 0.5295191792068343,
+        "n_features": 40
+      }
+    },
+    {
+      "window_id": 1,
+      "test_start": "2026-05-01T00:00:00-04:00",
+      "n_test": 38430,
+      "A0_no_event": {
+        "wape": 0.4982595485013328,
+        "n_features": 32
+      },
+      "A1_rule_event": {
+        "wape": 0.4982595485013328,
+        "n_features": 34
+      },
+      "A2_llm_event": {
+        "wape": 0.4982595485013328,
+        "n_features": 40
+      }
+    },
+    {
+      "window_id": 2,
+      "test_start": "2026-06-01T00:00:00-04:00",
+      "n_test": 40439,
+      "A0_no_event": {
+        "wape": 0.4873008000638652,
+        "n_features": 32
+      },
+      "A1_rule_event": {
+        "wape": 0.4873008000638652,
+        "n_features": 34
+      },
+      "A2_llm_event": {
+        "wape": 0.4873008000638652,
+        "n_features": 40
+      }
+    }
+  ],
+  "headline_verdict": "insufficient_event_overlap",
+  "note": "Arms share cutoffs/splits and the promoted model; only features differ. WAPE delta<0 = improvement. Profit is simulated (assumption-conditioned); LLM actual cost is $0 (mock), with an assumption-labeled real-LLM cost estimate for net value. arms_identical_on_test == true means the extracted events carried no signal into the test windows (the real, geo-matched overlapping event volume is negligible on this JC/2026 slice) -> insufficient_event_overlap, reported honestly. This is the same gap v1 flagged, now shown with the full 3-arm + CI + cost framework. Path to unblock: trip+news of the same geography/period at sufficient event density (e.g. NYC-wide trips + NYC news, or JC-specific event collection)."
+}

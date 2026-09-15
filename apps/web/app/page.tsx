@@ -9,6 +9,7 @@ import {
   type AvailabilityLevel,
   type EventOut,
   type RiderAskResponse,
+  type TripPlan,
   type StationHit,
   type StationSearchResponse,
 } from "@/lib/api";
@@ -245,6 +246,85 @@ function RiderCopilot({
   );
 }
 
+// Trip planner: "A에서 B까지" → walk → rent → bike → return → walk. All numbers (stations,
+// distances, times) come from the deterministic /v2/rider/plan-trip; the LLM's role is only to parse
+// the request + narrate (rule-based here, no key). Honest: straight-line distances, as-of inventory.
+function TripPlanner({ cutoff }: { cutoff: string | null }) {
+  const [q, setQ] = useState("");
+  const [plan, setPlan] = useState<TripPlan | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function go(text: string) {
+    if (!text.trim()) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      setPlan(await api.planTrip({ query: text, cutoff: cutoff ?? undefined }));
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="card copilot">
+      <h2>🧭 어디서 어디까지 — 길찾기</h2>
+      <p className="muted" style={{ marginTop: 0 }}>
+        출발지와 목적지를 말하면 <strong>어디서 빌리고 · 어디에 반납하고 · 얼마나 걷는지</strong>를
+        알려드려요. 예: “시청에서 뉴포트 가고 싶어”.
+      </p>
+      <div className="copilot-input">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && go(q)}
+          placeholder="예: 시청에서 뉴포트 가고 싶어"
+          aria-label="길찾기 질문"
+        />
+        <button onClick={() => go(q)} disabled={busy}>
+          {busy ? "…" : "길찾기"}
+        </button>
+      </div>
+      <div className="copilot-chips">
+        {["시청에서 뉴포트", "그로브에서 익스체인지", "호보켄에서 시청"].map((c) => (
+          <button key={c} className="chip" onClick={() => { setQ(c); go(c); }}>
+            {c}
+          </button>
+        ))}
+      </div>
+      {err && <div className="copilot-answer unsupported">오류: {err}</div>}
+      {plan && !plan.feasible && (
+        <div className="copilot-answer unsupported">{plan.answer}</div>
+      )}
+      {plan && plan.feasible && (
+        <div className="trip-plan" style={{ marginTop: 12 }}>
+          <div className="copilot-answer">{plan.answer}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 10 }}>
+            {plan.segments?.map((s, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 18 }}>{s.kind === "walk" ? "🚶" : "🚲"}</span>
+                <span className="mono" style={{ minWidth: 92 }}>
+                  {s.kind === "walk" ? "걷기" : "자전거"} {s.minutes}분
+                </span>
+                <span className="muted" style={{ fontSize: 13 }}>
+                  {s.from} → {s.to} · {s.distance_m}m
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="muted mono" style={{ fontSize: 12, marginTop: 10 }}>
+            대여: {plan.rent_station?.ko} ({plan.rent_station?.bikes}대) · 반납: {plan.return_station?.ko} (
+            {plan.return_station?.docks_free}칸) · 총 {plan.total_minutes}분
+          </div>
+          <div className="muted" style={{ fontSize: 11, marginTop: 6 }}>{plan.disclaimer}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RiderHome() {
   const router = useRouter();
   const { state, refreshKey, setSelectedZone } = useReplay();
@@ -310,6 +390,9 @@ export default function RiderHome() {
 
       {/* Natural-language copilot (deterministic, tool-grounded) */}
       <RiderCopilot cutoff={cutoff} onOpen={(id) => setOpenId(id)} />
+
+      {/* Trip planner: walk → rent → bike → return → walk (deterministic; LLM parses/narrates only) */}
+      <TripPlanner cutoff={cutoff} />
 
       {/* Pull the latest news that could affect nearby availability */}
       <NewsSync compact />

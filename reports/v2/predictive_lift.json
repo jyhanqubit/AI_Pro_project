@@ -1,0 +1,35 @@
+{
+  "run_id": "run_v2lift_20260816T044514Z",
+  "artifact_id": "reports/v2/predictive_lift.json",
+  "mode": "demo_fixture",
+  "claim_status": "demo_fixture",
+  "freshness": "2026-08-16T04:45:14.919372+00:00",
+  "protocol": "predictive-lift-v2",
+  "coverage": {
+    "unique_events": 2,
+    "unique_sources": 2,
+    "event_types": 2,
+    "affected_zone_hours": 15
+  },
+  "coverage_gate": {
+    "min_unique_events": 20,
+    "min_affected_zone_hours": 200,
+    "min_unique_sources": 5,
+    "min_event_types": 3
+  },
+  "coverage_conditions": {
+    "unique_events": false,
+    "affected_zone_hours": false,
+    "unique_sources": false,
+    "event_types": false
+  },
+  "coverage_ok": false,
+  "verdict": "blocked_data",
+  "claim_enabled": false,
+  "mean_gain": 0.0,
+  "ci_95": [
+    0.0,
+    0.0
+  ],
+  "note": "데모 fixture는 커버리지 게이트(이벤트/소스/타입/영향 zone-hour)에 크게 못 미쳐 predictive lift 주장은 blocked_data로 비활성입니다. 측정된 lift는 실제 겹치는 뉴스 backfill + 학습이 통과해야 가능하며(V2-01/V2-02), 이 오프라인 환경에서는 차단됩니다. 프로토콜(시계열 분할·purge/embargo·이벤트 블록 부트스트랩 CI·판정 규칙)은 tests/unit/test_predictive_lift.py에서 합성 데이터로 검증됩니다."
+}

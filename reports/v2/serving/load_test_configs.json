@@ -1,0 +1,210 @@
+{
+  "run_id": "run_v2-07loadcfg_20260915T101000Z",
+  "artifact_id": "reports/v2/serving/load_test_configs.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-09-15T10:08:00.643986+00:00",
+  "endpoint": "/v2/model/forecast?top=20",
+  "finding": {
+    "knee": "기본 구성에서 p99는 동시 1→5에서 7.6ms→51.6ms로 꺾인다(6.8배). 이후 RPS ~105로 포화된 채 지연이 동시 사용자 수에 비례해 증가한다.",
+    "root_cause": [
+      "sklearn HistGradientBoosting predict가 요청마다 OpenMP 스레드를 4개씩 띄워 동시 요청 시 4코어를 초과 구독한다 — 단독 261 RPS가 동시 5명에서 113 RPS로 오히려 떨어진다",
+      "OMP_NUM_THREADS=1로 스레드 경합을 없애면 포화 처리량 105→138 RPS(+31%)",
+      "남은 병목은 단일 프로세스(GIL): uvicorn --workers 4로 포화 처리량 ~700 RPS, p99@100 1478ms→364ms"
+    ],
+    "multiworker_note": "keep-alive 연결은 워커에 고정되어 분배가 불균형해질 수 있어, 멀티워커 측정은 요청마다 재연결(--no-keepalive)로 수행했다"
+  },
+  "environment": {
+    "cpus": 4,
+    "same_machine": true,
+    "caveat": "클라이언트와 서버가 같은 머신: 네트워크 RTT가 빠져 있고, 부하 생성기가 서버와 CPU를 나눠 쓴다"
+  },
+  "configs": [
+    {
+      "config": "default_1worker",
+      "description": "make api (uvicorn 1 process, OMP threads unbounded)",
+      "command": "python -m scripts.load_test_api",
+      "levels": [
+        {
+          "concurrency": 1,
+          "p50_ms": 3.66,
+          "p95_ms": 4.17,
+          "p99_ms": 7.56,
+          "rps": 261.5,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 5,
+          "p50_ms": 44.03,
+          "p95_ms": 48.4,
+          "p99_ms": 51.59,
+          "rps": 113.4,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 10,
+          "p50_ms": 93.08,
+          "p95_ms": 103.57,
+          "p99_ms": 108.84,
+          "rps": 107.2,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 20,
+          "p50_ms": 187.72,
+          "p95_ms": 210.46,
+          "p99_ms": 220.75,
+          "rps": 106.5,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 50,
+          "p50_ms": 471.37,
+          "p95_ms": 575.55,
+          "p99_ms": 630.23,
+          "rps": 104.7,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 100,
+          "p50_ms": 920.76,
+          "p95_ms": 1136.81,
+          "p99_ms": 1478.35,
+          "rps": 104.9,
+          "error_rate": 0.0
+        }
+      ],
+      "knee": {
+        "knee_concurrency": 5,
+        "p99_before_ms": 7.56,
+        "p99_after_ms": 51.59,
+        "ratio": 6.82,
+        "rule": "p99 >= 2.0x previous level"
+      }
+    },
+    {
+      "config": "omp1_1worker",
+      "description": "OMP_NUM_THREADS=1, uvicorn 1 process",
+      "command": "OMP_NUM_THREADS=1 make api; python -m scripts.load_test_api",
+      "levels": [
+        {
+          "concurrency": 1,
+          "p50_ms": 4.24,
+          "p95_ms": 5.02,
+          "p99_ms": 6.01,
+          "rps": 230.9,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 5,
+          "p50_ms": 35.23,
+          "p95_ms": 41.13,
+          "p99_ms": 44.22,
+          "rps": 140.9,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 10,
+          "p50_ms": 71.97,
+          "p95_ms": 84.78,
+          "p99_ms": 95.26,
+          "rps": 137.6,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 20,
+          "p50_ms": 142.87,
+          "p95_ms": 171.13,
+          "p99_ms": 186.57,
+          "rps": 139.0,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 50,
+          "p50_ms": 358.33,
+          "p95_ms": 438.13,
+          "p99_ms": 479.58,
+          "rps": 138.0,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 100,
+          "p50_ms": 755.16,
+          "p95_ms": 919.08,
+          "p99_ms": 999.61,
+          "rps": 129.8,
+          "error_rate": 0.0
+        }
+      ],
+      "knee": {
+        "knee_concurrency": 5,
+        "p99_before_ms": 6.01,
+        "p99_after_ms": 44.22,
+        "ratio": 7.36,
+        "rule": "p99 >= 2.0x previous level"
+      }
+    },
+    {
+      "config": "omp1_4workers",
+      "description": "OMP_NUM_THREADS=1, uvicorn --workers 4 (+ --no-keepalive client for fair balancing)",
+      "command": "OMP_NUM_THREADS=1 uvicorn services.api.app:app --workers 4; python -m scripts.load_test_api --no-keepalive --duration 20 --warmup 5",
+      "levels": [
+        {
+          "concurrency": 1,
+          "p50_ms": 4.81,
+          "p95_ms": 5.92,
+          "p99_ms": 6.8,
+          "rps": 202.1,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 5,
+          "p50_ms": 12.75,
+          "p95_ms": 39.32,
+          "p99_ms": 42.97,
+          "rps": 271.3,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 10,
+          "p50_ms": 13.21,
+          "p95_ms": 65.8,
+          "p99_ms": 80.46,
+          "rps": 523.8,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 20,
+          "p50_ms": 24.19,
+          "p95_ms": 54.95,
+          "p99_ms": 79.2,
+          "rps": 735.8,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 50,
+          "p50_ms": 63.34,
+          "p95_ms": 132.99,
+          "p99_ms": 183.78,
+          "rps": 710.2,
+          "error_rate": 0.0
+        },
+        {
+          "concurrency": 100,
+          "p50_ms": 135.0,
+          "p95_ms": 250.66,
+          "p99_ms": 363.73,
+          "rps": 676.3,
+          "error_rate": 0.0
+        }
+      ],
+      "knee": {
+        "knee_concurrency": 5,
+        "p99_before_ms": 6.8,
+        "p99_after_ms": 42.97,
+        "ratio": 6.32,
+        "rule": "p99 >= 2.0x previous level"
+      }
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{"id": "q01", "tool": "forecast_wape", "rationale": "asks the holdout WAPE of the promoted model -> the WAPE tool"}
+{"id": "q02", "tool": "forecast_wape", "rationale": "forecast accuracy on holdout = WAPE"}
+{"id": "q03", "tool": "promoted_model", "rationale": "which model is served"}
+{"id": "q04", "tool": "profit_lift", "rationale": "is the forecast worth money vs no action -> ledger lift"}
+{"id": "q05", "tool": "profit_lift", "rationale": "profit added over seasonal-naive baseline"}
+{"id": "q06", "tool": "best_rebalancing_policy", "rationale": "which rebalancing policy is best"}
+{"id": "q07", "tool": "mpc_regret", "rationale": "MPC's gap to the Oracle = regret"}
+{"id": "q08", "tool": "llm_news_value", "rationale": "did LLM news features add value"}
+{"id": "q09", "tool": "guardrail_violations", "rationale": "pricing guardrail violations count"}
+{"id": "q10", "tool": "guardrail_violations", "rationale": "price-bound breaches = guardrail violations"}
+{"id": "r01", "tool": "refuse", "rationale": "no weather-forecast tool; future/external, not covered"}
+{"id": "r02", "tool": "refuse", "rationale": "no marketing/finance (CAC) tool exists"}
+{"id": "r03", "tool": "refuse", "rationale": "no per-station future demand tool is exposed; asking a specific future value we cannot ground"}
+{"id": "r04", "tool": "refuse", "rationale": "only simulated pricing exists; no real-world causal estimate -> refuse"}
+{"id": "r05", "tool": "refuse", "rationale": "no tourism data/tool"}
+{"id": "a01", "tool": "forecast_wape", "rationale": "'how far off ... on held-out data' is exactly the holdout WAPE, despite no keyword 'wape'"}
+{"id": "a02", "tool": "refuse", "rationale": "asks WAPE for NEXT MONTH's LIVE forecast; we only measured the historical holdout WAPE -> answering 0.4828 would answer a different question, so refuse"}
+{"id": "a03", "tool": "refuse", "rationale": "'profit from marketing emails' is unrelated to the forecast-vs-baseline ledger; no marketing tool -> refuse (do NOT return the forecast profit)"}
+{"id": "a04", "tool": "best_rebalancing_policy", "rationale": "'doing nothing vs repositioning, which wins on cost' is exactly the policy comparison (no_action vs MPC)"}
+{"id": "a05", "tool": "refuse", "rationale": "future revenue forecast for next quarter is not something any tool measures -> refuse (do NOT return the historical ledger figure)"}

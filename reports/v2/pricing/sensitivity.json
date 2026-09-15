@@ -1,0 +1,85 @@
+{
+  "run_id": "run_v2-05_20260721T034413Z",
+  "artifact_id": "reports/v2/pricing/sensitivity.json",
+  "mode": "research",
+  "claim_status": "simulated",
+  "freshness": "2026-07-21T03:44:13.721367+00:00",
+  "assumption_set_version": "v2-assumptions-1",
+  "base_elasticity": -0.3,
+  "grid": [
+    {
+      "elasticity": -0.15,
+      "m_max": 1.25,
+      "total_net": 2730.3,
+      "surge_actions": 15,
+      "surge_intensity": 3.75
+    },
+    {
+      "elasticity": -0.15,
+      "m_max": 1.5,
+      "total_net": 2789.8,
+      "surge_actions": 15,
+      "surge_intensity": 7.5
+    },
+    {
+      "elasticity": -0.15,
+      "m_max": 2.0,
+      "total_net": 2789.8,
+      "surge_actions": 15,
+      "surge_intensity": 7.5
+    },
+    {
+      "elasticity": -0.3,
+      "m_max": 1.25,
+      "total_net": 2731.4,
+      "surge_actions": 15,
+      "surge_intensity": 3.75
+    },
+    {
+      "elasticity": -0.3,
+      "m_max": 1.5,
+      "total_net": 2785.1,
+      "surge_actions": 15,
+      "surge_intensity": 7.5
+    },
+    {
+      "elasticity": -0.3,
+      "m_max": 2.0,
+      "total_net": 2785.1,
+      "surge_actions": 15,
+      "surge_intensity": 7.5
+    },
+    {
+      "elasticity": -0.6,
+      "m_max": 1.25,
+      "total_net": 2729.0,
+      "surge_actions": 15,
+      "surge_intensity": 3.75
+    },
+    {
+      "elasticity": -0.6,
+      "m_max": 1.5,
+      "total_net": 2763.1,
+      "surge_actions": 15,
+      "surge_intensity": 6.0
+    },
+    {
+      "elasticity": -0.6,
+      "m_max": 2.0,
+      "total_net": 2763.1,
+      "surge_actions": 15,
+      "surge_intensity": 6.0
+    }
+  ],
+  "experiment_dry_run_AA": {
+    "design": "switchback A/A (identical policy both arms)",
+    "estimated_effect": 0.1212,
+    "ci_95": [
+      -0.6386,
+      0.9366
+    ],
+    "ci_covers_zero": true,
+    "interpretation": "A/A effect ~0 with CI covering 0 => estimator unbiased (design valid)"
+  },
+  "note": "Simulated shadow pricing; net is assumption-conditioned; no causal/live claim."
+}

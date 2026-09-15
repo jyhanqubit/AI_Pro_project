@@ -47,6 +47,12 @@ llm = [
     "openai>=1.30",  # opt-in real GPT-4o event extraction (LLM_PROVIDER=openai)
     "anthropic>=0.34",  # opt-in real Claude event extraction (LLM_PROVIDER=anthropic)
 ]
+ragas = [
+    # Optional: real RAGAS non-LLM retrieval metrics for the V2-06 copilot benchmark
+    # (ml/copilot/ragas_retrieval.py). Absent -> that runner records blocked_external, no fake numbers.
+    "ragas>=0.4",
+    "rapidfuzz>=3.0",  # string-distance backend ragas uses for NonLLM context precision/recall
+]
 
 [tool.setuptools]
 # Explicit package list; keeps the scaffold importable under pip -e install.

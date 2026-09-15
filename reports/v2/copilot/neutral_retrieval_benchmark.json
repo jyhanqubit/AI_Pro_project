@@ -1,0 +1,152 @@
+{
+  "run_id": "run_v2-06neutral_20260722T082523Z",
+  "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-07-22T08:25:23.015630+00:00",
+  "task": "text lookup: find the event a paraphrased description refers to",
+  "why_neutral": "gold is a hand-authored query->event mapping independent of any retriever; the task is text-native so plain retrieval is genuinely competitive.",
+  "corpus_events": 2895,
+  "methods": {
+    "flat_text": "Jaccard token overlap (query vs event title)",
+    "graph_boosted": "same text score + 0.05 * normalized graph degree"
+  },
+  "results": {
+    "flat_text": {
+      "top1_accuracy": 0.833,
+      "mrr": 0.838,
+      "n": 12,
+      "per_query": [
+        {
+          "id": "L01",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L02",
+          "gold_rank": 53,
+          "top1": false
+        },
+        {
+          "id": "L03",
+          "gold_rank": 24,
+          "top1": false
+        },
+        {
+          "id": "L04",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L05",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L06",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L07",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L08",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L09",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L10",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L11",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L12",
+          "gold_rank": 1,
+          "top1": true
+        }
+      ]
+    },
+    "graph_boosted": {
+      "top1_accuracy": 0.75,
+      "mrr": 0.776,
+      "n": 12,
+      "per_query": [
+        {
+          "id": "L01",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L02",
+          "gold_rank": 56,
+          "top1": false
+        },
+        {
+          "id": "L03",
+          "gold_rank": 24,
+          "top1": false
+        },
+        {
+          "id": "L04",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L05",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L06",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L07",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L08",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L09",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L10",
+          "gold_rank": 1,
+          "top1": true
+        },
+        {
+          "id": "L11",
+          "gold_rank": 4,
+          "top1": false
+        },
+        {
+          "id": "L12",
+          "gold_rank": 1,
+          "top1": true
+        }
+      ]
+    }
+  },
+  "graph_minus_flat_top1": -0.083,
+  "finding": "On a fair, text-native lookup with method-independent gold, the graph structure gives NO lift over plain text retrieval (and the degree boost does not help \u2014 degree is irrelevant to which event a description names). This is the honest counterpart to the structural benchmark where the graph wins by construction: GraphRAG helps relational / per-zone queries, not text lookup. Choose the tool to the query type."
+}

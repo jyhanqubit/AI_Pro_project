@@ -1,0 +1,431 @@
+{
+  "run_id": "run_v2-03c_20260822T110001Z",
+  "artifact_id": "reports/v2/llm_value/news_feature_conditions.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-08-22T11:00:01.701733+00:00",
+  "grain": "borough-hour (nearest-centroid; approximate)",
+  "n_seeds": 10,
+  "question": "Under what conditions does the LLM news feature help the forecast?",
+  "windows": [
+    {
+      "window": "2026-02",
+      "n_test_rows": 2539,
+      "n_train_rows": 2269,
+      "news_active_rows": 306,
+      "per_seed_gain": [
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959,
+        -0.959
+      ],
+      "per_seed_mean": -0.959,
+      "per_seed_std": 0.0,
+      "seeds_positive": 0,
+      "ensemble": {
+        "n": 2539,
+        "n_blocks": 27,
+        "mean_loss_m0": 69.979245,
+        "mean_loss_m1": 70.938596,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -0.959351,
+        "ci_95": [
+          -1.527479,
+          -0.420889
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-03",
+      "n_test_rows": 2967,
+      "n_train_rows": 4808,
+      "news_active_rows": 215,
+      "per_seed_gain": [
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858,
+        -0.858
+      ],
+      "per_seed_mean": -0.858,
+      "per_seed_std": 0.0,
+      "seeds_positive": 0,
+      "ensemble": {
+        "n": 2967,
+        "n_blocks": 31,
+        "mean_loss_m0": 147.606065,
+        "mean_loss_m1": 148.463958,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -0.857893,
+        "ci_95": [
+          -1.40063,
+          -0.282625
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-04",
+      "n_test_rows": 2880,
+      "n_train_rows": 7775,
+      "news_active_rows": 24,
+      "per_seed_gain": [
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822,
+        -0.822
+      ],
+      "per_seed_mean": -0.822,
+      "per_seed_std": 0.0,
+      "seeds_positive": 0,
+      "ensemble": {
+        "n": 2880,
+        "n_blocks": 30,
+        "mean_loss_m0": 146.173338,
+        "mean_loss_m1": 146.994999,
+        "verdict": "blocked_data",
+        "claim_enabled": false,
+        "mean_gain": -0.821661,
+        "ci_95": [
+          -1.929942,
+          0.340658
+        ],
+        "coverage_ok": false
+      }
+    },
+    {
+      "window": "2026-05",
+      "n_test_rows": 2975,
+      "n_train_rows": 10655,
+      "news_active_rows": 336,
+      "per_seed_gain": [
+        -0.575,
+        0.567,
+        -3.697,
+        1.013,
+        -0.651,
+        -1.215,
+        -1.521,
+        0.094,
+        -0.404,
+        1.628
+      ],
+      "per_seed_mean": -0.476,
+      "per_seed_std": 1.418,
+      "seeds_positive": 4,
+      "ensemble": {
+        "n": 2975,
+        "n_blocks": 31,
+        "mean_loss_m0": 135.989604,
+        "mean_loss_m1": 136.750282,
+        "verdict": "negative_lift",
+        "claim_enabled": false,
+        "mean_gain": -0.760678,
+        "ci_95": [
+          -1.424461,
+          -0.226924
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-06",
+      "n_test_rows": 2880,
+      "n_train_rows": 13630,
+      "news_active_rows": 168,
+      "per_seed_gain": [
+        2.226,
+        6.256,
+        1.211,
+        -1.883,
+        -2.256,
+        -0.787,
+        0.167,
+        0.684,
+        4.246,
+        1.523
+      ],
+      "per_seed_mean": 1.139,
+      "per_seed_std": 2.504,
+      "seeds_positive": 7,
+      "ensemble": {
+        "n": 2880,
+        "n_blocks": 30,
+        "mean_loss_m0": 179.067975,
+        "mean_loss_m1": 177.827064,
+        "verdict": "measured_improvement",
+        "claim_enabled": true,
+        "mean_gain": 1.240911,
+        "ci_95": [
+          0.827799,
+          1.637717
+        ],
+        "coverage_ok": true
+      }
+    },
+    {
+      "window": "2026-07",
+      "n_test_rows": 2976,
+      "n_train_rows": 16510,
+      "news_active_rows": 0,
+      "per_seed_gain": [
+        -0.515,
+        0.619,
+        6.853,
+        1.62,
+        -1.89,
+        -3.6,
+        0.78,
+        1.03,
+        -0.269,
+        1.724
+      ],
+      "per_seed_mean": 0.635,
+      "per_seed_std": 2.597,
+      "seeds_positive": 6,
+      "ensemble": {
+        "n": 2976,
+        "n_blocks": 31,
+        "mean_loss_m0": 167.1639,
+        "mean_loss_m1": 166.445594,
+        "verdict": "blocked_data",
+        "claim_enabled": false,
+        "mean_gain": 0.718306,
+        "ci_95": [
+          0.099709,
+          1.288511
+        ],
+        "coverage_ok": false
+      }
+    }
+  ],
+  "event_composition": {
+    "2026-01": {
+      "n_events": 3,
+      "mean_boroughs_per_event": 5.0,
+      "citywide_share": 1.0,
+      "mean_severity": 0.667,
+      "dominant_types": [
+        "WEATHER_SHOCKx3"
+      ]
+    },
+    "2026-02": {
+      "n_events": 5,
+      "mean_boroughs_per_event": 4.2,
+      "citywide_share": 0.8,
+      "mean_severity": 0.68,
+      "dominant_types": [
+        "WEATHER_SHOCKx2",
+        "ROAD_CLOSUREx2",
+        "LARGE_VENUE_EVENTx1"
+      ]
+    },
+    "2026-03": {
+      "n_events": 3,
+      "mean_boroughs_per_event": 3.67,
+      "citywide_share": 0.667,
+      "mean_severity": 0.467,
+      "dominant_types": [
+        "WEATHER_SHOCKx2",
+        "SAFETY_INCIDENTx1"
+      ]
+    },
+    "2026-04": {
+      "n_events": 1,
+      "mean_boroughs_per_event": 1.0,
+      "citywide_share": 0.0,
+      "mean_severity": 0.6,
+      "dominant_types": [
+        "TRANSIT_DISRUPTIONx1"
+      ]
+    },
+    "2026-05": {
+      "n_events": 7,
+      "mean_boroughs_per_event": 2.29,
+      "citywide_share": 0.286,
+      "mean_severity": 0.443,
+      "dominant_types": [
+        "LARGE_VENUE_EVENTx3",
+        "PUBLIC_GATHERINGx1",
+        "TRANSIT_DISRUPTIONx1"
+      ]
+    },
+    "2026-06": {
+      "n_events": 4,
+      "mean_boroughs_per_event": 2.0,
+      "citywide_share": 0.25,
+      "mean_severity": 0.575,
+      "dominant_types": [
+        "PUBLIC_GATHERINGx2",
+        "SAFETY_INCIDENTx1",
+        "LARGE_VENUE_EVENTx1"
+      ]
+    }
+  },
+  "training_size_control": {
+    "2026-06": [
+      {
+        "train_months": 1,
+        "train_from": "2026-05",
+        "n_train_rows": 2975,
+        "gain": -0.31812,
+        "ci_95": [
+          -1.257106,
+          0.635186
+        ],
+        "verdict": "inconclusive"
+      },
+      {
+        "train_months": 2,
+        "train_from": "2026-04",
+        "n_train_rows": 5855,
+        "gain": -0.037451,
+        "ci_95": [
+          -0.918231,
+          0.818033
+        ],
+        "verdict": "inconclusive"
+      },
+      {
+        "train_months": 3,
+        "train_from": "2026-03",
+        "n_train_rows": 8822,
+        "gain": 1.672597,
+        "ci_95": [
+          0.488035,
+          3.079136
+        ],
+        "verdict": "measured_improvement"
+      },
+      {
+        "train_months": 4,
+        "train_from": "2026-02",
+        "n_train_rows": 11361,
+        "gain": 0.790748,
+        "ci_95": [
+          0.322932,
+          1.227132
+        ],
+        "verdict": "measured_improvement"
+      },
+      {
+        "train_months": 5,
+        "train_from": "2026-01",
+        "n_train_rows": 13630,
+        "gain": 1.240911,
+        "ci_95": [
+          0.827799,
+          1.637717
+        ],
+        "verdict": "measured_improvement"
+      }
+    ],
+    "2026-05": [
+      {
+        "train_months": 1,
+        "train_from": "2026-04",
+        "n_train_rows": 2880,
+        "gain": 0.0,
+        "ci_95": [
+          0.0,
+          0.0
+        ],
+        "verdict": "no_lift"
+      },
+      {
+        "train_months": 2,
+        "train_from": "2026-03",
+        "n_train_rows": 5847,
+        "gain": 0.155961,
+        "ci_95": [
+          -1.974987,
+          1.816122
+        ],
+        "verdict": "inconclusive"
+      },
+      {
+        "train_months": 3,
+        "train_from": "2026-02",
+        "n_train_rows": 8386,
+        "gain": -0.659865,
+        "ci_95": [
+          -1.975884,
+          0.671828
+        ],
+        "verdict": "inconclusive"
+      },
+      {
+        "train_months": 4,
+        "train_from": "2026-01",
+        "n_train_rows": 10655,
+        "gain": -0.760678,
+        "ci_95": [
+          -1.424461,
+          -0.226924
+        ],
+        "verdict": "negative_lift"
+      }
+    ]
+  },
+  "finding": {
+    "gain_is_monotone_in_event_spread": true,
+    "windows_ranked_by_spread": [
+      {
+        "window": "2026-02",
+        "mean_boroughs_per_event": 4.2,
+        "citywide_share": 0.8,
+        "ensemble_gain": -0.959351,
+        "verdict": "negative_lift"
+      },
+      {
+        "window": "2026-03",
+        "mean_boroughs_per_event": 3.67,
+        "citywide_share": 0.667,
+        "ensemble_gain": -0.857893,
+        "verdict": "negative_lift"
+      },
+      {
+        "window": "2026-05",
+        "mean_boroughs_per_event": 2.29,
+        "citywide_share": 0.286,
+        "ensemble_gain": -0.760678,
+        "verdict": "negative_lift"
+      },
+      {
+        "window": "2026-06",
+        "mean_boroughs_per_event": 2.0,
+        "citywide_share": 0.25,
+        "ensemble_gain": 1.240911,
+        "verdict": "measured_improvement"
+      }
+    ],
+    "mechanism": "A citywide event switches the feature on in every borough at once, so it adds no spatial contrast and duplicates what the calendar features already encode; what remains is noise. A localised event names which borough moves and when.",
+    "training_size_rejected": "Holding the test window fixed and shortening the training history moves June and May in opposite directions, so training volume does not explain the difference."
+  },
+  "limitations": [
+    "Only four informative windows: the monotone relationship is suggestive, not established.",
+    "The direct test (dropping events spanning 4+ boroughs) lost 12 of 23 events and fell under the coverage gate, so it could neither confirm nor refute the mechanism.",
+    "Five months of history is too short to separate seasonal effects from event effects; a full year would be needed."
+  ],
+  "note": "Reported as a conditional result. Neither 'the news feature works' nor 'it does not' is supportable on its own; the measured statement is that its contribution tracks the spatial resolution of the events it encodes."
+}

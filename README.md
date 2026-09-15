@@ -1,44 +1,306 @@
 # ShockFlow AI
 
-### 🔗 라이브 데모 — **https://ai-pro-project-1.vercel.app**
+### 🔗 라이브 데모 — https://ai-pro-project-1.vercel.app
 
-설치 없이 바로 전체 운영자 화면(관제탑·운영 통계·재배치·요금 등)을 볼 수 있습니다. API는 무료 호스팅이라
-한동안 안 쓰면 잠들어, **첫 접속은 30~60초** 걸린 뒤 데이터가 채워집니다(이후엔 빠릅니다). 설치해서 실행하거나
-수치를 재현하는 방법은 아래 [빠른 확인 안내](#-빠른-확인-안내)에 있습니다.
+설치 없이 운영자 화면 전체(관제탑, 운영 통계, 재배치, 요금)를 바로 볼 수 있습니다. API는 무료
+호스팅(Render free tier)이라 한동안 요청이 없으면 잠들고, 깨어나는 첫 접속에 30~60초가 걸립니다
+(cold start). 그 뒤에는 빠르게 응답합니다. 설치해서 실행하거나 수치를 재현하는 방법은 아래
+[빠른 확인 안내](#-빠른-확인-안내)에 있습니다.
 
 ---
 
-이벤트를 인지하는 도시 모빌리티 수요 예측 및 차량 재배치 의사결정 지원 시스템.
+## 한 줄 요약
 
-ShockFlow AI는 시간 정보가 붙은 이벤트에서 불규칙한 수요 충격을 감지해 추적 가능한 graph feature로 바꿉니다.
-이 feature가 예측에 준 **모델 기여**(model-attributed) 영향(입증된 인과는 아닙니다)을 정량화한 뒤, 그 결과를
-실제 운영에 쓸 수 있는 재배치 조치로 이어줍니다.
+시간 정보가 붙은 도시 이벤트를 feature로 만들어, 정형 데이터만으로는 놓치는 공유 자전거 수요
+급변을 예측하고, 그 예측을 재배치와 요금 결정으로 연결한 end-to-end 시스템입니다. Citi Bike 2,491만
+건과 NYC 허가 이벤트 63,070건으로 백테스트했고, 측정된 결과는 모두 `reports/`에 artifact로 커밋해
+두었습니다.
 
 ```text
-Citi Bike 수요 이력
-+ 시간 정보가 붙은 뉴스 / 이벤트 입력
-+ 현재 station 재고
+Citi Bike 수요 이력 + 시간 정보가 붙은 뉴스 / 이벤트 + 현재 station 재고
 → LLM 이벤트 추출 → Neo4j 이벤트 graph → as-of numeric graph feature
 → H3 Zone-시간 수요 예측 → 설명 및 시나리오 비교 → 실행 가능한 재배치 계획
 ```
 
-개발 전반의 운영 계약은 [CLAUDE.md](CLAUDE.md)에 정리해 두었습니다.
+## 문제 정의
+
+공유 자전거 수요는 출퇴근, 요일, 날씨 같은 정형 패턴을 대부분 따르지만, 축제나 도로 통제, 대형
+행사처럼 특정 시각과 특정 지역에 몰리는 이벤트가 생기면 그 구간에서 크게 벗어납니다. 수요 이력과
+캘린더 feature만 쓰는 모델은 이런 급변을 사후에야 따라잡습니다. 부족(자전거가 없어 못 탐)은
+초과(빈 거치대)보다 운영상 더 아픈데, 대칭 손실로 학습한 모델은 둘을 똑같이 취급합니다. 이
+프로젝트는 (1) 이벤트를 feature로 넣으면 예측이 실제로 좋아지는지를 누수 없이 검증하고, (2)
+부족을 더 무겁게 다루도록 손실함수를 바꾸며, (3) 예측을 제약을 만족하는 재배치 계획으로 연결하는 것을
+목표로 합니다.
+
+## 데이터
+
+| 소스 | 규모 | 용도 |
+|---|---|---|
+| Citi Bike 트립 이력 (NYC, 2026-01~07) | **24,914,442건** | 수요 label (H3 zone × local hour 집계) |
+| NYC 허가 이벤트 (permitted events) | **63,070건** | 이벤트 feature (시각, 위치, 유형) |
+| GDELT 뉴스 → LLM 구조화 이벤트 | 23건 | LLM 뉴스 feature (유형, 심각도, 영향 방향) |
+| NOAA 날씨 (Central Park) | 일 단위 | 날씨 feature (도시 전역 shock) |
+
+트립 원본(약 3GB)은 저장소에 넣지 않습니다(§7.1). `make download-citibike`로 내려받아 재현합니다.
+승격 모델은 leakage 검증이 끝난 Citi Bike Jersey City 패널(2026-01~07, 226,953행 / 219 zone)로
+학습했습니다.
+
+## 핵심 결과
+
+숫자마다 측정 조건을 함께 적었습니다. 안 된 것(뉴스 피처의 조건부 실패, 철회한 permit lift)도
+그대로 둡니다.
+
+1. **LLM 뉴스 피처는 이벤트가 국지적일 때만 예측을 개선합니다 — 조건부 결과.** 6월 홀드아웃(이벤트
+   평균 2.0개 borough)에서 WAPE 상대 **+1.24% 개선, 95% CI [0.83, 1.64]**(0 제외, 시드 10개
+   앙상블). 이벤트가 도시 전역일수록 기여가 단조 감소해 부호가 바뀝니다(평균 4.2개 −0.96 → 3.7개
+   −0.86 → 2.3개 −0.76 → 2.0개 +1.24). 원인: 전역 이벤트는 feature를 모든 zone에서 동시에 켜
+   공간 대비를 못 주고 캘린더 feature와 중복됩니다. (`reports/v2/llm_value/news_feature_conditions.json`)
+2. **허가 이벤트 피처(permit)의 단일 분할 +2.69% 개선은 재현되지 않아 철회했습니다.** 월별 rolling
+   origin으로 창마다 재학습하면 유의한 양수가 사라집니다(inconclusive). 과장하지 않기 위해 원본
+   artifact와 재현 실패를 나란히 남겼습니다. (`reports/v2/llm_value/rolling_origin_ablation.json`)
+3. **비대칭 비용 최적화 — 0.667분위(뉴스벤더 q\*) 회귀로 품절 26%, 운영비용(OCS) 3.4% 감소.** 3개
+   홀드아웃 창 전부에서 q=0.667이 최적이며, 대가로 WAPE는 8.4% 나빠집니다(트레이드오프를 함께
+   보고). 예측을 실행 전에 artifact에 기록했습니다. (`reports/v2/holdout/quantile_cost.json`)
+4. **MILP와 MPC 재배치로 부족 73% 감소(무대응 대비), 총비용 36% 감소(greedy 대비) — 시뮬레이션.**
+   ledger total_cost: 무대응 1127 / greedy 1155 / MILP 1087 / MPC 740 / Oracle 719. MPC가 best
+   feasible(regret 21.6). 금액은 assumption에 조건부라 `simulated` 라벨입니다. (`reports/v2/mpc/`)
+
+## A/B/C 실험 — 이벤트 피처가 실제로 효과가 있나
+
+핵심 질문("이벤트 feature를 넣으면 예측이 좋아지는가")을 A/B/C 실험으로 검증했습니다. 세 arm은 같은
+모델, 같은 cutoff, 같은 분할을 쓰고 **입력 feature만 다릅니다.**
+
+| arm | feature | 역할 |
+|---|---|---|
+| **A** (대조군) | 수요 이력 + 캘린더 (32개) | baseline |
+| **B** (처치 1) | A + 허가 이벤트 (permitted) | 구조화 이벤트 피드 |
+| **C** (처치 2) | B + LLM 뉴스 이벤트 | LLM이 뉴스에서 뽑은 이벤트 |
+
+**통계 방법.** arm 간 차이가 우연인지 가리려고 **paired day-block bootstrap**을 씁니다. 지표는 짝지은
+gain = loss(대조) − loss(처치)이고, 행이 아니라 **날짜 블록**을 2,000회 복원추출(seed 42)해 95%
+신뢰구간을 percentile로 잡습니다(같은 날 시간대의 상관을 깨지 않으려는 것). 판정 규칙은 실행 전에
+고정했습니다 — CI가 전부 0보다 크면 개선, 전부 작으면 악화, 0을 포함하면 보류, 이벤트 커버리지가
+임계 미만이면 blocked. Diebold-Mariano 계열의 예측 정확도 비교입니다. 단일 분할이 아니라 **월별
+rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학습 변동까지 담았습니다.
+
+![A/B/C forest plot — 창별 gain과 95% CI](reports/v2/llm_value/abc_forest.png)
+
+| 창(held-out) | A WAPE | B WAPE | C WAPE | B−A gain % [95% CI] | 판정 | C−B gain % [95% CI] | 판정 |
+|---|---:|---:|---:|---|---|---|---|
+| 2026-02 | 0.1469 | 0.1458 | 0.1478 | +0.52 [−0.40, 1.47] | 보류 | −0.96 [−1.53, −0.42] | 악화 |
+| 2026-03 | 0.1467 | 0.1488 | 0.1496 | −2.06 [−3.47, −0.63] | 악화 | −0.86 [−1.40, −0.28] | 악화 |
+| 2026-04 | 0.1085 | 0.1091 | 0.1097 | −0.83 [−2.77, 1.04] | 보류 | −0.82 [−1.93, 0.34] | blocked |
+| 2026-05 | 0.0903 | 0.0900 | 0.0904 | +0.42 [−2.00, 2.71] | 보류 | −0.58 [−1.72, 0.59] | 보류 |
+| 2026-06 | 0.0978 | 0.0968 | 0.0956 | +1.91 [−0.24, 3.92] | 보류 | **+2.23 [1.10, 3.35]** | **개선** |
+| 2026-07 | 0.1030 | 0.1033 | 0.1036 | −0.38 [−3.46, 2.61] | blocked | −0.51 [−2.04, 1.02] | blocked |
+
+**스코어보드 (창 6개 기준).**
+
+| 대조 | 개선 | 악화 | 보류 | blocked | cross-origin 판정 |
+|---|---:|---:|---:|---:|---|
+| B vs A (허가 이벤트) | 0 | 1 | 4 | 1 | `mixed_with_inconclusive` |
+| C vs B (LLM 뉴스) | 1 | 2 | 1 | 2 | `sign_flips` |
+
+**해석.** 한 창의 유의성(예: 6월 C−B가 0을 넘음)만으로 "효과 있다"고 말하지 않습니다. 6창을 모아
+보면 **B(허가 이벤트)는 origin에 따라 흔들려 방향을 확정할 수 없고**(그래서 핵심 결과 2에서 단일 분할
++2.69% 주장을 철회), **C(LLM 뉴스)는 부호가 뒤집힙니다.** C가 어느 창에서 이기는지를 추가로 파고든
+결과가 조건부 결과(핵심 결과 1)입니다 — 이벤트가 국지적일 때만 기여가 양수이고, 시드 10개 앙상블로
+6월 창을 다시 재면 **+1.24% (CI [0.83, 1.64])**로 좁혀집니다. 위 표의 단일 시드 +2.23%보다 보수적인
+값이며, 이 프로젝트가 대표로 인용하는 숫자입니다.
+
+재현: `make v2-llm-value-rolling`(측정) → `make v2-abc-plot`(그림), `make v2-news-conditions`(조건부
+시드 앙상블). 원본 artifact는 `reports/v2/llm_value/rolling_origin_ablation.json`.
+
+## 검증 방법
+
+- **백테스트(시간 분할):** 1~5월 학습, 6월 홀드아웃 평가. random split은 금지하고 rolling-origin /
+  expanding-window만 씁니다(§5.4). 승격 모델은 3-window rolling-origin에서 WAPE 0.4974 ± 0.0074,
+  MASE 0.8708 ± 0.0094로 seasonal naive(WAPE 0.65~0.69)를 세 창 모두 이깁니다.
+- **누수 차단:** 이벤트 feature는 `available_at = max(published_at, first_seen_at) ≤ forecast_cutoff`인
+  것만 씁니다(point-in-time join). 14:01에 공개된 기사가 14:00 예측에 0 기여인지 검사하는 회귀
+  테스트가 있습니다.
+- **피처 기여 분리(ablation):** B0 seasonal naive → B1 수요+캘린더 → B2 +기사 수 → B3 +LLM 이벤트
+  → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
+- **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
+  (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
+- **테스트:** `make test` 기준 494 passed / 6 skipped(torch 없는 환경에서 v1 recsys 2개 모듈 제외).
+
+## 서빙
+
+승격 모델을 API로 서빙합니다. `GET /v2/model/forecast`가 요청마다 `estimator.predict`를 실제로 실행해
+H3 zone별 next-hour 예측을 반환합니다(미리 계산한 답이 아님). 로컬 컨테이너(uvicorn single worker)에서
+warm-up 후 측정한 단일 요청 Latency는 **p50 4.2 / p95 5.7 / p99 6.5 ms**이고, 순수 추론(`predict`,
+136 zone)은 p50 1.9 / p95 2.2 ms입니다.
+
+한 자릿수 ms가 나오는 이유는 이렇습니다. 요청 시점에 피처 패널을 새로 집계하면 실측 **83초 / 최대 2.1 GB**(JC 2026-01~07,
+226,953행에서 136 zone 스냅숏 생성)가 드는데, 이 집계를 오프라인에서 미리 돌려 스냅숏을 커밋해 두고
+요청 시점에는 행렬 구성과 `predict`만 합니다.
+
+**부하 테스트: p99가 어디서 꺾이는지.** asyncio closed-loop으로 동시 사용자를 1→100까지
+올리며 측정했습니다(단계마다 워밍업으로 첫 호출 지연 제외). 서버와 클라이언트가 같은 4-CPU 머신이라
+**네트워크 왕복 시간은 빠져 있고**, 부하 생성기가 서버와 CPU를 나눠 씁니다.
+
+| 동시 사용자 | p50 | p95 | p99 | RPS | 에러율 |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 3.7 ms | 4.2 ms | 7.6 ms | 262 | 0 |
+| 5 | 44.0 ms | 48.4 ms | 51.6 ms | 113 | 0 |
+| 10 | 93.1 ms | 103.6 ms | 108.8 ms | 107 | 0 |
+| 20 | 187.7 ms | 210.5 ms | 220.8 ms | 107 | 0 |
+| 50 | 471.4 ms | 575.6 ms | 630.2 ms | 105 | 0 |
+| 100 | 920.8 ms | 1136.8 ms | 1478.4 ms | 105 | 0 |
+
+기본 `make api` 구성은 **동시 5명에서 p99가 7.6 → 51.6 ms로 꺾이고**(무릎 지점), 처리량이 ~105 RPS로
+포화합니다. 원인과 개선을 측정으로 분리했습니다.
+
+- sklearn `predict`가 요청마다 OpenMP 스레드를 띄워 4코어보다 많은 스레드가 서로 경합합니다(단독
+  262 RPS가 동시 5명에서 113 RPS로 떨어짐). `OMP_NUM_THREADS=1`로 포화 처리량 105 → 138 RPS.
+- 남은 병목은 단일 프로세스(GIL). `uvicorn --workers 4`로 포화 처리량 ~700 RPS, p99@100 1478 →
+  364 ms. (멀티워커는 keep-alive가 워커에 고정돼 분배가 치우치므로 요청마다 재연결해 측정)
+
+![부하 테스트: 구성별 p99와 처리량](reports/v2/serving/load_test_configs.png)
+
+재현: `make api`를 띄운 뒤 `make v2-loadtest` (`reports/v2/serving/load_test.{csv,json}`).
+
+### 무료 배포 조건에서는 어떤가
+
+라이브 서버는 Render 무료 인스턴스(0.1 CPU, 512 MB, 유휴 시 정지)에 올라가 있습니다. 위 수치는
+4코어 머신 값이라 그대로 쓸 수 없어서, 무료 티어를 정의하는 두 제약을 로컬에서 재현해 다시
+쟀습니다. 코어 하나에 고정하고(`taskset`) `cpulimit` 방식(100 ms 주기마다 10 ms만 실행)으로 0.1 CPU
+몫을 줬습니다. 측정 샌드박스에서 라이브 URL로 나가는 연결이 정책상 막혀 있어 실제 서버를 직접 재지는
+못했고, 그래서 지역 간 네트워크 왕복과 정지 후 재기동(30~60초)은 이 수치에 들어 있지 않습니다.
+
+| endpoint | p50 | p95 | 응답 크기 | 요청이 다루는 레코드 | 레코드당 시간 |
+|---|---:|---:|---:|---:|---:|
+| `/v1/health` | 1.0 ms | 96.8 ms | 140 B | 0 | 해당 없음 |
+| `/v1/forecasts` (데모 fixture) | 1.4 ms | 97.3 ms | 1.1 KB | 3 zone | 0.47 ms |
+| `/v2/model/forecast?top=10` | 100.0 ms | 103.5 ms | 1.8 KB | 136 zone × 32 feature | 0.74 ms |
+| `/v2/model/forecast?top=200` | 99.9 ms | 103.7 ms | 13.0 KB | 136 zone × 32 feature | 0.74 ms |
+| `/v2/operator/statistics` | 96.5 ms | 99.8 ms | 14.0 KB | 45 (station, event, zone) | 2.15 ms |
+
+**숫자를 읽을 때 주의할 점.** health처럼 CPU를 거의 안 쓰는 요청도 p95가 97 ms이고, 모델 예측은 p50이
+정확히 100 ms입니다. 이 100 ms는 코드가 아니라 CPU 할당 주기에서 나옵니다. 한 주기(100 ms)에 허용된
+10 ms를 다 쓰면 다음 주기까지 멈추는데, 클라이언트가 응답을 받자마자 다음 요청을 보내는 closed-loop이라
+그 요청은 거의 항상 멈춘 구간에 도착해 다음 주기를 기다립니다. Render의 CPU 제한도 같은 100 ms 주기의
+quota 방식이라 무료 티어에서 보이는 약 100 ms 바닥은 코드로 없앨 수 없고, 전용 코어를 주는 유료
+인스턴스로만 사라집니다. 그래서 무료 티어에서 의미 있는 지표는 지연이 아니라 **요청당 CPU 시간**이고,
+이것은 포화 처리량으로 역산할 수 있습니다.
+
+**데이터 건수 대비 평가.** 동시 10명에서 25.5 req/s로 포화했으니 요청당 CPU는 0.1 CPU-s ÷ 25.5 ≈
+3.9 ms, zone 하나 예측에 0.03 ms입니다(4코어 무제한 환경의 요청당 4 ms와 일치). 같은 결과를 요청
+시점에 원본 트립부터 집계하면 226,953행에 83초, 행당 0.37 ms가 듭니다. 즉 요청은 트립 22만 행이 아니라
+스냅숏 136행만 만지고, 레코드당 비용은 배치 집계의 약 1/12입니다. 이 구조가 무료 티어에서도 예측
+엔드포인트가 초당 25건 이상, zone 기준 초당 3,400건을 처리하는 이유입니다. 반면
+`/v2/operator/statistics`는 레코드 45개에 2.15 ms로, 레코드당 비용이 모델 예측의 3배입니다. 요청마다
+fixture 전체를 as-of로 다시 집계하기 때문인데, 데모 데이터에서는 45건이라 문제가 되지 않지만 station
+수에 비례해 커지는 비용이라 실데이터 규모에서는 cutoff별 캐시가 필요합니다.
+
+**효율적이지 않았던 부분과 개선.** 첫 측정에서 두 가지가 드러났습니다.
+
+1. 프로세스가 뜬 뒤 첫 요청이 **33.3초** 걸렸습니다. 모델 번들(0.55 MB)과 sklearn import를 첫 요청이
+   lazy하게 부담했는데, 4코어에서 1.5초이던 것이 0.1 CPU에서 20배로 늘어난 것입니다. 배포 직후 첫
+   방문자가 이걸 그대로 맞습니다.
+2. 스냅숏은 프로세스가 사는 동안 바뀌지 않는데, 136 × 32 입력 행렬을 요청마다 dict에서 다시 만들고
+   있었습니다. 함수 내부 2.8 ms 중 0.6 ms입니다.
+
+그래서 모델을 서버 startup(FastAPI lifespan)에서 미리 로드하고, 입력 행렬은 스냅숏과 함께 한 번만
+만들도록 바꿨습니다. `predict`는 여전히 요청마다 실행합니다(미리 계산한 답을 돌려주는 구조로 바꾸지
+않았습니다). 같은 조건에서 다시 재면:
+
+| 항목 | 개선 전 | 개선 후 |
+|---|---:|---:|
+| 프로세스 시작 후 첫 요청 | 33,343 ms | 104 ms |
+| 포화 처리량 (동시 10명) | 25.5 req/s | 33.1 req/s (+30%) |
+| p99 @ 동시 10명 | 701 ms | 507 ms |
+| 요청당 CPU (역산) | 3.9 ms | 3.0 ms |
+
+![무료 티어 재현: 개선 전후](reports/v2/serving/free_tier_before_after.png)
+
+33초가 사라진 게 아니라 startup으로 옮겨진 것이라는 점은 분명히 해 둡니다. 재현 환경에서 서버가
+health check에 응답하기까지 35.5초가 걸렸고, Render에서는 이 시간이 배포 시 health check 뒤로(사용자가
+보지 않음), 유휴 정지 후 재기동 시에는 원래 있던 30~60초 cold start 안으로 들어갑니다.
+
+재현: `make v2-free-tier-probe` (`reports/v2/serving/free_tier_emulation.json`, 개선 전 기록은
+`free_tier_emulation_before.json`).
+
+## 대용량 처리
+
+분산 처리에서 shuffle 비용이 어디서 나오는지 직접 측정했습니다. 2,491만 건 트립을 3-컬럼
+Parquet으로 만든 뒤, 같은 두 workload(역-시간 groupBy, 트립↔거점 dimension join)를 세 방식으로
+돌렸습니다. Spark는 local 모드(1 JVM, 4코어), shuffle read/write는 Spark UI REST API에서 쿼리별로
+읽었습니다. join은 `autoBroadcastJoinThreshold=-1`로 강제 shuffle시켰습니다(2K행 dimension은 운영에선
+broadcast).
+
+| workload | pandas | Spark 기본 (p=32) | Spark 사전 repartition (p=32) | shuffle write |
+|---|---:|---:|---:|---:|
+| groupBy (역×시간) | 7.3 s | **6.1 s** | 7.7 s | 기본 98 MB / repartition 276 MB |
+| join (end_station) | 11.8 s | 9.3 s | **8.0 s** | 두 방식 모두 ~355 MB |
+
+파티션 수 8 / 32 / 200 비교에서 드러난 것:
+
+- 파티션 8개는 4코어를 다 못 채워 groupBy가 11.6 s로 느립니다. 32와 200은 큰 차이가 없습니다.
+- **groupBy 앞에서 미리 repartition하면 shuffle 바이트가 약 3배**(98 → 276 MB)로 늘고 더 느립니다.
+  map-side 부분 집계(combiner)를 건너뛰고 원시 행을 통째로 셔플하기 때문입니다. 기본 파티셔닝이
+  불균형할 때(p=8)만 이득이 있습니다.
+- join은 어느 방식이든 셔플 바이트가 같지만(exchange 재사용), 미리 해시해 두면 약 10% 빠릅니다.
+  dimension을 broadcast하면 셔플 자체가 사라집니다.
+- 단일 머신 4코어라 groupBy에서 pandas와 Spark 차이는 크지 않습니다(pandas 시간은 Parquet 스캔
+  I/O가 지배해 page-cache 상태에 따라 7~11 s로 흔들립니다). 이 실험의 요점은 절대 속도가 아니라
+  **파티션 설계와 셔플 바이트가 분산 처리 비용을 어떻게 바꾸는지**입니다.
+
+![Spark shuffle 벤치마크](reports/v2/spark/shuffle_bench.png)
+
+재현: `make v2-spark-bench` (`reports/v2/spark/shuffle_bench.{csv,json}`).
+
+## 재현 방법
+
+```bash
+git clone https://github.com/jyhanqubit/AI_Pro_project && cd AI_Pro_project
+make install                                # Python 가상환경 + 패키지
+make api                                    # 백엔드: http://127.0.0.1:8000
+cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000 (새 터미널)
+```
+
+수치 재현(원본 트립 필요):
+
+```bash
+make download-citibike MONTHS="202601 202602 202603 202604 202605 202606 202607"
+make v2-holdout            # 승격 모델 + rolling H3 multi-holdout (WAPE / MASE)
+make v2-quantile-cost      # 비대칭 비용 분위수 sweep
+make v2-news-conditions    # LLM 뉴스 피처 조건부 결과
+make v2-mpc                # 재배치 정책 비교 (simulated)
+make v2-loadtest           # 서빙 부하 테스트 (make api 실행 중일 때)
+make v2-spark-bench        # PySpark shuffle 벤치마크
+```
+
+가벼운 항목은 트립 없이 바로 재현할 수 있습니다(아래 [빠른 확인 안내](#-빠른-확인-안내)).
+
+## 기술 스택
+
+- **예측/최적화:** Python 3.11, scikit-learn(HistGradientBoosting), pandas, numpy, scipy(MILP: HiGHS)
+- **분산 처리:** PySpark(local), Parquet
+- **서빙:** FastAPI, uvicorn, Pydantic v2
+- **데이터/그래프:** H3, Neo4j(옵션), FAISS, SQLite
+- **LLM:** provider 인터페이스(Anthropic / OpenAI / mock), GraphRAG, RAGAS
+- **프런트:** Next.js, TypeScript
+- **연구용(완성 조건 아님):** tabular Q-learning과 PPO, QUBO/QAOA(Qiskit)
+
+개발 전반의 운영 계약은 [CLAUDE.md](CLAUDE.md)에 정리했습니다.
 
 ---
 
 ## 👀 빠른 확인 안내
 
-**1) 스크린샷**, **2) 3분 실행**, **3) 수치 재현** — 세 가지 방법으로 확인할 수 있습니다.
-모두 **API 키 없이 완전 오프라인**으로 동작합니다.
+1) 스크린샷, 2) 3분 실행, 3) 수치 재현 — 세 가지 방법으로 확인할 수 있습니다.
+모두 API 키 없이 오프라인으로 동작합니다.
 
 ### 1. 메인 화면 (설치 없이 바로)
 
 두 운영자 화면입니다.
 
-**관제탑** — 이벤트를 켜고 끄면 수요·할증·수익이 함께 움직입니다
+관제탑 — 이벤트를 켜고 끄면 수요, 할증, 수익이 함께 움직입니다
 ![관제탑](docs/screenshots/control_tower.png)
 
-**운영 통계** — 재생 시점 기준으로 재고·이벤트·수요 변화를 한 화면에 집계
+운영 통계 — 재생 시점 기준으로 재고, 이벤트, 수요 변화를 한 화면에 집계합니다
 ![운영 통계](docs/screenshots/operator_stats.png)
 
 ### 2. 직접 실행 (약 3분, 키 불필요)
@@ -51,38 +313,240 @@ make api                                    # 백엔드: http://127.0.0.1:8000
 cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 ```
 
-브라우저에서 **http://localhost:3000** → 우상단 **운영자**로 전환 → **관제탑 / 운영 통계**.
-관제탑에서 이벤트 토글을 끄면(= 이벤트를 반영하지 않은 기준값) 수요·할증·수익 상승분이 사라지는 것을
-직접 확인할 수 있습니다. `운영 통계` 화면의 **운영 도우미**는 이벤트 그래프에 근거해 답하며, GPT/Claude
-키를 넣으면 GraphRAG(LLM)로, 없으면 규칙 기반으로 동작합니다([docs/LOCAL_GPT.md](docs/LOCAL_GPT.md)).
+브라우저에서 http://localhost:3000 을 열고 우상단 "운영자"로 전환한 뒤 관제탑과 운영 통계 화면을
+보세요. 관제탑에서 이벤트 토글을 끄면(이벤트를 반영하지 않은 기준값) 수요와 할증, 수익 상승분이
+사라지는 것을 직접 확인할 수 있습니다. 운영 통계 화면의 운영 도우미는 이벤트 그래프에 근거해
+답합니다. GPT/Claude 키를 넣으면 GraphRAG(LLM)로, 없으면 규칙 기반으로 동작합니다
+([docs/LOCAL_GPT.md](docs/LOCAL_GPT.md)).
 
 ### 3. 수치 재현
 
-가벼운 항목은 즉시 재현되고, 예측 리프트는 원본 트립(약 3GB, 저장소에 미포함 §7.1)을 내려받아야
-재실행됩니다. **측정 결과 자체는 `reports/`에 커밋**되어 있어 다운로드 없이 바로 볼 수 있습니다.
+가벼운 항목은 즉시 재현할 수 있고, 예측 lift는 원본 트립(약 3GB, 저장소 미포함 §7.1)을 내려받아야
+재실행할 수 있습니다. 측정 결과 자체는 `reports/`에 커밋해 두어 다운로드 없이 바로 볼 수 있습니다.
 
 | 핵심 결과 | 확인 / 재현 | 위치 |
 |---|---|---|
-| 재배치 부족 **146→78(−47%)**, MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 · 오프라인 |
-| GraphRAG: 검색 없는 raw LLM **환각 10/10** → 근거 응답 0, 정답 **40%→100%** | `python -m scripts.graphrag_eval` | 콘솔 · 오프라인 |
-| 이벤트 그래프 **5,770 노드 · 11,850 엣지** | `make seed-graph` | `data/processed/graph/event_graph.json` |
-| 이벤트 피처 리프트 **WAPE −1.65%** (95% CI [0.36, 5.11]) | 결과 확인: `reports/borough_event_lift.json` · 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/` |
-| 방향별 리프트 (수요 급락 **95.2%** 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요) · 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
-| 전체 테스트 | `make test` | 375 passed |
+| 재배치 부족 146→78(−47%), MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 출력 (오프라인) |
+| GraphRAG: 검색 없는 raw LLM은 hallucination 10/10 → 근거 응답 0, 정답률 40%→100% | `python -m scripts.graphrag_eval` | 콘솔 출력 (오프라인) |
+| 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
+| 이벤트 feature lift: **철회** — 원래의 +1.65%는 Jersey City 트립이 Staten Island로 오배정돼 섞인 결과였고, NYC 데이터만으로 다시 돌리면 −1.94%(CI [−6.09, −0.86])로 악화합니다 | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/`, [경위](docs/EVENT_LIFT_FINDINGS.md) |
+| 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
+| 이벤트 피처 유무 ablation (H3 단위): 희소 이벤트(3개월 5건)는 개선 없음 — WAPE 0.5091(없음) vs 0.5105(있음) | 결과와 재실행 명령: `reports/event_feature_ablation.json` | `reports/` |
+| **LLM 뉴스 피처의 조건부 기여**: 이벤트가 지역 특정적일수록 개선 — 평균 borough 4.2개 −0.96 → 2.0개 **+1.24 (CI [0.83, 1.64])**, 단조 관계 | `make v2-news-conditions` | `reports/v2/llm_value/news_feature_conditions.json` |
+| 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
+| 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
+| 전체 테스트 | `make test` | 494 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
-> **Note.** 화면의 `7/12` 수치는 라벨을 붙인 **데모 리플레이(휴리스틱)**이고, WAPE·방향별 리프트·재배치는
-> **2026년 1–6월 실데이터 측정치**입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로,
-> 답변은 예시이며 실제 LLM 출력으로 교체해 다시 채점할 수 있습니다. 자세한 구분은
+> Note. 화면의 `7/12` 수치는 라벨을 붙인 데모 리플레이(휴리스틱)이고, WAPE와 방향별 lift, 재배치는
+> 실데이터 측정치입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로, 답변은
+> 예시이며 실제 LLM 출력으로 교체해 다시 채점할 수 있습니다. 자세한 구분은
 > [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md)와 [docs/STATUS.md](docs/STATUS.md)에 있습니다.
+
+최신 릴리스의 측정 결과(promoted model, LLM feature 순가치, ledger, MPC, pricing, Copilot)는 아래
+"V2 — LLM 순가치 검증" 섹션에 정리했습니다.
+
+---
+
+## 백엔드 API 설계
+
+FastAPI로 만든 endpoint 30개(v1 15개, v2 15개)가 운영자 화면, 라이더 화면, 모델 서빙을 모두 받칩니다.
+설계 결정은 다섯 가지 원칙으로 정리됩니다.
+
+1. **계약이 먼저.** 모든 요청과 응답은 Pydantic v2 모델(`services/api/schemas.py`, 27개)이고, OpenAPI
+   스키마는 그 모델에서 자동으로 나옵니다. 시각은 전부 `AwareDatetime`이라 naive datetime이 경계를
+   넘지 못합니다.
+2. **응답은 자기 출처를 밝힌다.** 모든 응답에 `mode`가 있고, 시간에 의존하는 응답에는 `cutoff`와
+   `model_version` / `feature_version`이 붙습니다. 측정 결과를 내보내는 v2 응답은 `ResultEnvelope`
+   (`run_id`, `artifact_id`, `mode`, `claim_status`, `freshness`)로 감싸 화면의 숫자를 artifact 파일까지
+   추적할 수 있습니다.
+3. **에러는 구조화한다.** 실패는 `{error_code, message}`와 의미에 맞는 HTTP 상태로 돌려주고, 클라이언트는
+   문자열이 아니라 `error_code`로 분기합니다.
+4. **degrade는 하되 지어내지 않는다.** 모델 파일이나 optional 의존성이 없으면 503과 복구 명령을
+   돌려줍니다. 데모 휴리스틱으로 대체하거나 빈 성공을 꾸미지 않습니다.
+5. **실행 가능성을 검증한 결과만 반환한다.** 재배치 계획은 `check_feasibility`를 통과해야 응답이 되고,
+   통과하지 못하면 `feasible=false`와 사유를 그대로 돌려줍니다.
+
+### 리소스와 버전
+
+`/v1`은 리플레이 골든패스(상태, 이벤트, 예측, 설명, 시나리오, 재배치)이고, `/v2`는 그 위에 얹은
+측정 모델 서빙과 운영, 라이더, 요금 기능입니다. v2를 추가하면서 v1 계약은 바꾸지 않았습니다.
+
+| 그룹 | Endpoint |
+|---|---|
+| 상태와 리플레이 | `GET /v1/health`, `GET /v1/replay/state`, `POST /v1/replay/set-cutoff` |
+| 예측과 설명 | `GET /v1/forecasts`, `GET /v1/events`, `GET /v1/zones/{zone_id}/explanation`, `POST /v1/scenarios` |
+| 모델 서빙 | `GET /v2/model/forecast`, `GET /v2/model/predictive-lift`, `GET /v1/model/lift` |
+| 재배치 | `POST /v1/rebalancing/solve`, `POST /v2/operator/rebalancing/allocate` |
+| 운영 | `GET /v2/operator/statistics`, `GET /v2/operator/timeline`, `GET /v2/cockpit/metrics`, `POST /v2/operator/ask`, `POST /v2/operator/stations/import` |
+| 라이더 | `GET /v2/rider/stations/search`, `GET /v2/rider/search/hybrid`, `POST /v2/rider/ask`, `POST /v2/rider/plan-trip` |
+| 요금 | `POST /v2/pricing/quote`, `POST /v2/pricing/revenue` |
+| 뉴스, 추천, 실험 | `POST /v2/news/sync`, `GET /v1/news/search`, `GET /v1/news/clusters`, `POST /v1/recommendations/stations`, `POST /v1/recommendations/compare-event-impact`, `GET /v1/anomalies`, `GET /v1/experiments/switchback` |
+
+읽기는 GET, 상태를 바꾸거나 계산을 요청하는 것은 POST입니다. `set-cutoff`처럼 같은 값을 여러 번 보내도
+결과가 같고, `news/sync`는 `url_hash`로 중복을 제거해 반복 호출해도 기사가 늘지 않습니다.
+
+### 요청과 응답 계약
+
+실제 응답 그대로입니다. 리플레이 상태는 cutoff와 허용 창을 함께 돌려줘 클라이언트가 경계를 알 수
+있습니다.
+
+```json
+GET /v1/replay/state -> 200
+{"mode": "historical_replay", "cutoff": "2026-07-12T13:59:00-04:00",
+ "window_start": "2026-07-12T12:00:00-04:00", "window_end": "2026-07-12T18:00:00-04:00",
+ "available_event_count": 0}
+```
+
+측정 모델 서빙 응답은 예측값 앞에 출처를 먼저 놓습니다. 어떤 run이 학습한 모델인지, 어디까지의
+데이터로 학습했는지, holdout 성능이 얼마였는지가 응답 안에 있습니다.
+
+```json
+GET /v2/model/forecast?top=2 -> 200
+{"mode": "historical_replay", "claim_status": "measured",
+ "run_id": "run_v2-01_20260816T061758Z_827818f6", "freshness": "2026-08-16T06:17:58Z",
+ "model": {"algorithm": "hist_gradient_boosting", "feature_version": "dfv1",
+           "trained_on_rows": 226953, "trained_through_hour": "2026-07-31T23:00:00-04:00",
+           "holdout_wape_mean": 0.4974, "holdout_mase_mean": 0.8708},
+ "serving_hour": "2026-08-01T00:00:00-04:00", "forecast_horizon_h": 1, "n_zones": 136,
+ "forecasts": [{"zone_id": "892a107216bffff", "lat": 40.7355, "lng": -74.0301,
+                "predicted_departures": 8.3}, "..."]}
+```
+
+화면 KPI는 `/v2/cockpit/metrics`가 `ResultEnvelope` 목록으로 내보냅니다. 값이 없으면 `value`를 `null`로
+두고 `claim_status`가 이유(`blocked_data`, `pending_live_label` 등)를 설명합니다. 숫자를 만들어 채우지
+않습니다.
+
+```json
+{"key": "forecast_wape", "label": "H3 multi-holdout WAPE",
+ "envelope": {"value": 0.4974, "run_id": "run_v2-01_20260816T061758Z_827818f6",
+              "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
+              "mode": "historical_replay", "claim_status": "measured",
+              "freshness": "2026-08-16T06:17:58Z"}}
+```
+
+재배치 응답(`RebalancingResponse`)은 이동 목록만이 아니라 `feasible`, `infeasibility_reason`,
+이동 전후의 부족과 초과 대수, 목적함수 비용과 baseline 비용을 함께 돌려줍니다. 클라이언트가 "얼마나
+나아졌는지"를 다시 계산하지 않아도 되고, 계획이 제약을 어겼는지 서버가 먼저 판정합니다.
+
+### 에러 모델
+
+| HTTP | `error_code` | 언제 |
+|---|---|---|
+| 400 | `cutoff_out_of_window` | 리플레이 창 밖의 cutoff (cutoff를 받는 모든 endpoint에서 같은 검사) |
+| 404 | `zone_not_found` | 존재하지 않는 zone의 설명 요청 |
+| 503 | `promoted_model_unavailable` | 모델 번들이나 serving snapshot 부재 (복구 명령 포함) |
+| 503 | `vectorstore_unavailable`, `recsys_unavailable`, `results_unavailable` | optional extra(FAISS, torch)나 결과 artifact 부재 |
+| 422 | (FastAPI 기본) | 스키마 검증 실패, 예를 들어 naive datetime이나 범위 밖 좌표 |
+
+```json
+POST /v1/replay/set-cutoff {"cutoff": "2026-07-12T23:00:00-04:00"} -> 400
+{"detail": {"error_code": "cutoff_out_of_window",
+            "message": "cutoff must be within [2026-07-12T12:00:00-04:00, 2026-07-12T18:00:00-04:00]"}}
+```
+
+외부 의존성이 실패하는 경우는 에러가 아니라 라벨로 처리합니다. `POST /v2/news/sync`는 GDELT가 막히면
+`status: "degraded"`와 `degraded_reason`을 돌려주고 기존 데이터를 그대로 유지합니다. 라이브 수집 실패가
+Demo Mode를 깨지 않는다는 규칙(§7.3)을 API 계약으로 옮긴 것입니다.
+
+### 상태와 시간 의미
+
+리플레이 API의 핵심 상태는 하나, "지금이 몇 시인가"를 뜻하는 `cutoff`입니다. `ReplayEngine` 싱글턴이
+갖고 있고 각 endpoint는 `Depends(get_engine)`로 주입받습니다. 이벤트는
+`available_at = max(published_at, first_seen_at) ≤ cutoff`일 때만 보이고, 예측과 설명, 통계는 전부
+같은 cutoff를 기준으로 계산됩니다. 그래서 13:59에는 14:00 기사가 보이지 않고 14:00으로 옮기면
+같은 API가 이벤트와 예측 변화를 함께 돌려줍니다(`tests/integration/test_api.py::test_as_of_boundary_through_api`).
+
+이 설계의 대가도 분명합니다. 상태가 프로세스 메모리에 있어 서버는 프로세스 하나여야 하고, 수평 확장을
+하려면 cutoff를 공유 저장소로 옮기거나 매 요청에 실어 보내야 합니다. 이 제약은 `render.yaml`에 적어
+두었고 위 서빙 절의 워커 실험이 그 근거입니다.
+
+### 구성과 안전한 기본값
+
+설정은 `pydantic-settings`(`config/settings.py`)가 환경변수와 `.env`에서 읽습니다. 기본값은 키 없이
+오프라인으로 도는 조합입니다.
+
+```env
+SHOCKFLOW_MODE=demo_fixture   # demo_fixture | historical_replay | live | research
+ENABLE_GBFS_LIVE=false        # 켜면 실시간 재고 폴링, 실패해도 Demo Mode 유지
+ENABLE_GDELT_LIVE=false
+LLM_PROVIDER=mock             # anthropic | openai | mock, 키가 없으면 규칙 기반으로 degrade
+```
+
+CORS는 로컬 개발 origin(`:3000`)과 Vercel 배포 도메인을 정규식으로 허용하고, 그 밖의 origin은
+`SHOCKFLOW_CORS_ORIGINS`로 명시합니다. 허용 method는 GET과 POST뿐입니다.
+
+### 측정 모델 서빙
+
+`GET /v2/model/forecast`는 요청마다 `estimator.predict`를 실제로 실행합니다. 서빙에 필요한 것은
+두 파일, 승격 모델 번들(`promoted_model.joblib`, 0.55 MB)과 학습 데이터 다음 1시간의 feature
+snapshot(`serving_features.json`, 136 zone)이고, 둘 다 `lru_cache`로 프로세스당 한 번만 읽습니다.
+`predict`에 들어가는 136 × 32 입력 행렬도 snapshot과 함께 한 번만 만듭니다. 모델 로드는 FastAPI
+lifespan에서 startup 때 미리 하므로 첫 요청이 그 비용을 내지 않습니다. 번들이 없으면 startup은 경고만
+남기고 endpoint가 503으로 답합니다.
+
+새 달의 트립이 공개되면 세 명령으로 모델과 serving 시점을 당깁니다. Citi Bike는 월 단위로 약 2주
+지연을 두고 공개하므로 진짜 실시간 수요 label은 없고, 재고(GBFS)만 실시간 폴링이 가능합니다.
+
+```bash
+make download-citibike MONTHS="202608" JC=1   # 새로 공개된 달
+make v2-holdout                                # 재학습 + H3 multi-holdout + 승격
+make v2-serving-export                         # serving snapshot 갱신
+```
+
+```bash
+curl "https://shockflow-api.onrender.com/v2/model/forecast?top=10"   # 라이브 (첫 요청은 cold start)
+curl "127.0.0.1:8000/v2/model/forecast?top=10"                       # 로컬 (make api 실행 후)
+```
+
+### 관측과 성능
+
+`GET /v1/health`가 모드, cutoff, 모델과 feature 버전을 돌려주고 Render의 health check가 이 경로를
+봅니다. 성능은 위 서빙 절에 있습니다. 단일 요청 p50 4.2 / p95 5.7 / p99 6.5 ms, 동시 5명에서
+p99가 꺾이는 무릎 지점과 그 원인(OpenMP 스레드 경합, 단일 프로세스), 무료 티어 재현 측정과 개선(첫
+요청 33.3초 → 0.1초, 포화 처리량 +30%)까지 모두 측정값입니다.
+
+| Endpoint | p50 | p95 | p99 | Payload |
+|---|---|---|---|---|
+| `GET /v2/model/forecast?top=10` | 4.2 ms | 5.7 ms | 6.5 ms | 1.8 KB |
+| `GET /v1/forecasts` | 2.1 ms | 3.0 ms | 3.2 ms | 1.1 KB |
+| `GET /v2/operator/statistics` | 3.5 ms | 4.6 ms | 4.9 ms | 14.0 KB |
+| `GET /v1/health` | 1.4 ms | 1.8 ms | 1.9 ms | 0.1 KB |
+
+로컬 컨테이너(uvicorn single worker)에서 warm-up 10회 뒤 100회 요청으로 잰 값이고, hybrid 검색의
+offline benchmark는 p50 0.18 ms / p95 0.41 ms입니다(`reports/v2/search_relevance.json`).
+
+### 계약 테스트
+
+API는 `TestClient`로 HTTP 경계에서 검증합니다. 내부 함수가 아니라 상태 코드, 응답 스키마, 시간 경계를
+확인하는 테스트입니다.
+
+- `tests/integration/test_api.py` 12개: health가 버전을 돌려주는지, 13:59 → 14:00 as-of 경계가 API를
+  통해 지켜지는지, 창 밖 cutoff가 400인지, 설명이 항상 근거를 갖는지, 시나리오 토글이 이벤트 효과를
+  되돌리는지, greedy와 MILP 재배치가 둘 다 feasible인지.
+- `tests/integration/test_api_v2.py` 43개: 검색이 재고를 검색어가 아니라 저장소에서 가져오는지,
+  통계 합계가 맞는지, 타임라인의 이벤트 수가 단조 증가하는지, 추가 자전거 배분이 as-of 경계를 지키고
+  남는 자전거를 숨기지 않는지.
+- `tests/integration/test_model_serving.py`: artifact가 있으면 measured 예측을, 없으면 503을 돌려주는지.
+- E2E 골든패스(`tests/e2e/`): cutoff 13:59 → 14:00 → 이벤트 추출 → graph → feature → 예측 → 설명 →
+  시나리오 off → 재배치까지 한 흐름.
+
+### 문서와 배포
+
+OpenAPI 문서는 서버를 띄운 뒤 http://127.0.0.1:8000/docs 에서 볼 수 있고, 스키마는 코드의 Pydantic
+모델에서 생성되므로 구현과 어긋나지 않습니다. 배포는 `render.yaml` 블루프린트 하나로 정의됩니다.
+build는 `pip install -e ".[api,ml]"`, start는 `uvicorn services.api.app:app`, 환경변수는 위의 안전한
+기본값과 `OMP_NUM_THREADS=1`이고, 워커 수를 1로 두는 이유는 파일 안에 주석으로 남겼습니다.
 
 ---
 
 ## 운영 모드
 
 모든 레코드와 응답, 화면은 자신의 모드를 명시합니다. `demo_fixture`, `historical_replay`,
-`live`, `research` 중 하나입니다. **Demo Mode는 외부 API 키 없이 완전히 오프라인으로 돌아갑니다.**
+`live`, `research` 중 하나이고, Demo Mode는 외부 API 키 없이 오프라인으로 돌아갑니다.
+실행 전에 `.env.example`을 `.env`로 복사하세요. 기본값은 오프라인에서 그대로 동작합니다.
 
-## 시작하기
+<details>
+<summary><b>전체 make 명령 보기</b></summary>
 
 ```bash
 make install       # .venv 생성 + 패키지(editable)와 dev 도구 설치
@@ -99,10 +563,10 @@ make api                  # 오프라인 replay API (127.0.0.1:8000, Demo Mode, 
 make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install 필요)
 ```
 
-> 윈도우에서 `make`를 쓸 수 없다면 위 명령에 대응하는 명령을 직접 실행하세요. 예를 들면
-> `python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"` 처럼요.
+윈도우에서 `make`를 쓸 수 없다면 대응 명령을 직접 실행하세요
+(예: `python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"`).
 
-실행 전에 `.env.example`을 `.env`로 복사하세요. 기본값은 안전하고 오프라인에서도 문제없이 동작합니다.
+</details>
 
 ## 저장소 구조
 
@@ -123,29 +587,35 @@ make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install �
 | `docs/` | PRD, 아키텍처, contract, 평가, 상태 |
 | `tests/` | `unit/`, `integration/`, `e2e/` |
 
-## 예측 결과 및 해석 (Phase 06)
+## 상세 기록
+
+아래 네 섹션은 단계별 측정과 설계 기록입니다. 펼쳐서 보세요.
+
+<details>
+<summary><b>예측 모델링 상세 (Phase 06 — 지표 설계, leaderboard, feature 해석)</b></summary>
+
 
 실데이터(Citi Bike JC, 2026년 6월)로 돌린 결과입니다. 목표는 `departures`(H3 Zone x 로컬 시간,
-1시간 앞 forecast). 평가는 rolling-origin — 최근 72시간을 손대지 않은 out-of-sample test로 빼고,
-그 앞 구간을 expanding-window 3-fold로 CV했습니다. 랜덤 분할은 쓰지 않았고 seed는 42입니다.
-usable row 30,947개 / 139개 Zone, dev 26,918 · test 4,029, B1 feature 32개.
+1시간 앞 forecast). 평가는 rolling-origin으로 했습니다 — 최근 72시간을 손대지 않은 out-of-sample
+test로 빼고, 그 앞 구간을 expanding-window 3-fold로 CV했습니다. 랜덤 분할은 쓰지 않았고 seed는
+42입니다. usable row 30,947개 / 139개 Zone, dev 26,918 / test 4,029, B1 feature 32개.
 
-전 수치는 실제 실행에서 나온 값이며, 재현은 `make evaluate`로 가능합니다. 원본은
+모든 수치는 실제 실행에서 나온 값이고 `make evaluate`로 재현할 수 있습니다. 원본은
 `reports/phase06_results.json`, 상세 해석은 [docs/EVALUATION_PROTOCOL.md](docs/EVALUATION_PROTOCOL.md).
 
 ### 지표를 왜 이렇게 골랐나
 
-이 데이터의 성질에서 지표가 정해졌습니다. `departures`는 **평균 2.7 / 중앙값 2 / 최대 87**의
-간헐적 카운트 수요로, **0인 시간이 20.2%**, 2 이하가 64%이고, Zone별 평균 규모가 0~12로 극단적으로
+지표는 데이터의 성질에 맞춰 골랐습니다. `departures`는 평균 2.7 / 중앙값 2 / 최대 87의
+간헐적 카운트 수요로, 0인 시간이 20.2%, 2 이하가 64%이고, Zone별 평균 규모가 0~12로 극단적으로
 다릅니다.
 
-- **percentage 계열(MAPE·sMAPE)은 탈락** — 0으로 나눠 폭발합니다.
-- **WAPE**(Σ\|y−ŷ\|/Σ\|y\|) — 합산 정규화라 0에 강하고, 수요 큰 Zone·시간대의 오차를 자동 가중.
-- **MASE**(seasonal naive 대비) — Zone 규모가 제각각이라 **scale-free** 지표가 필수. <1이면 naive보다 나음.
-- **MAE** — "평균 몇 대 틀리나"의 직관적 보조 지표.
-- **peak direction accuracy** — 재배치는 크기보다 **오르내림 방향**이 중요.
-- **bias**(평균 오차) — 체계적 과소예측 = 품절 위험을 감지.
-- **OCS(Operational Cost Score)** — 아래의 **데이터/도메인 맞춤 지표**.
+- percentage 계열(MAPE, sMAPE)은 탈락 — 0으로 나눠 폭발합니다.
+- WAPE(Σ\|y−ŷ\|/Σ\|y\|) — 합산 정규화라 0에 강하고, 수요 큰 Zone과 시간대의 오차를 자동 가중합니다.
+- MASE(seasonal naive 대비) — Zone 규모가 제각각이라 scale-free 지표가 필수입니다. 1보다 작으면 naive보다 낫습니다.
+- MAE — "평균 몇 대 틀리나"의 직관적 보조 지표.
+- peak direction accuracy — 재배치는 크기보다 오르내림 방향이 중요합니다.
+- bias(평균 오차) — 체계적 과소예측, 즉 품절 위험을 감지합니다.
+- OCS(Operational Cost Score) — 아래에서 설명하는 데이터/도메인 맞춤 지표.
 
 ### 알고리즘 leaderboard (GridSearch, CV WAPE 기준 정렬)
 
@@ -154,8 +624,8 @@ OCS는 아래 "맞춤 지표" 절 참고(shortage 2.0 / overflow 1.0). bias = �
 | 알고리즘 | CV WAPE | test WAPE | test MASE | test OCS | bias | peak-dir |
 |---|---|---|---|---|---|---|
 | _B0 seasonal naive_ | - | 0.6584 | 1.0125 | 1.1473 | −0.867 | 0.559 |
-| **knn** ⭐(CV 선택) | 0.5438 | 0.5161 | 0.7936 | 0.8571 | −0.451 | 0.632 |
-| extra_trees | 0.5507 | 0.4922 | 0.7569 | **0.7809** | −0.231 | 0.640 |
+| knn (CV 선택) | 0.5438 | 0.5161 | 0.7936 | 0.8571 | −0.451 | 0.632 |
+| extra_trees | 0.5507 | 0.4922 | 0.7569 | 0.7809 | −0.231 | 0.640 |
 | hist_gradient_boosting | 0.5522 | 0.4974 | 0.7649 | 0.7897 | −0.237 | 0.646 |
 | random_forest | 0.5533 | 0.5047 | 0.7761 | 0.8015 | −0.241 | 0.642 |
 | gradient_boosting | 0.5556 | 0.4972 | 0.7646 | 0.7905 | −0.243 | 0.636 |
@@ -165,29 +635,60 @@ OCS는 아래 "맞춤 지표" 절 참고(shortage 2.0 / overflow 1.0). bias = �
 
 ### OCS — 데이터/도메인 맞춤 지표
 
-수요 예측 오차는 **방향이 비대칭**입니다. **과소예측**(ŷ<y)은 자전거 부족 → 품절(rider가 자전거를
-못 찾음), **과대예측**(ŷ>y)은 dock 초과·헛된 재배치. 보통 부족이 더 아픕니다. 그래서:
+수요 예측 오차는 방향이 비대칭입니다. 과소예측(ŷ<y)은 자전거 부족, 즉 품절(rider가 자전거를
+못 찾음)로, 과대예측(ŷ>y)은 dock 초과와 헛된 재배치로 이어지는데, 보통 부족이 더 아픕니다. 그래서:
 
 $$\text{OCS} = \frac{c_{short}\sum\max(y-\hat y,0) + c_{over}\sum\max(\hat y-y,0)}{\sum y}$$
 
-기본 $c_{short}=2,\ c_{over}=1$ ([config/forecasting.py](config/forecasting.py), §11.5·§14의 비용
-가중치). 합산 정규화라 **0에 강하고 scale-free**이며, **두 비용이 같으면 정확히 WAPE로 환원**됩니다 —
-WAPE를 재배치 목적함수 쪽으로 굽힌 원리적 일반화이고, Phase 08 비용 모델과 직접 이어집니다.
+기본 $c_{short}=2,\ c_{over}=1$ ([config/forecasting.py](config/forecasting.py), §11.5와 §14의 비용
+가중치). 합산 정규화라 0에 강하고 scale-free이며, 두 비용이 같으면 정확히 WAPE로 환원됩니다 —
+WAPE를 재배치 목적함수 쪽으로 굽힌 원리적 일반화이고, Phase 08 비용 모델과 직접 연결됩니다.
 
-**핵심 발견 — 맞춤 지표가 순위를 바꿉니다.** WAPE로 뽑은 knn은 OCS에서는 학습 모델 중 **가장 나쁩니다**
+핵심 발견: 맞춤 지표가 순위를 바꿉니다. WAPE로 뽑은 knn이 OCS에서는 학습 모델 중 가장 나쁩니다
 (0.857). knn이 더 심하게 과소예측(bias −0.451, 부족 3,730대)하는 반면, tree 계열은 덜 과소예측
-(extra_trees bias −0.231, 부족 3,157대 → OCS 0.781로 최고)하기 때문입니다. **모든 모델이 과소예측
-(음의 bias)** 이라 품절 위험이 구조적으로 존재하고, B0는 특히 심합니다(bias −0.867, OCS 1.147).
-즉 정확도(WAPE)만 보면 knn이지만, **품절 비용까지 보면 extra_trees가 운영상 더 낫다** — 이것이 이
+(extra_trees bias −0.231, 부족 3,157대 → OCS 0.781로 최고)하기 때문입니다. 모든 모델이 과소예측
+(음의 bias)이라 품절 위험이 구조적으로 존재하고, B0는 특히 심합니다(bias −0.867, OCS 1.147).
+### 비대칭 비용을 손실함수까지 반영하기 (측정 결과)
+
+OCS는 오랫동안 **지표**로만 쓰였습니다. 모델은 대칭 squared_error로 학습해 조건부 평균을 맞추고,
+비대칭성은 평가와 재배치 목적함수에서만 반영됐습니다. 뉴스벤더 정리는 그 간극을 정확히 지목합니다 —
+부족 비용 $c_s$, 과잉 비용 $c_o$일 때 비용을 최소화하는 점 예측은 평균도 중앙값도 아닌
+
+$$q^* = \frac{c_s}{c_s + c_o}$$
+
+분위수이고, OCS 가중치(2:1)에서는 **0.667**입니다. 실행 전에 이 예측을 artifact에 기록하고
+(`newsvendor_q_star`), 손실함수만 바꿔가며 같은 rolling-origin 창에서 측정했습니다.
+
+| loss | WAPE | OCS | bias | OCS 변화 |
+|---|---|---|---|---|
+| squared_error (기준) | 0.4974 | 0.7525 | −0.033 | — |
+| quantile q=0.5 | **0.4903** | 0.7895 | −0.281 | +4.92% |
+| quantile q=0.6 | 0.5124 | 0.7447 | +0.126 | −1.04% |
+| **quantile q=0.667** | 0.5391 | **0.7268** | +0.428 | **−3.42%** |
+| quantile q=0.75 | 0.5979 | 0.7361 | +0.839 | −2.18% |
+| quantile q=0.8 | 0.6569 | 0.7679 | +1.134 | +2.05% |
+
+**OCS 곡선은 q=0.667에서 최소인 U자**로, 이론이 지목한 지점과 일치합니다. 3개 홀드아웃 창
+**전부**에서 q=0.667이 최적이었고, 부족 대수가 창별로 25,184→18,704 / 27,327→19,854 /
+27,262→20,105으로 **평균 26% 감소**했습니다.
+
+대가는 명시합니다 — **WAPE는 0.4974에서 0.5391로 8.4% 나빠집니다.** 정확도를 내주고 운영 비용을
+얻은 것이므로 두 지표를 항상 나란히 보고합니다. 중앙값(q=0.5)이 WAPE는 가장 좋지만(0.4903) OCS는
+기준보다 나쁘다는 점(+4.92%)이, 정확도 지표만 보면 운영상 잘못된 모델을 고르게 된다는 위의 발견을
+다시 확인해 줍니다.
+
+재현: `make v2-quantile-cost` → `reports/v2/holdout/quantile_cost.json`
+
+즉 정확도(WAPE)만 보면 knn이지만, 품절 비용까지 보면 extra_trees가 운영상 더 낫습니다 — 이것이 이
 데이터에 맞춘 지표를 따로 둔 이유입니다. (선택 자체는 프로토콜대로 CV WAPE로 하되, 운영 관점의
 재순위를 함께 보고합니다.)
 
 ### 모델 해석
 
-**best 모델은 CV WAPE 기준으로 knn**(`n_neighbors=30`, `weights=distance`)이 뽑혔습니다. test에서
+best 모델은 CV WAPE 기준으로 knn(`n_neighbors=30`, `weights=distance`)을 선택했습니다. test에서
 WAPE 0.5161, MASE 0.7936 — MASE가 1보다 작으니 주간 seasonal naive를 이깁니다(B0 대비 test WAPE
 약 21.6% 개선). 다만 짚어두면, 손대지 않은 test 창에서는 extra_trees(0.4922)와 boosting
-계열(약 0.497)이 knn을 근소하게 앞섭니다. 선택은 프로토콜대로 **test가 아닌 CV로** 했기 때문에
+계열(약 0.497)이 knn을 근소하게 앞섭니다. 선택은 프로토콜대로 test가 아닌 CV로 했기 때문에
 knn을 대표 모델로 보고합니다. tree/knn 계열은 test WAPE 0.49~0.53 구간에 촘촘히 모여 있어, 이
 데이터에서는 알고리즘 종류보다 feature가 성능을 좌우한다는 뜻입니다.
 
@@ -198,8 +699,8 @@ knn을 대표 모델로 보고합니다. tree/knn 계열은 test WAPE 0.49~0.53 
 | `n_neighbors` | 30 | 예측에 평균 내는 이웃 수. 30개로 크게 잡아 노이즈에 강하고 매끄러운 예측. |
 | `weights` | distance | 가까운 이웃일수록 큰 가중치 → 지역 demand 수준을 더 정확히 반영. |
 
-이웃을 5·15가 아니라 30으로 크게, 그리고 거리 가중을 준 조합이 CV에서 가장 안정적이었습니다. 개별
-시점의 튐(noise)에 휘둘리지 않고 최근·유사 패턴을 넓게 평균하는 쪽이 이 수요 데이터에 맞았다는 신호입니다.
+이웃을 5나 15가 아니라 30으로 크게, 그리고 거리 가중을 준 조합이 CV에서 가장 안정적이었습니다. 개별
+시점의 튐(noise)에 휘둘리지 않고 최근의 유사 패턴을 넓게 평균하는 쪽이 이 수요 데이터에 맞았다는 신호입니다.
 
 ### feature 해석 (permutation importance, test holdout 기준)
 
@@ -216,13 +717,13 @@ feature를 하나씩 섞었을 때 WAPE가 얼마나 나빠지는지로 측정�
 | 7 | `cal_is_evening_rush` | 0.0120 | 저녁 러시(16-18시) |
 | 8 | `dep_expanding_mean` | 0.0117 | 해당 Zone의 누적 평균 demand(규모) |
 
-해석하면, **단기 지속성(직전 시간)이 가장 강하고**, 그다음이 주간(168h)·일간(24h) seasonality,
-그리고 시각·저녁 러시 같은 calendar 신호와 Zone별 demand 규모입니다. EDA에서 확인한 "평일/주말
+해석하면, 단기 지속성(직전 시간)이 가장 강하고, 그다음이 주간(168h)과 일간(24h) seasonality,
+그리고 시각과 저녁 러시 같은 calendar 신호와 Zone별 demand 규모입니다. EDA에서 확인한 "평일/주말
 차이는 총량보다 타이밍(저녁 러시)에서 온다"는 결론과 일치합니다.
 
 ![feature importance](docs/img/phase06_feature_importance.png)
 
-**feature selection**: 상위 12개만 남겨 다시 학습하면 test WAPE 0.512로, 32개 전체(0.5161)와
+feature selection: 상위 12개만 남겨 다시 학습하면 test WAPE 0.512로, 32개 전체(0.5161)와
 동등하거나 오히려 근소하게 낫습니다. 예측력의 대부분이 소수의 history feature에 몰려 있다는 뜻입니다.
 
 ### ablation B0–B4 (측정 결과 그대로)
@@ -235,44 +736,55 @@ feature를 하나씩 섞었을 때 WAPE가 얼마나 나빠지는지로 측정�
 | B3 (+ LLM event features) | 37 | 0.5161 | 1.401 | 0.7936 |
 | B4 (+ graph-propagated features) | 40 | 0.5161 | 1.401 | 0.7936 |
 
-**해석**: 이 6월 평가 창에서 유일한 curated 이벤트는 데이터보다 뒤인 2026-07-12라, 가용성
+해석: 이 6월 평가 창에서 유일한 curated 이벤트는 데이터보다 뒤인 2026-07-12라, 가용성
 규칙(§5.2)에 따라 모든 event/graph feature가 0이 됩니다. runner가 창의 마지막 cutoff
 (2026-06-30 23:00)에서 `build_graph_features`를 호출해 snapshot 0개임을 실제로 확인했고, 그래서
-B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 **이벤트 효과는 이 창에서는 입증
-불가**이며, 입증하려면 curated 이벤트와 겹치는 평가 구간이 필요합니다(가짜 뉴스 생성은 §22로 금지).
+B2–B4는 B1과 완전히 같고 B4−B1 forecast delta도 0입니다. 즉 이벤트 효과는 이 창에서는 입증할 수
+없고, 입증하려면 curated 이벤트와 겹치는 평가 구간이 필요합니다(가짜 뉴스 생성은 §22로 금지).
+이후 2026년 5~7월 데이터로 이벤트가 학습 구간에 실제로 들어가는 조건에서 같은 ablation을 다시
+측정했고, 결과는 `reports/event_feature_ablation.json`에 있습니다(희소 이벤트로는 개선 없음).
 event-aware 로직 자체는 as-of 누수 테스트(`tests/unit/test_graph_features.py`, 14:01→14:00
-회귀 포함)로 별도 검증됩니다. 한계는 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
+회귀 포함)가 별도로 검증합니다. 한계는 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
-## 재배치 & 양자 리서치 모드 (Phase 08)
+</details>
 
-예측을 실제 운영 조치로 잇는 **Act** 단계입니다(§13, §14). 각 station은 현재 재고·용량·목표(target)
-재고를 갖고, 목표를 맞추도록 이동 예산(`vehicle_capacity`) 안에서 자전거를 정수 단위로 옮깁니다.
+<details>
+<summary><b>재배치 & 양자 리서치 모드 (Phase 08 — MILP, QUBO 검증)</b></summary>
 
-- **목적함수(비대칭, §14.1)** — `shortage_cost·부족 + overflow_cost·과잉 + distance_cost·이동거리`.
-  부족(품절 → trip 손실)을 과잉보다 무겁게(기본 3:1) 둡니다. Phase 06의 OCS 지표와 같은 비대칭 철학.
-- **solver 사다리** — ① Greedy(항상 feasible, do-nothing보다 나쁘지 않음) → ② MILP(`scipy.optimize.milp`,
-  정확 최적) → ③ enumeration oracle(작은 instance 완전 탐색). 테스트에서 **MILP 비용 == enumeration
-  비용**(최적)이고 greedy 이하임을 검증합니다.
-- **feasibility 명시(§14.1)** — 출발지 재고 초과, 도착지 용량 초과, 음수/비정수 이동, 차량 용량 초과를
-  명시적으로 거부하고 사람이 읽는 사유를 반환합니다. 계획은 이 검사를 통과해야만 화면에 노출됩니다.
-- **이벤트 연동** — 이벤트가 노출된 zone은 as-of `demo-heuristic-v1` forecast delta만큼 target이
+
+예측을 실제 운영 조치로 연결하는 Act 단계입니다(§13, §14). 각 station은 현재 재고와 용량,
+목표(target) 재고를 갖고, 목표를 맞추도록 이동 예산(`vehicle_capacity`) 안에서 자전거를 정수
+단위로 옮깁니다.
+
+- 목적함수(비대칭, §14.1) — `shortage_cost × 부족 + overflow_cost × 과잉 + distance_cost × 이동거리`.
+  부족(품절로 인한 trip 손실)을 과잉보다 무겁게(기본 3:1) 둡니다. Phase 06의 OCS 지표와 같은 비대칭 철학입니다.
+- solver 사다리 — ① Greedy(항상 feasible, do-nothing보다 나쁘지 않음) → ② MILP(`scipy.optimize.milp`,
+  정확 최적) → ③ enumeration oracle(작은 instance 완전 탐색). 테스트에서 MILP 비용 == enumeration
+  비용(최적)이고 greedy 이하임을 검증합니다.
+- feasibility 명시(§14.1) — 출발지 재고 초과, 도착지 용량 초과, 음수/비정수 이동, 차량 용량 초과를
+  명시적으로 거부하고 사람이 읽는 사유를 반환합니다. 이 검사를 통과한 계획만 화면에 표시합니다.
+- 이벤트 연동 — 이벤트가 노출된 zone은 as-of `demo-heuristic-v1` forecast delta만큼 target이
   올라가 부족이 생기고, solver가 조용한 zone(Grove St, Exchange Place)에서 자전거를 옮겨옵니다.
-  이벤트 전에는 target=base라 계획이 비어 있습니다. (측정된 Phase 06 모델이 아니라 라벨된 데모 heuristic)
-- **양자 리서치 모드(§14.2, 리서치 전용)** — 작은 instance를 QUBO로 매핑하고, **QUBO 최적 == 완전
-  탐색 최적**임을 검증합니다(모든 비트 벡터에서 에너지 일치, crafted instance에서는 MILP 계획과 일치).
-  QAOA는 선택(`qiskit` 없으면 "unavailable" 경로 + 사유 명시 skip). 시뮬레이터이며 하드웨어가 아니고,
-  **양자 우위 주장은 하지 않습니다.**
+  이벤트 전에는 target=base라 계획이 비어 있습니다. (측정된 Phase 06 모델이 아니라 라벨을 붙인 데모 heuristic)
+- 양자 리서치 모드(§14.2, 리서치 전용) — 작은 instance를 QUBO로 매핑하고, QUBO 최적 == 완전
+  탐색 최적임을 검증합니다(모든 비트 벡터에서 에너지 일치, crafted instance에서는 MILP 계획과 일치).
+  QAOA는 선택입니다(`qiskit` 없으면 "unavailable" 경로 + 사유를 명시하고 skip). 시뮬레이터이며
+  하드웨어가 아니고, 양자 우위 주장은 하지 않습니다.
 
 자세한 매핑과 검증은 [docs/OPTIMIZATION.md](docs/OPTIMIZATION.md)에, 90초 골든패스는
 [docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)에 있습니다. 한계는
 [docs/KNOWN_LIMITATIONS.md](docs/KNOWN_LIMITATIONS.md) 참고.
 
-## V1 (모델·추천·실험·이상탐지·라이브)
+</details>
+
+<details>
+<summary><b>V1 (모델, 추천, 실험, 이상탐지, 라이브)</b></summary>
+
 
 v0 위에 backward-compatible 증분으로 V1을 구현했습니다 — 측정된 모델 스토리(B0–B4),
-어텐션 듀얼인코더 추천 + reranker + 정책, 동적 인센티브·정책 시뮬레이션, 클러스터드 스위치백 실험,
-이상 탐지, 라이브 섀도(pending label), **FAISS 뉴스 벡터 스토어**(누적 수집·의미 검색·같은 사건 클러스터).
-웹 콘솔은 8개 화면. 모든 값은 measured / pending / simulated / blocked 중 하나로 명시합니다.
+어텐션 듀얼인코더 추천 + reranker + 정책, 동적 인센티브와 정책 시뮬레이션, 클러스터드 스위치백 실험,
+이상 탐지, 라이브 섀도(pending label), FAISS 뉴스 벡터 스토어(누적 수집, 의미 검색, 같은 사건 클러스터).
+웹 콘솔은 8개 화면입니다. 모든 값은 measured / pending / simulated / blocked 중 하나로 명시합니다.
 
 ```bash
 make v1-collect-news-live     # (opt-in) 실제 GDELT 뉴스 수집 → FAISS 스토어에 누적
@@ -283,28 +795,33 @@ make v1-live-fixture          # 라이브 섀도 마이크로배치 (pending lab
 make v1-news-vectorstore      # FAISS 의미 검색 + 같은 사건 클러스터
 ```
 
-전체 계획·실행 로그·감사는 [docs/V1_PORTFOLIO_SUMMARY.md](docs/V1_PORTFOLIO_SUMMARY.md),
+전체 계획과 실행 로그, 감사는 [docs/V1_PORTFOLIO_SUMMARY.md](docs/V1_PORTFOLIO_SUMMARY.md),
 [docs/V1_DEMO_SCRIPT.md](docs/V1_DEMO_SCRIPT.md),
 [docs/V1_EXECUTION_LOG.md](docs/V1_EXECUTION_LOG.md), `reports/v1/V1_FINAL_AUDIT.md` 참고.
 
-## V2 사용성 업데이트 (UI·검색·운영 통계)
+</details>
 
-V1 위에 backward-compatible 증분으로 사용성에 초점을 맞춘 업데이트를 더했습니다. 새 모델·가격·실험
-주장은 없으며, 모든 값은 오프라인에서 계산되고 수요 변화(Δ)는 라벨이 붙은 데모
+<details>
+<summary><b>V2 사용성 업데이트 (UI, 검색, 운영 통계)</b></summary>
+
+
+V1 위에 backward-compatible 증분으로 사용성에 초점을 맞춘 업데이트를 더했습니다. 새 모델이나 가격,
+실험 주장은 없고, 모든 값은 오프라인에서 계산하며 수요 변화(Δ)는 라벨을 붙인 데모
 heuristic(`demo-heuristic-v1`)입니다.
 
-- **라이더 홈 리디자인** — 공유자전거 앱 스타일의 검색바 + 필터 칩 + 대여소 리스트 + 상세 시트.
-- **대여소 검색** — `GET /v2/rider/stations/search?q=…` (한글/영문/별칭/오타 허용 부분일치;
-  재고는 항상 운영 fixture에서 hydrate, 검색어에서 추론하지 않음). 빈 검색어는 전체를 가용성순 정렬.
-- **운영 통계** — `GET /v2/operator/statistics` (시스템 가동률, 가용성 분포, 부족 부하, 이벤트 구성,
-  수요 Δ 분포, 지역별 상세)를 새 `/statistics` 화면에서 시각화.
-- **이벤트 윈도우 타임라인** — `GET /v2/operator/timeline` (재생 윈도우 12–18시를 매 시각 as-of로
-  재계산한 부족·Δ·이벤트 시계열)을 인라인 SVG 차트로 시각화. 이벤트 공개 이전 flat 구간이 leakage
-  경계를 그대로 보여줍니다.
-- **추가 자전거 최적 분배** — `POST /v2/operator/rebalancing/allocate` (운영자가 추가 자전거 **m**대를
-  입력하면, 부족한 대여소에 어떻게 나눠야 이익이 최대일지 계산). 비대칭 목적(부족 3 : 과잉 1)이 분리·볼록
-  이라 greedy 한계이익 배분이 전역 최적이며 완전탐색과 일치 검증. 목표 충족 뒤 남는 자전거는 창고 보유로
-  그대로 보고합니다. `/rebalancing` 화면 상단의 "추가 자전거 최적 분배" 카드에서 m을 입력합니다.
+- 라이더 홈 리디자인 — 공유자전거 앱 스타일의 검색바 + 필터 칩 + 대여소 리스트 + 상세 시트.
+- 대여소 검색 — `GET /v2/rider/stations/search?q=…` (한글/영문/별칭/오타 허용 부분일치;
+  재고는 항상 운영 fixture에서 hydrate하고, 검색어에서 추론하지 않습니다). 빈 검색어는 전체를 가용성순으로 정렬합니다.
+- 운영 통계 — `GET /v2/operator/statistics` (시스템 가동률, 가용성 분포, 부족 부하, 이벤트 구성,
+  수요 Δ 분포, 지역별 상세)를 새 `/statistics` 화면에서 시각화합니다.
+- 이벤트 윈도우 타임라인 — `GET /v2/operator/timeline` (재생 윈도우 12–18시를 매 시각 as-of로
+  재계산한 부족, Δ, 이벤트 시계열)을 인라인 SVG 차트로 시각화합니다. 이벤트 공개 이전의 flat 구간이
+  leakage 경계를 그대로 보여줍니다.
+- 추가 자전거 최적 분배 — `POST /v2/operator/rebalancing/allocate` (운영자가 추가 자전거 m대를
+  입력하면, 부족한 대여소에 어떻게 나눠야 이익이 최대일지 계산합니다). 비대칭 목적(부족 3 : 과잉 1)이
+  분리 가능한 볼록 형태라 greedy 한계이익 배분이 전역 최적이고, 완전탐색과 일치함을 검증했습니다.
+  목표 충족 뒤 남는 자전거는 창고 보유로 그대로 보고합니다. `/rebalancing` 화면 상단의
+  "추가 자전거 최적 분배" 카드에서 m을 입력합니다.
 
 ```bash
 make api    # v1 + v2 엔드포인트 (오프라인, :8000)
@@ -314,8 +831,8 @@ curl "127.0.0.1:8000/v2/operator/timeline"
 make web    # /  (라이더 홈)  및  /statistics  (운영 통계)
 ```
 
-**휴대폰에서 보기 (같은 Wi-Fi):** 라이더 UI는 모바일 반응형입니다. 두 개의 터미널에서 아래를 실행한 뒤,
-폰 브라우저에서 `http://<PC IP>:3000` 으로 접속하세요. 여전히 완전 오프라인(키 불필요)이며 로컬 네트워크만
+휴대폰에서 보기 (같은 Wi-Fi): 라이더 UI는 모바일 반응형입니다. 두 개의 터미널에서 아래를 실행한 뒤,
+폰 브라우저에서 `http://<PC IP>:3000` 으로 접속하세요. 여전히 오프라인(키 불필요)이고 로컬 네트워크만
 접근할 수 있습니다.
 
 ```bash
@@ -323,8 +840,81 @@ make api-lan                      # API를 0.0.0.0:8000 으로 (LAN 노출)
 make web-lan LAN_IP=192.168.0.10  # PC의 실제 IP로 교체 (macOS: ipconfig getifaddr en0, Linux: hostname -I)
 ```
 
-자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화·
-Elasticsearch·LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
+자세한 스펙과 재현 방법은 [docs/V2_UX_UPDATE.md](docs/V2_UX_UPDATE.md), 실제 배포(라이브 뉴스 동기화,
+Elasticsearch, LAN 등)는 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) 참고.
+
+</details>
+
+## V2 — LLM 순가치 검증 (V2-00 … V2-09)
+
+위의 "V2 사용성 업데이트"가 UI/UX 릴리스라면, 이 절은 그와 별개인 LLM net-business-value 검증
+릴리스입니다(계약: [CLAUDE_V2_APPEND_REVISED.md](CLAUDE_V2_APPEND_REVISED.md)). 핵심 질문은 하나입니다 —
+LLM/event feature가 예측 정확도를, 그리고 그 정확도가 (LLM 비용을 제하고도) 이익을 실제로 개선하는가?
+모든 결과는 `reports/v2/**`의 versioned artifact가 뒷받침하고, 각 값에는 `run_id / artifact_id / mode /
+claim_status / freshness`를 담은 `ResultEnvelope`로 라벨을 붙였습니다. 완성 판정은 기능 존재 여부가 아니라
+artifact 기준입니다. 각 알고리즘의 원리와 metric 정의는 [docs/v2/V2_ALGORITHMS.md](docs/v2/V2_ALGORITHMS.md)에
+정리했습니다.
+
+측정된 결과 (measured / simulated, artifact 링크):
+
+| 결과 | claim_status | 수치 | 재현 |
+|---|---|---|---|
+| Promoted model + H3 multi-holdout | measured | `hist_gradient_boosting`, 2026년 1~7월 트립, rolling-origin 3-window: WAPE 0.4974 ± 0.0074, MASE 0.8708 ± 0.0094 (naive WAPE 0.65~0.69를 이김) | `make v2-holdout` |
+| **비대칭 비용 최적화 (뉴스벤더 q\*)** | **measured** | 손실함수를 0.667분위로 바꿔 OCS 0.7525 → 0.7268 (**−3.42%**), 품절 대수 **−26%**, 3개 창 전부에서 q=0.667이 최적. 대가로 WAPE +8.4%. 예측을 실행 전에 artifact에 기록 | `make v2-quantile-cost` |
+| 실서빙 모델 API | measured | `GET /v2/model/forecast` — 요청마다 promoted 모델이 next-hour 예측 (serving 시점 2026-08-01), Latency p95 5.7 ms (로컬) | `make v2-serving-export` |
+| Structured event feed lift (A1−A0) | measured, **재현 실패** | 단일 분할(2026-05)에서는 `MEANINGFUL_POSITIVE` +2.69%였으나, rolling origin 6창에서 유의한 양수가 0개. 개선 주장을 철회합니다 | `make v2-llm-value-rolling` |
+| **LLM 뉴스 피처의 조건부 기여 (A2−A1)** | **measured (조건부)** | 이벤트의 **공간 해상도에 따라 방향이 갈림.** 시드 10 앙상블 기준 이벤트당 평균 borough 수로 정렬하면 gain이 **단조 상승**: 4.2개 −0.96 / 3.7개 −0.86 / 2.3개 −0.76 / **2.0개 +1.24 (CI [0.83, 1.64])**. 2개 borough 부근에서 부호가 바뀝니다 | `make v2-news-conditions` |
+| 조건부 결과의 메커니즘 검증 | measured | 학습량 가설 기각(테스트셋 고정 시 6월 −0.32→+1.24, 5월 0.00→−0.76으로 **반대 방향**). 단일 시드는 난수가 지배(같은 창이 +2.23 ↔ −2.26) → 앙상블 필요 | `make v2-news-conditions` |
+| Profit / Regret ledger | simulated | no-action 대비 net +$103,271 (9개 cost 설정 모두 부호 양수); Oracle 대비 regret $218,697 | `make v2-ledger` |
+| MPC vs No-Action/Greedy/MILP/Oracle | simulated | ledger total_cost: NoAction 1127 / Greedy 1155 / MILP 1087 / MPC 740 / Oracle 719 — MPC가 best feasible, regret 21.6 | `make v2-mpc` |
+| Dynamic pricing + guardrail | simulated | 576 zone-hour에서 guardrail 위반 0, A/A CI가 0 포함 (shadow quote만) | `make v2-pricing` |
+| Copilot 정확도 + grounding | offline_benchmark | typed-tool routing 1.0, numeric hallucination 0; RAGAS faithfulness 1.0, answer_relevancy 0.985; trip-plan faithfulness 1.0 | `make v2-copilot` |
+| Final audit (완성 판정) | measured | envelope honesty + completion-artifact + traceability 3 gate PASS, 31 artifacts → V2_COMPLETE | `make v2-final` |
+
+```bash
+make v2-audit             # V2-00: domain-drift + result-envelope 계약 gate (오프라인)
+make v2-holdout           # V2-01: promoted model + H3 multi-holdout (원본 트립 필요)
+make v2-serving-export    # V2-07: promoted 모델의 next-hour serving feature 스냅숏
+make v2-quantile-cost     # V2-01: 비대칭 비용 분위수 sweep (뉴스벤더 q* 검증)
+make v2-ledger            # V2-02: profit/regret ledger
+make v2-llm-value-borough # V2-03: No-Event / Rule-Event / LLM-Event ablation + CI + LLM 비용
+make v2-llm-value-rolling # V2-03: 같은 ablation을 월별 rolling origin에서 반복 (창마다 재학습, 부호 일관성)
+make v2-mpc               # V2-04: multi-period 정책 비교 (No-Action/Greedy/MILP/MPC/Oracle)
+make v2-pricing           # V2-05: bounded dynamic pricing + guardrail audit + A/A dry-run
+make v2-copilot           # V2-06: typed-tool grounding + GraphRAG + RAGAS 벤치마크
+make v2-monitor           # V2-08: run manifest + freshness + delayed-label loop (leakage-safe)
+make v2-final             # V2-09: 최종 audit → reports/v2/final/claim_matrix.json
+make v2-rl                # (research 전용) tabular Q-learning + PPO 재배치 정책
+```
+
+결과를 읽는 기준:
+- Measured 성과 — promoted forecaster가 seasonal naive를 세 holdout 창 모두에서 이기고, Copilot은
+  typed tool 덕분에 numeric hallucination이 0입니다.
+- 철회한 주장 (중요) — structured event feed의 A1−A0 개선(+2.69%)은 **단일 분할에서만 성립했고
+  재현되지 않았습니다.** 월별 rolling origin으로 다시 측정하니 2026-05는 +3.96 (CI [1.02, 6.68]),
+  2026-06은 −3.46 (CI [−6.10, −0.92])으로 부호가 뒤집혔습니다. 원래 결과의 test 구간이 사실상
+  2026년 5월 한 달이었다는 것도 이 과정에서 드러났습니다(n=2,975 / 31 day-blocks가 정확히 일치).
+  기존 artifact는 지우지 않고 남겨 두었고, 재현 실패를 나란히 기록했습니다:
+  `reports/v2/llm_value/rolling_origin_ablation.json`. 이 단일 분할 위에 세운 density curve와
+  quality ablation도 같은 조건부라는 점을 함께 밝힙니다.
+- 조건부 결과도 그대로 보고 (대표 발견) — LLM-from-news feature는 **이벤트의 공간 해상도에 따라
+  방향이 갈립니다.** 시드 10개 앙상블로 이벤트당 평균 borough 수로 정렬하면 gain이 단조 상승해,
+  국지 이벤트가 많은 6월 창에서 **+1.24% (CI [0.83, 1.64], 유의)**, 도시 전역 이벤트가 많은 창에서는
+  음수가 됩니다. "개선이 되는 경우와 그 이유(공간 대비를 주는 국지 이벤트), 안 되는 경우와 그
+  이유(전역 이벤트는 캘린더 feature와 중복)"를 함께 보고합니다. 단일 시드는 난수가 지배하므로
+  앙상블로만 측정했습니다. 전체 정리:
+  [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
+- Simulated는 measured가 아님 — 모든 금액(ledger, MPC, pricing)은 assumption에 조건부라 `simulated`로
+  라벨을 붙였습니다. 단위 수량만 measured입니다.
+- Research 전용, 완성 조건 아님 — RL(tabular Q-learning + PPO)과 QAOA. RL은 같은 ledger로 채점하면
+  PPO 202.9 < tabular 247.8이고, 둘 다 MPC 21.6에 못 미쳐 RL advantage는 주장하지 않습니다.
+  `ResultEnvelope`가 research 값을 product surface에서 차단합니다.
+  ([docs/v2/V2_RESEARCH_RL.md](docs/v2/V2_RESEARCH_RL.md))
+
+계획과 claim matrix, 한계는 [docs/v2/README.md](docs/v2/README.md),
+[docs/v2/V2_CLAIMS_MATRIX.md](docs/v2/V2_CLAIMS_MATRIX.md),
+[docs/v2/V2_KNOWN_LIMITATIONS.md](docs/v2/V2_KNOWN_LIMITATIONS.md), 최종 감사는
+[reports/v2/final/v2_final_audit.md](reports/v2/final/v2_final_audit.md) 참고.
 
 ## 상태
 

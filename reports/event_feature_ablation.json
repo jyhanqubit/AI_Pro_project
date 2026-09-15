@@ -1,0 +1,73 @@
+{
+  "run_id": "run_event-ablation_20260816T154927Z",
+  "artifact_id": "reports/event_feature_ablation.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-08-16T15:49:27.656746+00:00",
+  "question": "Do event features improve the H3 zone-hour forecast (with vs without)?",
+  "note": "Trips are real (Citi Bike JC). News input is the curated fixture corpus (data/fixtures/news_eval_combined.jsonl, 14 articles -> 5 extracted events), not live news. Metrics are from executed fits only.",
+  "runs": [
+    {
+      "name": "event_at_test_boundary",
+      "data": "JC 2026-06..07 (71,952 rows, 171 zones)",
+      "news": "news_demo.jsonl (2 events, first available 2026-07-12T14:00-04:00)",
+      "test_from": "2026-07-12",
+      "result": {
+        "B1_wape": 0.5,
+        "B4_wape": 0.5,
+        "mean_abs_delta_b4_vs_b1": 0.0
+      },
+      "finding": "Structural zero: with the only events at the test boundary, every event feature is 0 throughout the training window (availability rule, section 5.2), so the tree model never learns a split on them and B4 predictions are bit-identical to B1."
+    },
+    {
+      "name": "events_in_train_and_test",
+      "data": "JC 2026-05..07 (111,128 rows, 191 zones)",
+      "news": "news_eval_combined.jsonl; train window holds the 06-12 PATH failure and 06-14 concert, test window holds the 06-20 street closure and the 07-12 PATH failure + concert",
+      "test_from": "2026-06-18",
+      "best_algorithm": "extra_trees",
+      "result": {
+        "B0": {
+          "wape": 0.6881,
+          "mae": 1.8081,
+          "mase": 1.0431,
+          "event_window_wape": 0.6781,
+          "n_features": null
+        },
+        "B1": {
+          "wape": 0.5091,
+          "mae": 1.3376,
+          "mase": 0.7716,
+          "event_window_wape": 0.4981,
+          "n_features": 32
+        },
+        "B2": {
+          "wape": 0.5092,
+          "mae": 1.3379,
+          "mase": 0.7718,
+          "event_window_wape": 0.4982,
+          "n_features": 34
+        },
+        "B3": {
+          "wape": 0.5105,
+          "mae": 1.3414,
+          "mase": 0.7738,
+          "event_window_wape": 0.4997,
+          "n_features": 37
+        },
+        "B4": {
+          "wape": 0.5105,
+          "mae": 1.3414,
+          "mase": 0.7738,
+          "event_window_wape": 0.4996,
+          "n_features": 40
+        }
+      },
+      "mean_abs_delta_b4_vs_b1": 0.0758,
+      "finding": "Measured null (slightly negative): event features change the predictions (mean |B4-B1| = 0.076 departures/hour) but do not improve accuracy — test WAPE 0.5091 (B1) vs 0.5105 (B3/B4), event-window WAPE 0.4981 vs 0.4996. Five events over three months are too sparse at H3 zone-hour grain; the signal drowns in noise. Consistent with the V2-03 root-cause analysis: a dense structured feed lifts the forecast (+2.69% at borough grain), sparse news-derived events do not."
+    }
+  ],
+  "reproduce": [
+    "python -m ml.forecasting.run --data-dir data/raw/citibike --max-months 2 --news data/fixtures/news_demo.jsonl --provider mock --test-from 2026-07-12",
+    "python -m ml.forecasting.run --data-dir data/raw/citibike --max-months 3 --news data/fixtures/news_eval_combined.jsonl --provider mock --test-from 2026-06-18"
+  ]
+}

@@ -27,6 +27,15 @@ Everything runs in offline **Demo Mode** (no API keys, no live collectors), so n
 > Free tier spins down when idle, so the **first request after a pause takes ~30–60s** (cold start).
 > That's normal; subsequent requests are fast.
 
+**Performance settings.** The blueprint sets `OMP_NUM_THREADS=1`: sklearn's `predict` otherwise
+spawns OpenMP threads per request and they contend on a shared CPU (load test: saturated
+throughput 105 → 138 req/s, `reports/v2/serving/load_test_configs.json`). It deliberately stays at
+**one uvicorn worker**. The replay cutoff is a per-process singleton and the UI reads
+`/v1/forecasts`, `/v1/events` and the explanation endpoint without passing a cutoff, so multiple
+workers would answer with different cutoffs; a warm worker is also ~217 MB, so four would not fit
+the 512 MB free instance. `--workers 4` reached ~700 req/s on a 4-CPU box, but only makes sense
+once the cutoff is shared state (or sent on every call) and the instance has real cores.
+
 *(No Blueprint? Create a Web Service manually with the same build/start commands and Python 3.11.)*
 
 ## 2. Deploy the Web UI on Vercel

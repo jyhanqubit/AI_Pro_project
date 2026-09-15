@@ -1,0 +1,41 @@
+{
+  "run_id": "run_v2-01_20260816T061758Z_827818f6",
+  "artifact_id": "reports/v2/holdout/promoted_model.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-08-16T06:17:58.919832+00:00",
+  "trained_on_rows": 226953,
+  "trained_through_hour": "2026-07-31T23:00:00-04:00",
+  "model_file": "reports/v2/holdout/promoted_model.joblib",
+  "algorithm": "hist_gradient_boosting",
+  "params": {
+    "model__learning_rate": 0.1,
+    "model__max_depth": 8,
+    "model__max_iter": 300
+  },
+  "selection_cv_wape": 0.555702553624506,
+  "selection_dev_rows": 106924,
+  "selection_dev_last_hour": "2026-04-30T23:00:00-04:00",
+  "pool": [
+    "ridge",
+    "hist_gradient_boosting"
+  ],
+  "leaderboard": {
+    "ridge": {
+      "cv_wape": 0.6176637006165385,
+      "best_params": {
+        "model__alpha": 100.0
+      }
+    },
+    "hist_gradient_boosting": {
+      "cv_wape": 0.555702553624506,
+      "best_params": {
+        "model__learning_rate": 0.1,
+        "model__max_depth": 8,
+        "model__max_iter": 300
+      }
+    }
+  },
+  "feature_version": "dfv1",
+  "target": "departures"
+}

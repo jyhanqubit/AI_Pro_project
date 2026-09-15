@@ -1,0 +1,117 @@
+{
+  "run_id": "run_v2-03horizon_20260721T113637Z",
+  "artifact_id": "reports/v2/llm_value/horizon_contribution.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-07-21T11:36:37.818558+00:00",
+  "grain": "borough-hour",
+  "target": "departures",
+  "test_from": "2026-05-01",
+  "n_train_rows": 10655,
+  "n_test_rows": 2975,
+  "test_rows_permit_active": 2600,
+  "test_rows_news_active": 191,
+  "by_horizon": [
+    {
+      "horizon_h": 1,
+      "n_base_features": 32,
+      "wape": {
+        "A0": 0.0908,
+        "A1_permit": 0.0883,
+        "A2_news": 0.0906
+      },
+      "permit_value_A1_minus_A0": {
+        "decision": "MEANINGFUL_POSITIVE",
+        "skill_pct": 2.69,
+        "ci95": [
+          0.980734,
+          7.563584
+        ]
+      },
+      "news_value_A2_minus_A1": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -2.04,
+        "ci95": [
+          -7.258265,
+          1.437536
+        ]
+      }
+    },
+    {
+      "horizon_h": 6,
+      "n_base_features": 21,
+      "wape": {
+        "A0": 0.1826,
+        "A1_permit": 0.1824,
+        "A2_news": 0.1808
+      },
+      "permit_value_A1_minus_A0": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -0.0,
+        "ci95": [
+          -12.869438,
+          12.852272
+        ]
+      },
+      "news_value_A2_minus_A1": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -9.59,
+        "ci95": [
+          -65.739889,
+          16.928051
+        ]
+      }
+    },
+    {
+      "horizon_h": 24,
+      "n_base_features": 21,
+      "wape": {
+        "A0": 0.1826,
+        "A1_permit": 0.1824,
+        "A2_news": 0.1808
+      },
+      "permit_value_A1_minus_A0": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -0.0,
+        "ci95": [
+          -12.869438,
+          12.852272
+        ]
+      },
+      "news_value_A2_minus_A1": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -9.59,
+        "ci95": [
+          -65.739889,
+          16.928051
+        ]
+      }
+    },
+    {
+      "horizon_h": 48,
+      "n_base_features": 17,
+      "wape": {
+        "A0": 0.2187,
+        "A1_permit": 0.2162,
+        "A2_news": 0.2145
+      },
+      "permit_value_A1_minus_A0": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": 1.09,
+        "ci95": [
+          -14.602067,
+          22.247521
+        ]
+      },
+      "news_value_A2_minus_A1": {
+        "decision": "NO_MEANINGFUL_EFFECT",
+        "skill_pct": -2.82,
+        "ci95": [
+          -57.886226,
+          12.016868
+        ]
+      }
+    }
+  ],
+  "note": "At horizon h only features referencing hours <= target-h are usable (lag_k with k>=h; no rolling/momentum for h>1). Tests whether the event/news layer's value grows as recent-demand autoregression becomes unavailable \u2014 the operational forecasting regime rebalancing needs."
+}

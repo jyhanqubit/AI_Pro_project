@@ -1,0 +1,119 @@
+{
+  "run_id": "run_v2-07freetier_20260915T122847Z",
+  "artifact_id": "reports/v2/serving/free_tier_emulation.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-09-15T12:28:47.974334+00:00",
+  "emulation": {
+    "cpu_share": 0.1,
+    "cores": 1,
+    "method": "taskset -c 0 + cpulimit-style SIGSTOP/SIGCONT duty cycle (100 ms period)",
+    "omp_num_threads": 1,
+    "workers": 1,
+    "target": "Render free web service: 0.1 CPU, 512 MB, single instance",
+    "not_reproduced": [
+      "network RTT from the user's region to Render (sandbox egress policy blocked the live URL)",
+      "cold start after spin-down (~30-60 s on Render)",
+      "noisy neighbours on the shared host"
+    ]
+  },
+  "first_call_ms": 104.0,
+  "endpoints": [
+    {
+      "path": "/v1/health",
+      "n_requests": 40,
+      "p50_ms": 1.0,
+      "p95_ms": 96.8,
+      "p99_ms": 101.8,
+      "payload_bytes": 140,
+      "records": null,
+      "ms_per_record": null,
+      "records_per_s_sequential": null,
+      "endpoint": "health"
+    },
+    {
+      "path": "/v1/forecasts",
+      "n_requests": 40,
+      "p50_ms": 1.4,
+      "p95_ms": 97.3,
+      "p99_ms": 101.9,
+      "payload_bytes": 1086,
+      "records": 3,
+      "ms_per_record": 0.469,
+      "records_per_s_sequential": 2131.0,
+      "endpoint": "forecasts"
+    },
+    {
+      "path": "/v2/model/forecast?top=10",
+      "n_requests": 40,
+      "p50_ms": 100.0,
+      "p95_ms": 103.5,
+      "p99_ms": 195.7,
+      "payload_bytes": 1787,
+      "records": 136,
+      "ms_per_record": 0.735,
+      "records_per_s_sequential": 1360.0,
+      "endpoint": "model_forecast_top10"
+    },
+    {
+      "path": "/v2/model/forecast?top=200",
+      "n_requests": 40,
+      "p50_ms": 99.9,
+      "p95_ms": 103.7,
+      "p99_ms": 195.8,
+      "payload_bytes": 12965,
+      "records": 136,
+      "ms_per_record": 0.735,
+      "records_per_s_sequential": 1361.0,
+      "endpoint": "model_forecast_top200"
+    },
+    {
+      "path": "/v2/operator/statistics",
+      "n_requests": 40,
+      "p50_ms": 96.5,
+      "p95_ms": 99.8,
+      "p99_ms": 102.1,
+      "payload_bytes": 13953,
+      "records": 45,
+      "ms_per_record": 2.145,
+      "records_per_s_sequential": 466.0,
+      "endpoint": "operator_statistics"
+    }
+  ],
+  "levels": [
+    {
+      "concurrency": 1,
+      "p50_ms": 98.31,
+      "p95_ms": 103.25,
+      "p99_ms": 195.64,
+      "rps": 12.4,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 2,
+      "p50_ms": 100.06,
+      "p95_ms": 105.64,
+      "p99_ms": 197.22,
+      "rps": 19.4,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 5,
+      "p50_ms": 200.36,
+      "p95_ms": 306.41,
+      "p99_ms": 396.99,
+      "rps": 24.2,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 10,
+      "p50_ms": 300.07,
+      "p95_ms": 497.65,
+      "p99_ms": 507.2,
+      "rps": 33.1,
+      "error_rate": 0.0
+    }
+  ],
+  "startup_to_ready_ms": 35541.0,
+  "rss_mb_after": 219.0
+}

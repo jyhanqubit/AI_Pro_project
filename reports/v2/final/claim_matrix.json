@@ -1,0 +1,441 @@
+{
+  "run_id": "run_v2-09_20260822T110152Z",
+  "artifact_id": "reports/v2/final/claim_matrix.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-08-22T11:01:52.974567+00:00",
+  "gates": {
+    "envelope_honesty": true,
+    "completion_artifacts": true,
+    "traceability": true
+  },
+  "n_artifacts": 39,
+  "by_claim_status": {
+    "blocked_data": 1,
+    "demo_fixture": 2,
+    "measured": 21,
+    "offline_benchmark": 8,
+    "research": 1,
+    "simulated": 6
+  },
+  "completion_rule_artifacts": {
+    "H3 holdout metrics": {
+      "path": "reports/v2/holdout/h3_multiholdout.json",
+      "present": true
+    },
+    "profit/regret ledger": {
+      "path": "reports/v2/ledger/profit_regret.json",
+      "present": true
+    },
+    "LLM incremental value report": {
+      "path": "reports/v2/llm_value/incremental_value_borough.json",
+      "present": true
+    },
+    "MPC policy comparison": {
+      "path": "reports/v2/mpc/policy_comparison.json",
+      "present": true
+    },
+    "pricing sensitivity": {
+      "path": "reports/v2/pricing/sensitivity.json",
+      "present": true
+    },
+    "pricing guardrail audit": {
+      "path": "reports/v2/pricing/guardrail_audit.json",
+      "present": true
+    },
+    "Copilot correctness benchmark": {
+      "path": "reports/v2/copilot/correctness_benchmark.json",
+      "present": true
+    },
+    "final claim matrix": {
+      "path": "reports/v2/final/claim_matrix.json",
+      "present": true
+    }
+  },
+  "claims": [
+    {
+      "artifact": "reports/v2/copilot/correctness_benchmark.json",
+      "run_id": "run_v2-06_20260819T153050Z",
+      "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
+      "mode": "research",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-19T15:30:50.905920+00:00",
+      "headline": {
+        "routing_accuracy": 1.0,
+        "hallucinated_answers": 0,
+        "hard_gates_pass": true
+      }
+    },
+    {
+      "artifact": "reports/v2/copilot/graphrag_benchmark.json",
+      "run_id": "run_v2-06graphscale_20260722T082522Z",
+      "artifact_id": "reports/v2/copilot/graphrag_benchmark.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-07-22T08:25:22.442207+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/copilot/neutral_retrieval_benchmark.json",
+      "run_id": "run_v2-06neutral_20260722T082523Z",
+      "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-07-22T08:25:23.015630+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/copilot/ragas_generation_benchmark.json",
+      "run_id": "run_v2-06ragasgen_20260819T153050Z",
+      "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-19T15:30:50.912661+00:00",
+      "headline": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.985
+      }
+    },
+    {
+      "artifact": "reports/v2/copilot/ragas_retrieval_benchmark.json",
+      "run_id": "run_v2-06ragas_20260722T082523Z",
+      "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-07-22T08:25:23.437724+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/copilot/trip_faithfulness.json",
+      "run_id": "run_v2-07faith_20260819T153119Z",
+      "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-19T15:31:19.211201+00:00",
+      "headline": {
+        "mean_faithfulness": 1.0,
+        "ungrounded_numbers_total": 0
+      }
+    },
+    {
+      "artifact": "reports/v2/copilot/trip_parse_benchmark.json",
+      "run_id": "run_v2-07tripparse_20260819T153119Z",
+      "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-19T15:31:19.208073+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/h3_multiholdout.json",
+      "run_id": "run_v2-01_20260816T061758Z_827818f6",
+      "artifact_id": "reports/v2/holdout/h3_multiholdout.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-16T06:17:58.919832+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/promoted_model.json",
+      "run_id": "run_v2-01_20260816T061758Z_827818f6",
+      "artifact_id": "reports/v2/holdout/promoted_model.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-16T06:17:58.919832+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/quantile_cost.json",
+      "run_id": "run_v2-01q_20260819T152729Z",
+      "artifact_id": "reports/v2/holdout/quantile_cost.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-19T15:27:29.649300+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/holdout/serving_features.json",
+      "run_id": "run_v2-07serve_20260816T062135Z",
+      "artifact_id": "reports/v2/holdout/serving_features.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-16T06:21:35.743070+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/ledger/profit_regret.json",
+      "run_id": "run_v2-02_20260720T124240Z",
+      "artifact_id": "reports/v2/ledger/profit_regret.json",
+      "mode": "historical_replay",
+      "claim_status": "simulated",
+      "freshness": "2026-07-20T12:42:40.221787+00:00",
+      "headline": {
+        "model_minus_no_action_net": 103270.9,
+        "regret_vs_oracle": 218697.2
+      }
+    },
+    {
+      "artifact": "reports/v2/llm_value/density_curve.json",
+      "run_id": "run_v2-03density_20260721T115343Z",
+      "artifact_id": "reports/v2/llm_value/density_curve.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T11:53:43.088438+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/graph_contribution.json",
+      "run_id": "run_v2-03graph_20260721T101658Z",
+      "artifact_id": "reports/v2/llm_value/graph_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T10:16:58.284415+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/horizon_contribution.json",
+      "run_id": "run_v2-03horizon_20260721T113637Z",
+      "artifact_id": "reports/v2/llm_value/horizon_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T11:36:37.818558+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/importance_weight_contribution.json",
+      "run_id": "run_v2-03impwt_20260721T105907Z",
+      "artifact_id": "reports/v2/llm_value/importance_weight_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T10:59:07.503764+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/incremental_value.json",
+      "run_id": "run_v2-03_20260720T132931Z",
+      "artifact_id": "reports/v2/llm_value/incremental_value.json",
+      "mode": "historical_replay",
+      "claim_status": "blocked_data",
+      "freshness": "2026-07-20T13:29:31.489055+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/incremental_value_borough.json",
+      "run_id": "run_v2-03b_20260721T095833Z",
+      "artifact_id": "reports/v2/llm_value/incremental_value_borough.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T09:58:33.898099+00:00",
+      "headline": {
+        "structured_lift_verdict": "measured_improvement",
+        "llm_news_verdict": "negative_lift",
+        "net_llm_value_simulated": -17789.11
+      }
+    },
+    {
+      "artifact": "reports/v2/llm_value/news_condition_audit.json",
+      "run_id": "run_v2-03newsaudit_20260721T120939Z",
+      "artifact_id": "reports/v2/llm_value/news_condition_audit.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T12:09:39.885342+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/news_feature_conditions.json",
+      "run_id": "run_v2-03c_20260822T110001Z",
+      "artifact_id": "reports/v2/llm_value/news_feature_conditions.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-22T11:00:01.701733+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/overfit_diagnostic.json",
+      "run_id": "run_v2-03overfit_20260721T140126Z",
+      "artifact_id": "reports/v2/llm_value/overfit_diagnostic.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T14:01:26.334921+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/permit_enrich_contribution.json",
+      "run_id": "run_v2-03permitenrich_20260721T125526Z",
+      "artifact_id": "reports/v2/llm_value/permit_enrich_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T12:55:26.073088+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/permit_typed_contribution.json",
+      "run_id": "run_v2-03permittyped_20260721T125958Z",
+      "artifact_id": "reports/v2/llm_value/permit_typed_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T12:59:58.174502+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/permitize_contribution.json",
+      "run_id": "run_v2-03permitize_20260721T103418Z",
+      "artifact_id": "reports/v2/llm_value/permitize_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T10:34:18.459589+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/postprocess_contribution.json",
+      "run_id": "run_v2-03postproc_20260721T112241Z",
+      "artifact_id": "reports/v2/llm_value/postprocess_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T11:22:41.000826+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/quality_ablation.json",
+      "run_id": "run_v2-03quality_20260721T115920Z",
+      "artifact_id": "reports/v2/llm_value/quality_ablation.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T11:59:20.782735+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/rolling_origin_ablation.json",
+      "run_id": "run_v2-03r_20260819T141038Z",
+      "artifact_id": "reports/v2/llm_value/rolling_origin_ablation.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-19T14:10:38.303273+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/rolling_origin_localized.json",
+      "run_id": "run_v2-03r_20260819T142309Z",
+      "artifact_id": "reports/v2/llm_value/rolling_origin_localized.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-08-19T14:23:09.817327+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/signed_demand_contribution.json",
+      "run_id": "run_v2-03signed_20260721T111042Z",
+      "artifact_id": "reports/v2/llm_value/signed_demand_contribution.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-21T11:10:42.934498+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/llm_value/synthetic_ceiling.json",
+      "run_id": "run_v2-03synth_20260721T121857Z",
+      "artifact_id": "reports/v2/llm_value/synthetic_ceiling.json",
+      "mode": "research",
+      "claim_status": "simulated",
+      "freshness": "2026-07-21T12:18:57.386147+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/monitoring/delayed_labels.json",
+      "run_id": "run_v2-08labels_20260722T032428Z",
+      "artifact_id": "reports/v2/monitoring/delayed_labels.json",
+      "mode": "demo_fixture",
+      "claim_status": "demo_fixture",
+      "freshness": "2026-07-22T03:24:28.247326+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/monitoring/run_manifest.json",
+      "run_id": "run_v2-08manifest_20260722T032428Z",
+      "artifact_id": "reports/v2/monitoring/run_manifest.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-07-22T03:24:28.167033+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/mpc/policy_comparison.json",
+      "run_id": "run_v2-04_20260721T034058Z",
+      "artifact_id": "reports/v2/mpc/policy_comparison.json",
+      "mode": "research",
+      "claim_status": "simulated",
+      "freshness": "2026-07-21T03:40:58.357039+00:00",
+      "headline": {
+        "mpc_total_cost": 740.34,
+        "mpc_regret_vs_oracle": 21.63
+      }
+    },
+    {
+      "artifact": "reports/v2/predictive_lift.json",
+      "run_id": "run_v2lift_20260816T044514Z",
+      "artifact_id": "reports/v2/predictive_lift.json",
+      "mode": "demo_fixture",
+      "claim_status": "demo_fixture",
+      "freshness": "2026-08-16T04:45:14.919372+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/pricing/guardrail_audit.json",
+      "run_id": "run_v2-05_20260721T034413Z",
+      "artifact_id": "reports/v2/pricing/guardrail_audit.json",
+      "mode": "research",
+      "claim_status": "simulated",
+      "freshness": "2026-07-21T03:44:13.721367+00:00",
+      "headline": {
+        "violation_count": 0,
+        "budget_respected": true
+      }
+    },
+    {
+      "artifact": "reports/v2/pricing/revenue_sim.json",
+      "run_id": "run_v2rev_20260816T044514Z",
+      "artifact_id": "reports/v2/pricing/revenue_sim.json",
+      "mode": "historical_replay",
+      "claim_status": "simulated",
+      "freshness": "2026-08-16T04:45:14.920192+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/pricing/sensitivity.json",
+      "run_id": "run_v2-05_20260721T034413Z",
+      "artifact_id": "reports/v2/pricing/sensitivity.json",
+      "mode": "research",
+      "claim_status": "simulated",
+      "freshness": "2026-07-21T03:44:13.721367+00:00",
+      "headline": {
+        "AA_ci_covers_zero": true
+      }
+    },
+    {
+      "artifact": "reports/v2/research/rl_rebalancing.json",
+      "run_id": "run_rl_20260722T060008Z",
+      "artifact_id": "reports/v2/research/rl_rebalancing.json",
+      "mode": "research",
+      "claim_status": "research",
+      "freshness": "2026-07-22T06:00:08.643420+00:00",
+      "headline": {
+        "best_rl": "rl_ppo",
+        "best_rl_regret": 202.94,
+        "mpc_regret": 21.63,
+        "ppo_beats_tabular": true,
+        "beats_mpc": false
+      }
+    },
+    {
+      "artifact": "reports/v2/search_relevance.json",
+      "run_id": "run_v2search_20260816T044514Z",
+      "artifact_id": "reports/v2/search_relevance.json",
+      "mode": "demo_fixture",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-08-16T04:45:14.920192+00:00",
+      "headline": {}
+    }
+  ],
+  "verdict": "V2_COMPLETE",
+  "note": "Machine mirror of docs/v2/V2_CLAIMS_MATRIX.md, built from committed artifacts. RL/QAOA are research-only and excluded from the completion gate."
+}

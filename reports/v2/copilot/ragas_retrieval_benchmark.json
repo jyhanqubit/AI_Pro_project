@@ -1,0 +1,163 @@
+{
+  "run_id": "run_v2-06ragas_20260722T082523Z",
+  "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-07-22T08:25:23.437724+00:00",
+  "tool": {
+    "package": "ragas",
+    "version": "0.4.3",
+    "metrics": [
+      "NonLLMContextPrecisionWithReference",
+      "NonLLMContextRecall"
+    ]
+  },
+  "task": "text lookup (paraphrase -> which event?), method-independent gold, top-k retrieval",
+  "top_k": 10,
+  "exact_match_threshold": 0.99,
+  "results": {
+    "flat_text": {
+      "context_precision": 0.8333,
+      "context_recall": 0.8333,
+      "n": 12,
+      "top_k": 10,
+      "per_query": [
+        {
+          "id": "L01",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L02",
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        },
+        {
+          "id": "L03",
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        },
+        {
+          "id": "L04",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L05",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L06",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L07",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L08",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L09",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L10",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L11",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L12",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        }
+      ]
+    },
+    "graph_boosted": {
+      "context_precision": 0.7708,
+      "context_recall": 0.8333,
+      "n": 12,
+      "top_k": 10,
+      "per_query": [
+        {
+          "id": "L01",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L02",
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        },
+        {
+          "id": "L03",
+          "context_precision": 0.0,
+          "context_recall": 0.0
+        },
+        {
+          "id": "L04",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L05",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L06",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L07",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L08",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L09",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L10",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L11",
+          "context_precision": 0.25,
+          "context_recall": 1.0
+        },
+        {
+          "id": "L12",
+          "context_precision": 1.0,
+          "context_recall": 1.0
+        }
+      ]
+    }
+  },
+  "graph_minus_flat_context_precision": -0.0625,
+  "generation_side_metrics": {
+    "faithfulness": "measured in-session \u2014 see reports/v2/copilot/ragas_generation_benchmark.json (judge=claude-opus-4-8-insession; no API key for an automated ragas LLM judge, so judged in-session with verdicts committed as a fixture, as in V2-03/V2-06)",
+    "answer_relevancy": "measured in-session (direct relevance judgment, not the embedding proxy) \u2014 see ragas_generation_benchmark.json",
+    "automated_ragas_llm_judge": "blocked_external \u2014 ragas' own LLM-judge path needs an API key; not available here, so we judged in-session instead of faking it"
+  },
+  "finding": "Real ragas non-LLM retrieval metrics agree with the top1/MRR result: graph_boosted does NOT beat flat_text on context precision (graph gives no retrieval lift on a text task). With one relevant doc per query these reduce to reciprocal rank / hit@k, so they are the standard IR result under a RAGAS name. Generation-side RAGAS (faithfulness / answer relevancy) is measured separately by in-session judging on the Copilot's own answers \u2014 see ragas_generation_benchmark.json \u2014 since there is no API key for ragas' automated LLM judge."
+}
