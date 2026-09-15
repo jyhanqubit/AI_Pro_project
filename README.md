@@ -347,47 +347,163 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 
 ---
 
-## 모델 Serving API
+## 백엔드 API 설계
 
-승격된 측정 모델을 API로 서빙합니다. `GET /v2/model/forecast`가 요청마다 `estimator.predict`를
-실제로 실행해 H3 zone별 next-hour departures 예측을 반환합니다. 미리 계산한 답을 돌려주는 방식이
-아닙니다.
+FastAPI로 만든 endpoint 30개(v1 15개, v2 15개)가 운영자 화면, 라이더 화면, 모델 서빙을 모두 받칩니다.
+설계 결정은 다섯 가지 원칙으로 정리됩니다.
 
-반영 내역:
+1. **계약이 먼저.** 모든 요청과 응답은 Pydantic v2 모델(`services/api/schemas.py`, 27개)이고, OpenAPI
+   스키마는 그 모델에서 자동으로 나옵니다. 시각은 전부 `AwareDatetime`이라 naive datetime이 경계를
+   넘지 못합니다.
+2. **응답은 자기 출처를 밝힌다.** 모든 응답에 `mode`가 있고, 시간에 의존하는 응답에는 `cutoff`와
+   `model_version` / `feature_version`이 붙습니다. 측정 결과를 내보내는 v2 응답은 `ResultEnvelope`
+   (`run_id`, `artifact_id`, `mode`, `claim_status`, `freshness`)로 감싸 화면의 숫자를 artifact 파일까지
+   추적할 수 있습니다.
+3. **에러는 구조화한다.** 실패는 `{error_code, message}`와 의미에 맞는 HTTP 상태로 돌려주고, 클라이언트는
+   문자열이 아니라 `error_code`로 분기합니다.
+4. **degrade는 하되 지어내지 않는다.** 모델 파일이나 optional 의존성이 없으면 503과 복구 명령을
+   돌려줍니다. 데모 휴리스틱으로 대체하거나 빈 성공을 꾸미지 않습니다.
+5. **실행 가능성을 검증한 결과만 반환한다.** 재배치 계획은 `check_feasibility`를 통과해야 응답이 되고,
+   통과하지 못하면 `feasible=false`와 사유를 그대로 돌려줍니다.
 
-- Endpoint: `GET /v2/model/forecast?top=20` — 예측값 내림차순으로 상위 zone을 반환합니다.
-- 모델: `hist_gradient_boosting` (H3 multi-holdout에서 승격, holdout WAPE 0.4974 ± 0.0074).
-  Citi Bike JC 2026년 1~7월 트립으로 학습했고, 학습 row 226,953개, 학습 구간 마지막 시각
-  2026-07-31 23:00 (America/New_York), serving 시점 2026-08-01 00:00입니다.
-- Serving feature: `reports/v2/holdout/serving_features.json` — 학습 데이터가 끝난 다음 1시간(T+1)의
-  feature snapshot, 활성 zone 136개. dfv1 feature는 시각 t에서 t 이전 시각의 값만 쓰므로 구조적으로
-  leakage가 없습니다(§5.4).
-- Provenance: 응답마다 `run_id`, `claim_status`, `freshness`, holdout WAPE를 함께 반환해, 서빙된
-  수치를 measured 원본 artifact까지 추적할 수 있습니다.
-- Degrade 동작: 모델 파일이나 feature snapshot이 없으면 503과 재생성 명령을 반환합니다. 이 경로는
-  데모 휴리스틱으로 대체하지 않습니다.
-- 재생성: `make v2-holdout` (모델 학습과 승격) 후 `make v2-serving-export` (serving snapshot).
+### 리소스와 버전
+
+`/v1`은 리플레이 골든패스(상태, 이벤트, 예측, 설명, 시나리오, 재배치)이고, `/v2`는 그 위에 얹은
+측정 모델 서빙과 운영, 라이더, 요금 기능입니다. v2를 추가하면서 v1 계약은 바꾸지 않았습니다.
+
+| 그룹 | Endpoint |
+|---|---|
+| 상태와 리플레이 | `GET /v1/health`, `GET /v1/replay/state`, `POST /v1/replay/set-cutoff` |
+| 예측과 설명 | `GET /v1/forecasts`, `GET /v1/events`, `GET /v1/zones/{zone_id}/explanation`, `POST /v1/scenarios` |
+| 모델 서빙 | `GET /v2/model/forecast`, `GET /v2/model/predictive-lift`, `GET /v1/model/lift` |
+| 재배치 | `POST /v1/rebalancing/solve`, `POST /v2/operator/rebalancing/allocate` |
+| 운영 | `GET /v2/operator/statistics`, `GET /v2/operator/timeline`, `GET /v2/cockpit/metrics`, `POST /v2/operator/ask`, `POST /v2/operator/stations/import` |
+| 라이더 | `GET /v2/rider/stations/search`, `GET /v2/rider/search/hybrid`, `POST /v2/rider/ask`, `POST /v2/rider/plan-trip` |
+| 요금 | `POST /v2/pricing/quote`, `POST /v2/pricing/revenue` |
+| 뉴스, 추천, 실험 | `POST /v2/news/sync`, `GET /v1/news/search`, `GET /v1/news/clusters`, `POST /v1/recommendations/stations`, `POST /v1/recommendations/compare-event-impact`, `GET /v1/anomalies`, `GET /v1/experiments/switchback` |
+
+읽기는 GET, 상태를 바꾸거나 계산을 요청하는 것은 POST입니다. `set-cutoff`처럼 같은 값을 여러 번 보내도
+결과가 같고, `news/sync`는 `url_hash`로 중복을 제거해 반복 호출해도 기사가 늘지 않습니다.
+
+### 요청과 응답 계약
+
+실제 응답 그대로입니다. 리플레이 상태는 cutoff와 허용 창을 함께 돌려줘 클라이언트가 경계를 알 수
+있습니다.
+
+```json
+GET /v1/replay/state -> 200
+{"mode": "historical_replay", "cutoff": "2026-07-12T13:59:00-04:00",
+ "window_start": "2026-07-12T12:00:00-04:00", "window_end": "2026-07-12T18:00:00-04:00",
+ "available_event_count": 0}
+```
+
+측정 모델 서빙 응답은 예측값 앞에 출처를 먼저 놓습니다. 어떤 run이 학습한 모델인지, 어디까지의
+데이터로 학습했는지, holdout 성능이 얼마였는지가 응답 안에 있습니다.
+
+```json
+GET /v2/model/forecast?top=2 -> 200
+{"mode": "historical_replay", "claim_status": "measured",
+ "run_id": "run_v2-01_20260816T061758Z_827818f6", "freshness": "2026-08-16T06:17:58Z",
+ "model": {"algorithm": "hist_gradient_boosting", "feature_version": "dfv1",
+           "trained_on_rows": 226953, "trained_through_hour": "2026-07-31T23:00:00-04:00",
+           "holdout_wape_mean": 0.4974, "holdout_mase_mean": 0.8708},
+ "serving_hour": "2026-08-01T00:00:00-04:00", "forecast_horizon_h": 1, "n_zones": 136,
+ "forecasts": [{"zone_id": "892a107216bffff", "lat": 40.7355, "lng": -74.0301,
+                "predicted_departures": 8.3}, "..."]}
+```
+
+화면 KPI는 `/v2/cockpit/metrics`가 `ResultEnvelope` 목록으로 내보냅니다. 값이 없으면 `value`를 `null`로
+두고 `claim_status`가 이유(`blocked_data`, `pending_live_label` 등)를 설명합니다. 숫자를 만들어 채우지
+않습니다.
+
+```json
+{"key": "forecast_wape", "label": "H3 multi-holdout WAPE",
+ "envelope": {"value": 0.4974, "run_id": "run_v2-01_20260816T061758Z_827818f6",
+              "artifact_id": "reports/v2/holdout/h3_multiholdout.json#aggregate.wape.mean",
+              "mode": "historical_replay", "claim_status": "measured",
+              "freshness": "2026-08-16T06:17:58Z"}}
+```
+
+재배치 응답(`RebalancingResponse`)은 이동 목록만이 아니라 `feasible`, `infeasibility_reason`,
+이동 전후의 부족과 초과 대수, 목적함수 비용과 baseline 비용을 함께 돌려줍니다. 클라이언트가 "얼마나
+나아졌는지"를 다시 계산하지 않아도 되고, 계획이 제약을 어겼는지 서버가 먼저 판정합니다.
+
+### 에러 모델
+
+| HTTP | `error_code` | 언제 |
+|---|---|---|
+| 400 | `cutoff_out_of_window` | 리플레이 창 밖의 cutoff (cutoff를 받는 모든 endpoint에서 같은 검사) |
+| 404 | `zone_not_found` | 존재하지 않는 zone의 설명 요청 |
+| 503 | `promoted_model_unavailable` | 모델 번들이나 serving snapshot 부재 (복구 명령 포함) |
+| 503 | `vectorstore_unavailable`, `recsys_unavailable`, `results_unavailable` | optional extra(FAISS, torch)나 결과 artifact 부재 |
+| 422 | (FastAPI 기본) | 스키마 검증 실패, 예를 들어 naive datetime이나 범위 밖 좌표 |
+
+```json
+POST /v1/replay/set-cutoff {"cutoff": "2026-07-12T23:00:00-04:00"} -> 400
+{"detail": {"error_code": "cutoff_out_of_window",
+            "message": "cutoff must be within [2026-07-12T12:00:00-04:00, 2026-07-12T18:00:00-04:00]"}}
+```
+
+외부 의존성이 실패하는 경우는 에러가 아니라 라벨로 처리합니다. `POST /v2/news/sync`는 GDELT가 막히면
+`status: "degraded"`와 `degraded_reason`을 돌려주고 기존 데이터를 그대로 유지합니다. 라이브 수집 실패가
+Demo Mode를 깨지 않는다는 규칙(§7.3)을 API 계약으로 옮긴 것입니다.
+
+### 상태와 시간 의미
+
+리플레이 API의 핵심 상태는 하나, "지금이 몇 시인가"를 뜻하는 `cutoff`입니다. `ReplayEngine` 싱글턴이
+갖고 있고 각 endpoint는 `Depends(get_engine)`로 주입받습니다. 이벤트는
+`available_at = max(published_at, first_seen_at) ≤ cutoff`일 때만 보이고, 예측과 설명, 통계는 전부
+같은 cutoff를 기준으로 계산됩니다. 그래서 13:59에는 14:00 기사가 보이지 않고 14:00으로 옮기면
+같은 API가 이벤트와 예측 변화를 함께 돌려줍니다(`tests/integration/test_api.py::test_as_of_boundary_through_api`).
+
+이 설계의 대가도 분명합니다. 상태가 프로세스 메모리에 있어 서버는 프로세스 하나여야 하고, 수평 확장을
+하려면 cutoff를 공유 저장소로 옮기거나 매 요청에 실어 보내야 합니다. 이 제약은 `render.yaml`에 적어
+두었고 위 서빙 절의 워커 실험이 그 근거입니다.
+
+### 구성과 안전한 기본값
+
+설정은 `pydantic-settings`(`config/settings.py`)가 환경변수와 `.env`에서 읽습니다. 기본값은 키 없이
+오프라인으로 도는 조합입니다.
+
+```env
+SHOCKFLOW_MODE=demo_fixture   # demo_fixture | historical_replay | live | research
+ENABLE_GBFS_LIVE=false        # 켜면 실시간 재고 폴링, 실패해도 Demo Mode 유지
+ENABLE_GDELT_LIVE=false
+LLM_PROVIDER=mock             # anthropic | openai | mock, 키가 없으면 규칙 기반으로 degrade
+```
+
+CORS는 로컬 개발 origin(`:3000`)과 Vercel 배포 도메인을 정규식으로 허용하고, 그 밖의 origin은
+`SHOCKFLOW_CORS_ORIGINS`로 명시합니다. 허용 method는 GET과 POST뿐입니다.
+
+### 측정 모델 서빙
+
+`GET /v2/model/forecast`는 요청마다 `estimator.predict`를 실제로 실행합니다. 서빙에 필요한 것은
+두 파일, 승격 모델 번들(`promoted_model.joblib`, 0.55 MB)과 학습 데이터 다음 1시간의 feature
+snapshot(`serving_features.json`, 136 zone)이고, 둘 다 `lru_cache`로 프로세스당 한 번만 읽습니다.
+`predict`에 들어가는 136 × 32 입력 행렬도 snapshot과 함께 한 번만 만듭니다. 모델 로드는 FastAPI
+lifespan에서 startup 때 미리 하므로 첫 요청이 그 비용을 내지 않습니다. 번들이 없으면 startup은 경고만
+남기고 endpoint가 503으로 답합니다.
+
+새 달의 트립이 공개되면 세 명령으로 모델과 serving 시점을 당깁니다. Citi Bike는 월 단위로 약 2주
+지연을 두고 공개하므로 진짜 실시간 수요 label은 없고, 재고(GBFS)만 실시간 폴링이 가능합니다.
+
+```bash
+make download-citibike MONTHS="202608" JC=1   # 새로 공개된 달
+make v2-holdout                                # 재학습 + H3 multi-holdout + 승격
+make v2-serving-export                         # serving snapshot 갱신
+```
 
 ```bash
 curl "https://shockflow-api.onrender.com/v2/model/forecast?top=10"   # 라이브 (첫 요청은 cold start)
 curl "127.0.0.1:8000/v2/model/forecast?top=10"                       # 로컬 (make api 실행 후)
 ```
 
-월간 데이터 갱신: Citi Bike는 트립 이력을 월 단위로 약 2주 지연을 두고 공개하므로, 진짜 실시간
-수요 label은 존재하지 않습니다. 대신 아래 세 명령으로 새 달이 공개될 때마다 모델과 serving 시점을
-최신으로 당길 수 있습니다. 재고(GBFS station_status)는 실시간 공개 API라서 별도로 live 폴링이
-가능하고, `ENABLE_GBFS_LIVE=true`로 켭니다(기본값은 꺼짐, 실패해도 Demo Mode는 유지).
+### 관측과 성능
 
-```bash
-make download-citibike MONTHS="202608" JC=1   # 새로 공개된 달 내려받기 (--jersey-city)
-make v2-holdout                                # 재학습 + H3 multi-holdout + 모델 승격
-make v2-serving-export                         # serving feature snapshot 갱신
-```
-
-### Latency (로컬 측정)
-
-로컬 컨테이너(Linux, uvicorn single worker)에서 endpoint당 warm-up 10회 후 100회 요청으로
-측정했습니다. 측정 스크립트가 출력한 수치를 그대로 적었습니다.
+`GET /v1/health`가 모드, cutoff, 모델과 feature 버전을 돌려주고 Render의 health check가 이 경로를
+봅니다. 성능은 위 서빙 절에 있습니다. 단일 요청 p50 4.2 / p95 5.7 / p99 6.5 ms, 동시 5명에서
+p99가 꺾이는 무릎 지점과 그 원인(OpenMP 스레드 경합, 단일 프로세스), 무료 티어 재현 측정과 개선(첫
+요청 33.3초 → 0.1초, 포화 처리량 +30%)까지 모두 측정값입니다.
 
 | Endpoint | p50 | p95 | p99 | Payload |
 |---|---|---|---|---|
@@ -396,26 +512,30 @@ make v2-serving-export                         # serving feature snapshot 갱신
 | `GET /v2/operator/statistics` | 3.5 ms | 4.6 ms | 4.9 ms | 14.0 KB |
 | `GET /v1/health` | 1.4 ms | 1.8 ms | 1.9 ms | 0.1 KB |
 
-모델 추론 endpoint의 Latency가 p95 기준 5.7 ms입니다. 요청마다 추론을 실제로 도는데도 한 자릿수
-ms인 이유는 serving feature snapshot을 미리 커밋해 두고, 요청 시점에는 행렬 구성과 `predict`만
-수행하기 때문입니다. Render free tier 라이브 서버는 잠든 상태에서 깨어나는 첫 요청에 30~60초가
-걸리고(cold start), 깨어난 뒤에는 위 수치에 네트워크 왕복 시간이 더해집니다. 참고로 hybrid 검색의
-offline benchmark Latency는 p50 0.18 ms / p95 0.41 ms입니다(`reports/v2/search_relevance.json`).
+로컬 컨테이너(uvicorn single worker)에서 warm-up 10회 뒤 100회 요청으로 잰 값이고, hybrid 검색의
+offline benchmark는 p50 0.18 ms / p95 0.41 ms입니다(`reports/v2/search_relevance.json`).
 
-### 전체 endpoint 개요
+### 계약 테스트
 
-| 그룹 | Endpoint |
-|---|---|
-| 상태 / 리플레이 | `GET /v1/health`, `GET /v1/replay/state`, `POST /v1/replay/set-cutoff` |
-| 예측 / 설명 | `GET /v1/forecasts`, `GET /v1/events`, `GET /v1/zones/{zone_id}/explanation`, `POST /v1/scenarios` |
-| 모델 서빙 | `GET /v2/model/forecast`, `GET /v2/model/predictive-lift`, `GET /v1/model/lift` |
-| 재배치 | `POST /v1/rebalancing/solve`, `POST /v2/operator/rebalancing/allocate` |
-| 운영 | `GET /v2/operator/statistics`, `GET /v2/operator/timeline`, `GET /v2/cockpit/metrics`, `POST /v2/operator/ask` |
-| 라이더 | `GET /v2/rider/stations/search`, `GET /v2/rider/search/hybrid`, `POST /v2/rider/ask`, `POST /v2/rider/plan-trip` |
-| 요금 | `POST /v2/pricing/quote`, `POST /v2/pricing/revenue` |
-| 뉴스 / 추천 | `POST /v2/news/sync`, `GET /v1/news/search`, `GET /v1/news/clusters`, `POST /v1/recommendations/stations` |
+API는 `TestClient`로 HTTP 경계에서 검증합니다. 내부 함수가 아니라 상태 코드, 응답 스키마, 시간 경계를
+확인하는 테스트입니다.
 
-전체 스키마는 서버 실행 후 http://127.0.0.1:8000/docs (OpenAPI)에서 확인할 수 있습니다.
+- `tests/integration/test_api.py` 12개: health가 버전을 돌려주는지, 13:59 → 14:00 as-of 경계가 API를
+  통해 지켜지는지, 창 밖 cutoff가 400인지, 설명이 항상 근거를 갖는지, 시나리오 토글이 이벤트 효과를
+  되돌리는지, greedy와 MILP 재배치가 둘 다 feasible인지.
+- `tests/integration/test_api_v2.py` 43개: 검색이 재고를 검색어가 아니라 저장소에서 가져오는지,
+  통계 합계가 맞는지, 타임라인의 이벤트 수가 단조 증가하는지, 추가 자전거 배분이 as-of 경계를 지키고
+  남는 자전거를 숨기지 않는지.
+- `tests/integration/test_model_serving.py`: artifact가 있으면 measured 예측을, 없으면 503을 돌려주는지.
+- E2E 골든패스(`tests/e2e/`): cutoff 13:59 → 14:00 → 이벤트 추출 → graph → feature → 예측 → 설명 →
+  시나리오 off → 재배치까지 한 흐름.
+
+### 문서와 배포
+
+OpenAPI 문서는 서버를 띄운 뒤 http://127.0.0.1:8000/docs 에서 볼 수 있고, 스키마는 코드의 Pydantic
+모델에서 생성되므로 구현과 어긋나지 않습니다. 배포는 `render.yaml` 블루프린트 하나로 정의됩니다.
+build는 `pip install -e ".[api,ml]"`, start는 `uvicorn services.api.app:app`, 환경변수는 위의 안전한
+기본값과 `OMP_NUM_THREADS=1`이고, 워커 수를 1로 두는 이유는 파일 안에 주석으로 남겼습니다.
 
 ---
 
