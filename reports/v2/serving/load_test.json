@@ -1,0 +1,103 @@
+{
+  "artifact_id": "reports/v2/serving/load_test.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-09-15T09:58:56.884617+00:00",
+  "endpoint": "http://127.0.0.1:8000/v2/model/forecast?top=20",
+  "method": "closed-loop: each user coroutine issues requests back-to-back; 3.0s warmup + 15.0s measured per level; 50-request global warmup excludes cold-start model load",
+  "environment": {
+    "cpus": 4,
+    "platform": "Linux-6.18.44-fc-v33-x86_64-with-glibc2.39",
+    "python": "3.11.15",
+    "server": "uvicorn single process (make api default)",
+    "same_machine": true,
+    "caveat": "client and server share one machine: numbers exclude network RTT and the load generator competes with the server for CPU at high concurrency"
+  },
+  "levels": [
+    {
+      "concurrency": 1,
+      "requests_ok": 3923,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.003,
+      "rps": 261.5,
+      "p50_ms": 3.66,
+      "p95_ms": 4.17,
+      "p99_ms": 7.56,
+      "max_ms": 71.17,
+      "error_kinds": []
+    },
+    {
+      "concurrency": 5,
+      "requests_ok": 1704,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.022,
+      "rps": 113.4,
+      "p50_ms": 44.03,
+      "p95_ms": 48.4,
+      "p99_ms": 51.59,
+      "max_ms": 56.37,
+      "error_kinds": []
+    },
+    {
+      "concurrency": 10,
+      "requests_ok": 1613,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.042,
+      "rps": 107.2,
+      "p50_ms": 93.08,
+      "p95_ms": 103.57,
+      "p99_ms": 108.84,
+      "max_ms": 117.01,
+      "error_kinds": []
+    },
+    {
+      "concurrency": 20,
+      "requests_ok": 1604,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.063,
+      "rps": 106.5,
+      "p50_ms": 187.72,
+      "p95_ms": 210.46,
+      "p99_ms": 220.75,
+      "max_ms": 234.06,
+      "error_kinds": []
+    },
+    {
+      "concurrency": 50,
+      "requests_ok": 1592,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.212,
+      "rps": 104.7,
+      "p50_ms": 471.37,
+      "p95_ms": 575.55,
+      "p99_ms": 630.23,
+      "max_ms": 759.73,
+      "error_kinds": []
+    },
+    {
+      "concurrency": 100,
+      "requests_ok": 1616,
+      "requests_error": 0,
+      "error_rate": 0.0,
+      "duration_s": 15.406,
+      "rps": 104.9,
+      "p50_ms": 920.76,
+      "p95_ms": 1136.81,
+      "p99_ms": 1478.35,
+      "max_ms": 1572.06,
+      "error_kinds": []
+    }
+  ],
+  "knee": {
+    "knee_concurrency": 5,
+    "p99_before_ms": 7.56,
+    "p99_after_ms": 51.59,
+    "ratio": 6.82,
+    "rule": "p99 >= 2.0x previous level"
+  }
+}
