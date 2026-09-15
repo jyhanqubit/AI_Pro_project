@@ -1,0 +1,119 @@
+{
+  "run_id": "run_v2-07freetier_20260915T122423Z",
+  "artifact_id": "reports/v2/serving/free_tier_emulation_before.json",
+  "mode": "historical_replay",
+  "claim_status": "measured",
+  "freshness": "2026-09-15T12:24:23.884362+00:00",
+  "emulation": {
+    "cpu_share": 0.1,
+    "cores": 1,
+    "method": "taskset -c 0 + cpulimit-style SIGSTOP/SIGCONT duty cycle (100 ms period)",
+    "omp_num_threads": 1,
+    "workers": 1,
+    "target": "Render free web service: 0.1 CPU, 512 MB, single instance",
+    "not_reproduced": [
+      "network RTT from the user's region to Render (sandbox egress policy blocked the live URL)",
+      "cold start after spin-down (~30-60 s on Render)",
+      "noisy neighbours on the shared host"
+    ]
+  },
+  "first_call_ms": 33343.0,
+  "endpoints": [
+    {
+      "path": "/v1/health",
+      "n_requests": 40,
+      "p50_ms": 0.9,
+      "p95_ms": 96.2,
+      "p99_ms": 96.9,
+      "payload_bytes": 140,
+      "records": null,
+      "ms_per_record": null,
+      "records_per_s_sequential": null,
+      "endpoint": "health"
+    },
+    {
+      "path": "/v1/forecasts",
+      "n_requests": 40,
+      "p50_ms": 1.4,
+      "p95_ms": 97.8,
+      "p99_ms": 102.1,
+      "payload_bytes": 1086,
+      "records": 3,
+      "ms_per_record": 0.483,
+      "records_per_s_sequential": 2070.0,
+      "endpoint": "forecasts"
+    },
+    {
+      "path": "/v2/model/forecast?top=10",
+      "n_requests": 40,
+      "p50_ms": 100.0,
+      "p95_ms": 104.1,
+      "p99_ms": 104.2,
+      "payload_bytes": 1787,
+      "records": 136,
+      "ms_per_record": 0.736,
+      "records_per_s_sequential": 1360.0,
+      "endpoint": "model_forecast_top10"
+    },
+    {
+      "path": "/v2/model/forecast?top=200",
+      "n_requests": 40,
+      "p50_ms": 100.1,
+      "p95_ms": 104.4,
+      "p99_ms": 202.4,
+      "payload_bytes": 12965,
+      "records": 136,
+      "ms_per_record": 0.736,
+      "records_per_s_sequential": 1359.0,
+      "endpoint": "model_forecast_top200"
+    },
+    {
+      "path": "/v2/operator/statistics",
+      "n_requests": 40,
+      "p50_ms": 97.0,
+      "p95_ms": 100.5,
+      "p99_ms": 195.9,
+      "payload_bytes": 13953,
+      "records": 45,
+      "ms_per_record": 2.156,
+      "records_per_s_sequential": 464.0,
+      "endpoint": "operator_statistics"
+    }
+  ],
+  "levels": [
+    {
+      "concurrency": 1,
+      "p50_ms": 100.03,
+      "p95_ms": 103.44,
+      "p99_ms": 104.01,
+      "rps": 10.0,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 2,
+      "p50_ms": 103.55,
+      "p95_ms": 201.26,
+      "p99_ms": 293.32,
+      "rps": 15.1,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 5,
+      "p50_ms": 293.11,
+      "p95_ms": 397.87,
+      "p99_ms": 401.78,
+      "rps": 20.5,
+      "error_rate": 0.0
+    },
+    {
+      "concurrency": 10,
+      "p50_ms": 401.06,
+      "p95_ms": 599.04,
+      "p99_ms": 701.19,
+      "rps": 25.5,
+      "error_rate": 0.0
+    }
+  ],
+  "rss_mb_after": 219.0,
+  "note": "Baseline run before the two serving changes (lazy model load, per-request feature-matrix build); kept so the improvement in free_tier_emulation.json is comparable."
+}

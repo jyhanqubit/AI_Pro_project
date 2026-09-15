@@ -182,3 +182,6 @@ v2-spark-bench:  ## EXTRA: pandas vs PySpark shuffle-cost benchmark (needs data/
 
 v2-abc-plot:  ## EXTRA: forest plot of the A/B/C ablation from rolling_origin_ablation.json; writes reports/v2/llm_value/abc_forest.png
 	python -m scripts.abc_experiment_plot
+
+v2-free-tier-probe:  ## EXTRA: serving API under an emulated 0.1-CPU free tier (spawns its own server); writes reports/v2/serving/free_tier_emulation.*
+	python -m scripts.free_tier_probe

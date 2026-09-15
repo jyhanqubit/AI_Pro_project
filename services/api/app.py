@@ -8,7 +8,10 @@ fabricated success (sections 12, 22).
 
 from __future__ import annotations
 
+import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Annotated
 
@@ -42,13 +45,13 @@ from .schemas import (
     ReplayState,
     RevenueRequest,
     RiderAskRequest,
-    TripPlanRequest,
     ScenarioRequest,
     ScenarioResponse,
     ScenarioZone,
     SetCutoffRequest,
     StationStateOut,
     TraceStep,
+    TripPlanRequest,
 )
 
 EngineDep = Annotated[ReplayEngine, Depends(get_engine)]
@@ -107,11 +110,25 @@ def _trace_step(d: Driver) -> TraceStep:
     )
 
 
+@asynccontextmanager
+async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+    # Eager model load so the first user request does not pay for it (Demo Mode without the
+    # bundle just logs and keeps serving; the endpoint still answers 503 by itself).
+    from .model_serving import warm_up
+
+    if not warm_up():
+        logging.getLogger(__name__).warning(
+            "promoted model bundle not loaded at startup; /v2/model/forecast will answer 503"
+        )
+    yield
+
+
 def create_app() -> FastAPI:
     app = FastAPI(
         title="ShockFlow AI API",
         version="0.1.0",  # v0 milestone (Phases 00-08)
         summary="Event-aware demand forecasting & rebalancing decision support (Phase 08).",
+        lifespan=_lifespan,
     )
 
     # CORS. Local/LAN dev serves the Next.js UI on :3000 (localhost / 127.0.0.1 / the PC's LAN IP).
@@ -435,8 +452,12 @@ def create_app() -> FastAPI:
             origin, destination = resolve_endpoints(body.query, _alias_index())
             answer_mode = "rule_based"  # LLM parser slots in here when a key is configured
         if not origin or not destination:
-            return {"feasible": False, "reason": "unresolved_endpoints", "answer_mode": answer_mode,
-                    "answer": "출발지와 목적지를 모두 알려주세요. 예: '시청에서 뉴포트 가고 싶어'."}
+            return {
+                "feasible": False,
+                "reason": "unresolved_endpoints",
+                "answer_mode": answer_mode,
+                "answer": "출발지와 목적지를 모두 알려주세요. 예: '시청에서 뉴포트 가고 싶어'.",
+            }
         return {**plan_trip(engine, engine.cutoff, origin, destination), "answer_mode": answer_mode}
 
     @app.post("/v2/pricing/quote")

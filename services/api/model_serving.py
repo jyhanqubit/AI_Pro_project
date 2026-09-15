@@ -30,8 +30,22 @@ class ServingUnavailable(RuntimeError):
     """Raised when the model or its serving features cannot be loaded (route answers 503)."""
 
 
+def _feature_matrix(model: PromotedModel, zones: list[dict[str, Any]]) -> np.ndarray:
+    """Rows = zones, columns = the model's feature order; missing values become NaN."""
+    return np.array(
+        [
+            [
+                np.nan if z["features"].get(name) is None else float(z["features"][name])
+                for name in model.features
+            ]
+            for z in zones
+        ],
+        dtype=float,
+    )
+
+
 @lru_cache(maxsize=1)
-def _load() -> tuple[PromotedModel, dict[str, Any], dict[str, Any]]:
+def _load() -> tuple[PromotedModel, dict[str, Any], dict[str, Any], np.ndarray]:
     try:
         model = load_promoted_model(_HOLDOUT_DIR)
     except PromotedModelUnavailable as exc:
@@ -48,24 +62,30 @@ def _load() -> tuple[PromotedModel, dict[str, Any], dict[str, Any]]:
     holdout: dict[str, Any] = {}
     if _REPORT_PATH.exists():
         holdout = json.loads(_REPORT_PATH.read_text(encoding="utf-8")).get("aggregate", {})
-    return model, snapshot, holdout
+    # The snapshot is fixed for the life of the process, so its feature matrix is too. Building it
+    # per request was ~0.6 ms of the ~2.8 ms the endpoint spends on the model (free-tier probe);
+    # `predict` itself still runs on every request.
+    return model, snapshot, holdout, _feature_matrix(model, snapshot["zones"])
+
+
+def warm_up() -> bool:
+    """Load the bundle eagerly (API startup). Returns False, without raising, when unavailable.
+
+    Loading lazily on the first request cost that caller ~1.5 s locally and ~33 s under a
+    0.1-CPU share; paying it at startup keeps it off any user's request.
+    """
+    try:
+        _load()
+    except ServingUnavailable:
+        return False
+    return True
 
 
 def model_forecast(top: int = 20) -> dict[str, Any]:
     """Next-hour departures prediction per H3 zone from the promoted measured model."""
-    model, snapshot, holdout = _load()
+    model, snapshot, holdout, matrix = _load()
     zones = snapshot["zones"]
 
-    matrix = np.array(
-        [
-            [
-                np.nan if z["features"].get(name) is None else float(z["features"][name])
-                for name in model.features
-            ]
-            for z in zones
-        ],
-        dtype=float,
-    )
     preds = model.estimator.predict(matrix)
 
     ranked = sorted(
