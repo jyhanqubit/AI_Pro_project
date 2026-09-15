@@ -13,11 +13,22 @@ services:
     runtime: python
     plan: free
     buildCommand: pip install -e ".[api,ml]"
+    # Single worker on purpose. The replay cutoff lives in a per-process singleton
+    # (services/api/replay.py get_engine) and the UI reads /v1/forecasts etc. without a
+    # cutoff, so with N workers a set-cutoff would land on one process and the next read on
+    # another. A warm worker is ~217 MB; four would exceed the 512 MB free instance, and the
+    # 0.1-CPU free tier gains nothing from extra processes anyway. To scale out, first move the
+    # cutoff to shared state (or pass it on every call), then add --workers on a paid instance.
     startCommand: uvicorn services.api.app:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /v1/health
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
+      # sklearn predict spawns OpenMP threads per request; on a shared-CPU instance they
+      # contend with each other. Pinning to 1 raised saturated throughput 105 -> 138 req/s
+      # in the load test (reports/v2/serving/load_test_configs.json).
+      - key: OMP_NUM_THREADS
+        value: "1"
       - key: SHOCKFLOW_MODE
         value: demo_fixture
       - key: ENABLE_GBFS_LIVE
