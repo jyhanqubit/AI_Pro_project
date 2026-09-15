@@ -31,7 +31,7 @@ import argparse
 import json
 import time
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -63,6 +63,45 @@ def timed(fn) -> float:
     return round(time.perf_counter() - t0, 2)
 
 
+def build_parquet(raw_dir: Path = Path("data/raw/citibike")) -> None:
+    """Convert the monthly NYC trip zips to a 3-column Parquet the benchmark reads.
+
+    Only the three columns the two workloads need are kept, so the Parquet stays small
+    relative to the raw archives. Idempotent: skips if the output already has parts.
+    """
+    import glob
+    import zipfile
+
+    import pandas as pd
+
+    if any(DATA_DIR.glob("*.parquet")):
+        return
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    cols = ["started_at", "start_station_id", "end_station_id"]
+    part = 0
+    archives = sorted(glob.glob(str(raw_dir / "2026*-citibike-tripdata.zip")))
+    if not archives:
+        raise SystemExit(
+            f"no NYC trip archives in {raw_dir} — run `make download-citibike "
+            'MONTHS="202601 202602 202603 202604 202605 202606 202607"` first'
+        )
+    for f in archives:
+        z = zipfile.ZipFile(f)
+        for n in z.namelist():
+            if n.lower().endswith(".csv") and "__MACOSX" not in n:
+                with z.open(n) as fh:
+                    for chunk in pd.read_csv(
+                        fh,
+                        usecols=cols,
+                        dtype={"start_station_id": "string", "end_station_id": "string"},
+                        chunksize=2_000_000,
+                    ):
+                        chunk["started_at"] = pd.to_datetime(chunk["started_at"], format="mixed")
+                        chunk.to_parquet(DATA_DIR / f"part-{part:04d}.parquet", index=False)
+                        part += 1
+    print(f"built {part} Parquet parts in {DATA_DIR}")
+
+
 # ----------------------------------------------------------------------------- pandas
 def run_pandas() -> list[dict[str, Any]]:
     import pandas as pd
@@ -71,9 +110,7 @@ def run_pandas() -> list[dict[str, Any]]:
 
     def _groupby() -> None:
         df = pd.read_parquet(DATA_DIR)
-        agg = df.groupby(
-            ["start_station_id", df["started_at"].dt.floor("h")], observed=True
-        ).size()
+        agg = df.groupby(["start_station_id", df["started_at"].dt.floor("h")], observed=True).size()
         assert len(agg) > 0
 
     def _join() -> None:
@@ -123,7 +160,9 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
         )
         spark.sparkContext.setLogLevel("WARN")
 
-        def _measure(variant: str, workload: str, fn) -> None:
+        # Default-arg binding pins the loop variables to each iteration's values, so the
+        # closures stay correct if they ever outlive the loop body (ruff B023).
+        def _measure(variant: str, workload: str, fn, n_part: int = n_part) -> None:
             r0, w0 = shuffle_totals()
             secs = timed(fn)
             r1, w1 = shuffle_totals()
@@ -143,7 +182,7 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
         def _noop(df) -> None:
             df.write.format("noop").mode("overwrite").save()
 
-        def _trips():
+        def _trips(spark=spark):
             return spark.read.parquet(str(DATA_DIR))
 
         def _dim(df):
@@ -156,7 +195,8 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
 
         # (b) default partitioning ------------------------------------------------
         _measure(
-            "default", "groupby",
+            "default",
+            "groupby",
             lambda: _noop(
                 _trips()
                 .groupBy("start_station_id", F.date_trunc("hour", "started_at").alias("hour"))
@@ -164,7 +204,8 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
             ),
         )
         _measure(
-            "default", "join",
+            "default",
+            "join",
             lambda: _noop(
                 _trips().join(
                     _dim(_trips()),
@@ -176,8 +217,9 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
 
         # (c) pre-repartitioned by the key (repartition time included) -----------
         _measure(
-            "pre_repartitioned", "groupby",
-            lambda: _noop(
+            "pre_repartitioned",
+            "groupby",
+            lambda n_part=n_part: _noop(
                 _trips()
                 .repartition(n_part, "start_station_id")
                 .groupBy("start_station_id", F.date_trunc("hour", "started_at").alias("hour"))
@@ -185,8 +227,9 @@ def run_spark(cores: int, partition_counts: list[int]) -> list[dict[str, Any]]:
             ),
         )
         _measure(
-            "pre_repartitioned", "join",
-            lambda: _noop(
+            "pre_repartitioned",
+            "join",
+            lambda n_part=n_part: _noop(
                 _trips()
                 .repartition(n_part, "end_station_id")
                 .join(
@@ -248,20 +291,18 @@ def main() -> None:
     parser.add_argument("--partitions", type=int, nargs="+", default=[8, 32, 200])
     args = parser.parse_args()
 
-    if not DATA_DIR.exists():
-        raise SystemExit(
-            f"{DATA_DIR} missing — build it from data/raw/citibike/*.zip first "
-            "(see docs: make download-citibike, then the conversion snippet in this file's history)"
-        )
+    build_parquet()  # idempotent: builds the 3-column Parquet from the raw zips if absent
 
     rows = run_pandas() + run_spark(args.cores, args.partitions)
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
+    run_id = "run_v2-extra-spark_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     payload = {
+        "run_id": run_id,  # provenance: required by the V2 envelope/manifest gates
         "artifact_id": "reports/v2/spark/shuffle_bench.json",
         "mode": "historical_replay",
         "claim_status": "measured",
-        "freshness": datetime.now(timezone.utc).isoformat(),
+        "freshness": datetime.now(UTC).isoformat(),
         "input": {
             "rows": 24_914_442,
             "source": "NYC Citi Bike 2026-01..07 monthly archives -> Parquet (3 columns)",
@@ -281,7 +322,15 @@ def main() -> None:
     (OUT_DIR / "shuffle_bench.json").write_text(
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
-    header = ["engine", "variant", "workload", "partitions", "seconds", "shuffle_read_mb", "shuffle_write_mb"]
+    header = [
+        "engine",
+        "variant",
+        "workload",
+        "partitions",
+        "seconds",
+        "shuffle_read_mb",
+        "shuffle_write_mb",
+    ]
     lines = [",".join(header)] + [
         ",".join("" if r[h] is None else str(r[h]) for h in header) for r in rows
     ]

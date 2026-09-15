@@ -1,4 +1,5 @@
 {
+  "run_id": "run_v2-07loadcfg_20260915T101000Z",
   "artifact_id": "reports/v2/serving/load_test_configs.json",
   "mode": "historical_replay",
   "claim_status": "measured",

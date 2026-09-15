@@ -29,7 +29,7 @@ import json
 import os
 import platform
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -163,7 +163,11 @@ async def main() -> None:
     parser.add_argument("--duration", type=float, default=15.0, help="seconds measured per level")
     parser.add_argument("--warmup", type=float, default=3.0, help="warmup seconds per level")
     parser.add_argument("--out-dir", type=Path, default=OUT_DIR)
-    parser.add_argument("--no-keepalive", action="store_true", help="reconnect per request (fair worker balancing for multi-worker servers)")
+    parser.add_argument(
+        "--no-keepalive",
+        action="store_true",
+        help="reconnect per request (fair worker balancing for multi-worker servers)",
+    )
     args = parser.parse_args()
 
     # Global warmup: absorb the one-off joblib/snapshot load before level 1.
@@ -174,7 +178,9 @@ async def main() -> None:
 
     rows = []
     for users in args.levels:
-        row = await run_level(args.url, users, args.duration, args.warmup, keepalive=not args.no_keepalive)
+        row = await run_level(
+            args.url, users, args.duration, args.warmup, keepalive=not args.no_keepalive
+        )
         rows.append(row)
         print(
             f"c={row['concurrency']:>4}  p50={row['p50_ms']:>7.2f}ms  p95={row['p95_ms']:>7.2f}ms  "
@@ -182,11 +188,13 @@ async def main() -> None:
         )
 
     knee = find_knee(rows)
+    run_id = "run_v2-07load_" + datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     payload = {
+        "run_id": run_id,  # provenance: required by the V2 envelope/manifest gates
         "artifact_id": "reports/v2/serving/load_test.json",
         "mode": "historical_replay",
         "claim_status": "measured",
-        "freshness": datetime.now(timezone.utc).isoformat(),
+        "freshness": datetime.now(UTC).isoformat(),
         "endpoint": args.url,
         "method": (
             "closed-loop: each user coroutine issues requests back-to-back; "
@@ -214,12 +222,18 @@ async def main() -> None:
         json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     header = [
-        "concurrency", "requests_ok", "requests_error", "error_rate",
-        "duration_s", "rps", "p50_ms", "p95_ms", "p99_ms", "max_ms",
+        "concurrency",
+        "requests_ok",
+        "requests_error",
+        "error_rate",
+        "duration_s",
+        "rps",
+        "p50_ms",
+        "p95_ms",
+        "p99_ms",
+        "max_ms",
     ]
-    csv_lines = [",".join(header)] + [
-        ",".join(str(r[h]) for h in header) for r in rows
-    ]
+    csv_lines = [",".join(header)] + [",".join(str(r[h]) for h in header) for r in rows]
     (args.out_dir / "load_test.csv").write_text("\n".join(csv_lines) + "\n", encoding="utf-8")
     plot(rows, args.out_dir / "load_test_p99.png")
     print(f"knee: {knee}")

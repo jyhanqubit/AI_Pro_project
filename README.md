@@ -9,19 +9,173 @@
 
 ---
 
-이벤트를 인지하는 도시 모빌리티 수요 예측 및 차량 재배치 의사결정 지원 시스템입니다.
+## 한 줄 요약
 
-ShockFlow AI는 시간 정보가 붙은 이벤트에서 불규칙한 수요 충격을 감지해 추적 가능한 graph feature로
-바꾸고, 이 feature가 예측에 준 model-attributed 영향(입증된 인과는 아닙니다)을 정량화한 뒤, 그
-결과로 실행 가능한 재배치 계획을 만듭니다.
+시간 정보가 붙은 도시 이벤트를 feature로 만들어, 정형 데이터만으로는 놓치는 공유 자전거 수요
+급변을 예측하고, 그 예측을 재배치와 요금 결정으로 연결한 end-to-end 시스템입니다. Citi Bike 2,491만
+건과 NYC 허가 이벤트 63,070건으로 백테스트했고, 측정된 결과는 모두 `reports/`에 artifact로 커밋해
+두었습니다.
 
 ```text
-Citi Bike 수요 이력
-+ 시간 정보가 붙은 뉴스 / 이벤트 입력
-+ 현재 station 재고
+Citi Bike 수요 이력 + 시간 정보가 붙은 뉴스 / 이벤트 + 현재 station 재고
 → LLM 이벤트 추출 → Neo4j 이벤트 graph → as-of numeric graph feature
 → H3 Zone-시간 수요 예측 → 설명 및 시나리오 비교 → 실행 가능한 재배치 계획
 ```
+
+## 문제 정의
+
+공유 자전거 수요는 출퇴근 · 요일 · 날씨 같은 정형 패턴을 대부분 따르지만, 축제 · 도로 통제 · 대형
+행사처럼 특정 시각 · 특정 지역에 몰리는 이벤트가 생기면 그 구간에서 크게 벗어납니다. 수요 이력과
+캘린더 feature만 쓰는 모델은 이런 급변을 사후에야 따라잡습니다. 부족(자전거가 없어 못 탐)은
+초과(빈 거치대)보다 운영상 더 아픈데, 대칭 손실로 학습한 모델은 둘을 똑같이 취급합니다. 이
+프로젝트는 (1) 이벤트를 feature로 넣으면 예측이 실제로 좋아지는지를 누수 없이 검증하고, (2)
+부족을 더 무겁게 다루도록 손실함수를 바꾸며, (3) 예측을 제약을 만족하는 재배치 계획으로 잇는 것을
+목표로 합니다.
+
+## 데이터
+
+| 소스 | 규모 | 용도 |
+|---|---|---|
+| Citi Bike 트립 이력 (NYC, 2026-01~07) | **24,914,442건** | 수요 label (H3 zone × local hour 집계) |
+| NYC 허가 이벤트 (permitted events) | **63,070건** | 이벤트 feature (시각 · 위치 · 유형) |
+| GDELT 뉴스 → LLM 구조화 이벤트 | 23건 | LLM 뉴스 feature (유형 · 심각도 · 영향 방향) |
+| NOAA 날씨 (Central Park) | 일 단위 | 날씨 feature (도시 전역 shock) |
+
+트립 원본(약 3GB)은 저장소에 넣지 않습니다(§7.1). `make download-citibike`로 내려받아 재현합니다.
+승격 모델은 leakage 검증이 끝난 Citi Bike Jersey City 패널(2026-01~07, 226,953행 / 219 zone)로
+학습했습니다.
+
+## 핵심 결과
+
+숫자마다 측정 조건을 함께 적었습니다. 안 된 것(뉴스 피처의 조건부 실패, 철회한 permit lift)도
+그대로 둡니다.
+
+1. **LLM 뉴스 피처는 이벤트가 국지적일 때만 예측을 개선합니다 — 조건부 결과.** 6월 홀드아웃(이벤트
+   평균 2.0개 borough)에서 WAPE 상대 **+1.24% 개선, 95% CI [0.83, 1.64]**(0 제외, 시드 10개
+   앙상블). 이벤트가 도시 전역일수록 기여가 단조 감소해 부호가 바뀝니다(평균 4.2개 −0.96 → 3.7개
+   −0.86 → 2.3개 −0.76 → 2.0개 +1.24). 원인: 전역 이벤트는 feature를 모든 zone에서 동시에 켜
+   공간 대비를 못 주고 캘린더 feature와 중복됩니다. (`reports/v2/llm_value/news_feature_conditions.json`)
+2. **허가 이벤트 피처(permit)의 단일 분할 +2.69% 개선은 재현되지 않아 철회했습니다.** 월별 rolling
+   origin으로 창마다 재학습하면 유의한 양수가 사라집니다(inconclusive). 과장하지 않기 위해 원본
+   artifact와 재현 실패를 나란히 남겼습니다. (`reports/v2/llm_value/rolling_origin_ablation.json`)
+3. **비대칭 비용 최적화 — 0.667분위(뉴스벤더 q\*) 회귀로 품절 26%, 운영비용(OCS) 3.4% 감소.** 3개
+   홀드아웃 창 전부에서 q=0.667이 최적이며, 대가로 WAPE는 8.4% 나빠집니다(트레이드오프를 함께
+   보고). 예측을 실행 전에 artifact에 기록했습니다. (`reports/v2/holdout/quantile_cost.json`)
+4. **MILP · MPC 재배치로 부족 73% 감소(무대응 대비), 총비용 36% 감소(greedy 대비) — 시뮬레이션.**
+   ledger total_cost: 무대응 1127 / greedy 1155 / MILP 1087 / MPC 740 / Oracle 719. MPC가 best
+   feasible(regret 21.6). 금액은 assumption에 조건부라 `simulated` 라벨입니다. (`reports/v2/mpc/`)
+
+## 검증 방법
+
+- **백테스트(시간 분할):** 1~5월 학습, 6월 홀드아웃 평가. random split은 금지하고 rolling-origin /
+  expanding-window만 씁니다(§5.4). 승격 모델은 3-window rolling-origin에서 WAPE 0.4974 ± 0.0074,
+  MASE 0.8708 ± 0.0094로 seasonal naive(WAPE 0.65~0.69)를 세 창 모두 이깁니다.
+- **누수 차단:** 이벤트 feature는 `available_at = max(published_at, first_seen_at) ≤ forecast_cutoff`인
+  것만 씁니다(point-in-time join). 14:01에 공개된 기사가 14:00 예측에 0 기여인지 검사하는 회귀
+  테스트가 있습니다.
+- **피처 기여 분리(ablation):** B0 seasonal naive → B1 수요+캘린더 → B2 +기사 수 → B3 +LLM 이벤트
+  → B4 +graph feature. 같은 cutoff · 같은 split로 arm만 바꿉니다.
+- **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
+  (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
+- **테스트:** `make test` 기준 494 passed / 6 skipped(torch 없는 환경에서 v1 recsys 2개 모듈 제외).
+
+## 서빙
+
+승격 모델을 API로 서빙합니다. `GET /v2/model/forecast`가 요청마다 `estimator.predict`를 실제로 실행해
+H3 zone별 next-hour 예측을 반환합니다(미리 계산한 답이 아님). 로컬 컨테이너(uvicorn single worker)에서
+warm-up 후 측정한 단일 요청 Latency는 **p50 4.2 / p95 5.7 / p99 6.5 ms**이고, 순수 추론(`predict`,
+136 zone)은 p50 1.9 / p95 2.2 ms입니다.
+
+한 자릿수 ms인 이유: 요청 시점에 피처 패널을 새로 집계하면 실측 **83초 / 최대 2.1 GB**(JC 2026-01~07,
+226,953행 → 136 zone 스냅숏)가 드는데, 이 집계를 오프라인에서 미리 돌려 스냅숏을 커밋해 두고 요청
+시점에는 행렬 구성과 `predict`만 하기 때문입니다.
+
+**부하 테스트(1단계) — p99가 어디서 꺾이는지.** asyncio closed-loop으로 동시 사용자를 1→100까지
+올리며 측정했습니다(단계마다 워밍업으로 첫 호출 지연 제외). 서버와 클라이언트가 같은 4-CPU 머신이라
+**네트워크 왕복 시간은 빠져 있고**, 부하 생성기가 서버와 CPU를 나눠 씁니다.
+
+| 동시 사용자 | p50 | p95 | p99 | RPS | 에러율 |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 3.7 ms | 4.2 ms | 7.6 ms | 262 | 0 |
+| 5 | 44.0 ms | 48.4 ms | 51.6 ms | 113 | 0 |
+| 10 | 93.1 ms | 103.6 ms | 108.8 ms | 107 | 0 |
+| 20 | 187.7 ms | 210.5 ms | 220.8 ms | 107 | 0 |
+| 50 | 471.4 ms | 575.6 ms | 630.2 ms | 105 | 0 |
+| 100 | 920.8 ms | 1136.8 ms | 1478.4 ms | 105 | 0 |
+
+기본 `make api` 구성은 **동시 5명에서 p99가 7.6 → 51.6 ms로 꺾이고**(무릎), 처리량이 ~105 RPS로
+포화합니다. 원인과 개선을 측정으로 분리했습니다.
+
+- sklearn `predict`가 요청마다 OpenMP 스레드를 띄워 4코어를 초과 구독합니다(단독 262 RPS → 동시
+  5명 113 RPS). `OMP_NUM_THREADS=1`로 포화 처리량 105 → 138 RPS.
+- 남은 병목은 단일 프로세스(GIL). `uvicorn --workers 4`로 포화 처리량 ~700 RPS, p99@100 1478 →
+  364 ms. (멀티워커는 keep-alive가 워커에 고정돼 분배가 치우치므로 요청마다 재연결해 측정)
+
+![부하 테스트: 구성별 p99와 처리량](reports/v2/serving/load_test_configs.png)
+
+재현: `make api`를 띄운 뒤 `make v2-loadtest` (`reports/v2/serving/load_test.{csv,json}`).
+
+## 대용량 처리
+
+분산 처리에서 shuffle 비용이 어디서 나오는지 직접 측정했습니다(2단계). 2,491만 건 트립을 3-컬럼
+Parquet으로 만든 뒤, 같은 두 workload(역-시간 groupBy, 트립↔거점 dimension join)를 세 방식으로
+돌렸습니다. Spark는 local 모드(1 JVM, 4코어), shuffle read/write는 Spark UI REST API에서 쿼리별로
+읽었습니다. join은 `autoBroadcastJoinThreshold=-1`로 강제 shuffle시켰습니다(2K행 dimension은 운영에선
+broadcast).
+
+| workload | pandas | Spark 기본 (p=32) | Spark 사전 repartition (p=32) | shuffle write |
+|---|---:|---:|---:|---:|
+| groupBy (역×시간) | 7.3 s | **6.1 s** | 7.7 s | 기본 98 MB / repartition 276 MB |
+| join (end_station) | 11.8 s | 9.3 s | **8.0 s** | 두 방식 모두 ~355 MB |
+
+파티션 수 8 / 32 / 200 비교에서 드러난 것:
+
+- 파티션 8개는 4코어를 다 못 채워 groupBy가 11.6 s로 느립니다. 32와 200은 큰 차이가 없습니다.
+- **groupBy 앞에서 미리 repartition하면 shuffle 바이트가 약 3배**(98 → 276 MB)로 늘고 더 느립니다.
+  map-side 부분 집계(combiner)를 건너뛰고 원시 행을 통째로 셔플하기 때문입니다. 기본 파티셔닝이
+  불균형할 때(p=8)만 이득이 있습니다.
+- join은 어느 방식이든 셔플 바이트가 같지만(exchange 재사용), 미리 해시해 두면 약 10% 빠릅니다.
+  dimension을 broadcast하면 셔플 자체가 사라집니다.
+- 단일 머신 · 4코어라 groupBy에서 pandas와 Spark 차이는 크지 않습니다(pandas 시간은 Parquet 스캔
+  I/O가 지배해 page-cache 상태에 따라 7~11 s로 흔들립니다). 이 실험의 요점은 절대 속도가 아니라
+  **파티션 설계와 셔플 바이트가 분산 처리 비용을 어떻게 바꾸는지**입니다.
+
+![Spark shuffle 벤치마크](reports/v2/spark/shuffle_bench.png)
+
+재현: `make v2-spark-bench` (`reports/v2/spark/shuffle_bench.{csv,json}`).
+
+## 재현 방법
+
+```bash
+git clone https://github.com/jyhanqubit/AI_Pro_project && cd AI_Pro_project
+make install                                # Python 가상환경 + 패키지
+make api                                    # 백엔드: http://127.0.0.1:8000
+cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000 (새 터미널)
+```
+
+수치 재현(원본 트립 필요):
+
+```bash
+make download-citibike MONTHS="202601 202602 202603 202604 202605 202606 202607"
+make v2-holdout            # 승격 모델 + rolling H3 multi-holdout (WAPE / MASE)
+make v2-quantile-cost      # 비대칭 비용 분위수 sweep
+make v2-news-conditions    # LLM 뉴스 피처 조건부 결과
+make v2-mpc                # 재배치 정책 비교 (simulated)
+make v2-loadtest           # 서빙 부하 테스트 (make api 실행 중일 때)
+make v2-spark-bench        # PySpark shuffle 벤치마크
+```
+
+가벼운 항목은 트립 없이 바로 재현할 수 있습니다(아래 [빠른 확인 안내](#-빠른-확인-안내)).
+
+## 기술 스택
+
+- **예측/최적화:** Python 3.11, scikit-learn(HistGradientBoosting), pandas, numpy, scipy(MILP: HiGHS)
+- **분산 처리:** PySpark(local), Parquet
+- **서빙:** FastAPI, uvicorn, Pydantic v2
+- **데이터/그래프:** H3, Neo4j(옵션), FAISS, SQLite
+- **LLM:** provider 인터페이스(Anthropic / OpenAI / mock), GraphRAG, RAGAS
+- **프런트:** Next.js, TypeScript
+- **연구용(완성 조건 아님):** tabular Q-learning · PPO, QUBO/QAOA(Qiskit)
 
 개발 전반의 운영 계약은 [CLAUDE.md](CLAUDE.md)에 정리했습니다.
 
@@ -74,7 +228,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | **LLM 뉴스 피처의 조건부 기여**: 이벤트가 지역 특정적일수록 개선 — 평균 borough 4.2개 −0.96 → 2.0개 **+1.24 (CI [0.83, 1.64])**, 단조 관계 | `make v2-news-conditions` | `reports/v2/llm_value/news_feature_conditions.json` |
 | 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
-| 전체 테스트 | `make test` | 484 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
+| 전체 테스트 | `make test` | 494 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
 > Note. 화면의 `7/12` 수치는 라벨을 붙인 데모 리플레이(휴리스틱)이고, WAPE와 방향별 lift, 재배치는
 > 실데이터 측정치입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로, 답변은
@@ -516,12 +670,13 @@ make v2-rl                # (research 전용) tabular Q-learning + PPO 재배치
   기존 artifact는 지우지 않고 남겨 두었고, 재현 실패를 나란히 기록했습니다:
   `reports/v2/llm_value/rolling_origin_ablation.json`. 이 단일 분할 위에 세운 density curve와
   quality ablation도 같은 조건부라는 점을 함께 밝힙니다.
-- 개선 없음도 그대로 보고 (대표 발견) — 이 데이터에서 LLM-from-news feature는 수요 예측을 개선하지
-  않습니다. 이 부정적 결론은 rolling origin에서도 유지됐습니다(측정 가능한 두 창 모두 음수,
-  `consistently_negative`). LLM Feature Value metric + CI로 보고하고 root cause까지 규명했습니다
-  (source가 dense + precise-time + precise-location + forward-looking이어야 하는데 news는 하나도
-  만족하지 못함). simulated synthetic ceiling(+10.43%)으로 "방법 자체는 조건을 만족하면 동작"함을
-  보였습니다. 전체 정리: [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
+- 조건부 결과도 그대로 보고 (대표 발견) — LLM-from-news feature는 **이벤트의 공간 해상도에 따라
+  방향이 갈립니다.** 시드 10개 앙상블로 이벤트당 평균 borough 수로 정렬하면 gain이 단조 상승해,
+  국지 이벤트가 많은 6월 창에서 **+1.24% (CI [0.83, 1.64], 유의)**, 도시 전역 이벤트가 많은 창에서는
+  음수가 됩니다. "개선이 되는 경우와 그 이유(공간 대비를 주는 국지 이벤트), 안 되는 경우와 그
+  이유(전역 이벤트는 캘린더 feature와 중복)"를 함께 보고합니다. 단일 시드는 난수가 지배하므로
+  앙상블로만 측정했습니다. 전체 정리:
+  [docs/v2/V2_WHY_LLM_FEATURES.md](docs/v2/V2_WHY_LLM_FEATURES.md).
 - Simulated는 measured가 아님 — 모든 금액(ledger, MPC, pricing)은 assumption에 조건부라 `simulated`로
   라벨을 붙였습니다. 단위 수량만 measured입니다.
 - Research 전용, 완성 조건 아님 — RL(tabular Q-learning + PPO)과 QAOA. RL은 같은 ledger로 채점하면

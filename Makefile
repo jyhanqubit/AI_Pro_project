@@ -173,3 +173,9 @@ v2-rl:  ## RESEARCH: tabular Q-learning + PPO rebalancing vs No-Action/Greedy/MI
 
 v2-final:  ## V2-09: final audit — envelope honesty + completion-artifact + traceability gates -> claim_matrix.json
 	python -m scripts.v2_final_audit
+
+v2-loadtest:  ## EXTRA: concurrency load test of the serving endpoint (needs `make api` running); writes reports/v2/serving/load_test.*
+	python -m scripts.load_test_api
+
+v2-spark-bench:  ## EXTRA: pandas vs PySpark shuffle-cost benchmark (needs data/processed/spark_bench Parquet); writes reports/v2/spark/shuffle_bench.*
+	python -m scripts.spark_shuffle_bench

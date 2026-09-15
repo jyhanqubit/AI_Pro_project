@@ -1,8 +1,9 @@
 {
+  "run_id": "run_v2-extra-spark_20260915T104027Z",
   "artifact_id": "reports/v2/spark/shuffle_bench.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-09-15T10:17:45.021395+00:00",
+  "freshness": "2026-09-15T10:40:27.864289+00:00",
   "input": {
     "rows": 24914442,
     "source": "NYC Citi Bike 2026-01..07 monthly archives -> Parquet (3 columns)",
@@ -18,7 +19,7 @@
       "variant": "single_process",
       "workload": "groupby",
       "partitions": null,
-      "seconds": 11.26,
+      "seconds": 7.31,
       "shuffle_read_mb": null,
       "shuffle_write_mb": null
     },
@@ -27,7 +28,7 @@
       "variant": "single_process",
       "workload": "join",
       "partitions": null,
-      "seconds": 14.76,
+      "seconds": 11.81,
       "shuffle_read_mb": null,
       "shuffle_write_mb": null
     },
@@ -36,7 +37,7 @@
       "variant": "default",
       "workload": "groupby",
       "partitions": 8,
-      "seconds": 13.61,
+      "seconds": 11.58,
       "shuffle_read_mb": 95.7,
       "shuffle_write_mb": 95.7
     },
@@ -45,7 +46,7 @@
       "variant": "default",
       "workload": "join",
       "partitions": 8,
-      "seconds": 10.84,
+      "seconds": 11.74,
       "shuffle_read_mb": 369.3,
       "shuffle_write_mb": 369.3
     },
@@ -54,7 +55,7 @@
       "variant": "pre_repartitioned",
       "workload": "groupby",
       "partitions": 8,
-      "seconds": 7.64,
+      "seconds": 7.49,
       "shuffle_read_mb": 288.7,
       "shuffle_write_mb": 288.7
     },
@@ -63,7 +64,7 @@
       "variant": "pre_repartitioned",
       "workload": "join",
       "partitions": 8,
-      "seconds": 8.14,
+      "seconds": 7.36,
       "shuffle_read_mb": 369.3,
       "shuffle_write_mb": 369.3
     },
@@ -72,7 +73,7 @@
       "variant": "default",
       "workload": "groupby",
       "partitions": 32,
-      "seconds": 6.02,
+      "seconds": 6.07,
       "shuffle_read_mb": 97.7,
       "shuffle_write_mb": 97.7
     },
@@ -81,7 +82,7 @@
       "variant": "default",
       "workload": "join",
       "partitions": 32,
-      "seconds": 8.52,
+      "seconds": 9.28,
       "shuffle_read_mb": 354.7,
       "shuffle_write_mb": 354.7
     },
@@ -90,7 +91,7 @@
       "variant": "pre_repartitioned",
       "workload": "groupby",
       "partitions": 32,
-      "seconds": 6.81,
+      "seconds": 7.69,
       "shuffle_read_mb": 275.9,
       "shuffle_write_mb": 275.9
     },
@@ -99,7 +100,7 @@
       "variant": "pre_repartitioned",
       "workload": "join",
       "partitions": 32,
-      "seconds": 7.62,
+      "seconds": 8.01,
       "shuffle_read_mb": 354.7,
       "shuffle_write_mb": 354.7
     },
@@ -108,7 +109,7 @@
       "variant": "default",
       "workload": "groupby",
       "partitions": 200,
-      "seconds": 6.28,
+      "seconds": 6.4,
       "shuffle_read_mb": 100.3,
       "shuffle_write_mb": 100.3
     },
@@ -117,7 +118,7 @@
       "variant": "default",
       "workload": "join",
       "partitions": 200,
-      "seconds": 8.63,
+      "seconds": 8.64,
       "shuffle_read_mb": 348.2,
       "shuffle_write_mb": 348.2
     },
@@ -126,7 +127,7 @@
       "variant": "pre_repartitioned",
       "workload": "groupby",
       "partitions": 200,
-      "seconds": 7.23,
+      "seconds": 7.02,
       "shuffle_read_mb": 258.8,
       "shuffle_write_mb": 258.8
     },
@@ -135,7 +136,7 @@
       "variant": "pre_repartitioned",
       "workload": "join",
       "partitions": 200,
-      "seconds": 7.77,
+      "seconds": 7.69,
       "shuffle_read_mb": 348.2,
       "shuffle_write_mb": 348.2
     }
