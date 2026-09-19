@@ -1,6 +1,25 @@
 # Project Status
 
-_Last updated: 2026-08-19_
+_Last updated: 2026-09-19_
+
+## 운영 어시스턴트 tool을 MCP 서버로 분리 (2026-09-19)
+
+GraphRAG 운영 어시스턴트가 숫자를 얻던 in-process 함수 호출을 공식 `mcp` SDK 2.x(`MCPServer`) 기반
+서버(`services/mcp/server.py`, stdio 기본, streamable HTTP 옵션)로 분리했습니다. tool 5개:
+`get_graph_context`, `get_operator_statistics`, `get_metric`(REGISTRY 7개를 enum으로),
+`get_model_forecast`, `get_pricing_quotes`(운영자 규칙 override `PricingRules`, 가드레일 상한 유지).
+두 전송이 `services/mcp/core.py`의 같은 함수를 부르고 payload가 동일합니다. cutoff는 모든 tool의
+명시 인자이며, 이 과정에서 `operator_statistics`/`pricing_quotes`가 응답에 `engine.cutoff`를 echo하던
+불일치를 고쳤습니다. 전환은 `COPILOT_TOOL_TRANSPORT`, 실패 시 in-process로 degrade(`tool_transport`).
+
+- 검증: 계약 테스트 58개 + copilot 38개 + MCP 9개 통과. 전체 505 passed / 6 skipped(torch 제외).
+- 전후 비교(`make v2-mcp-compare`): 정확도 20문항 1.0/1.0/1.0, 환각 0, RAGAS faithfulness 1.0,
+  relevancy 0.985 — 두 전송에서 동일(drift 0). MCP 오버헤드 tool당 p50 2.6~4.9 ms, `operator/ask`
+  3.5 → 11.3 ms. OMP 스레드 무제한이면 `get_model_forecast` 오버헤드가 15 ms로 튀어
+  `OMP_NUM_THREADS=1`로 재측정. 서버 RSS 63 → 122 → 233 MB(sklearn lazy load 후).
+- 배포: Render 무료 인스턴스는 메모리 때문에 `inprocess` 기본값 유지.
+- artifact: `reports/v2/copilot/mcp_transport_comparison.{json,png}`.
+
 
 ## 새 measured 결과 (2026-08-19) — 비대칭 비용을 손실함수에 반영
 

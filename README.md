@@ -123,7 +123,7 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
   → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
 - **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
   (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
-- **테스트:** `make test` 기준 494 passed / 6 skipped(torch 없는 환경에서 v1 recsys 2개 모듈 제외).
+- **테스트:** `make test` 기준 505 passed / 6 skipped(torch 없는 환경에서 v1 recsys 2개 모듈 제외).
 
 ## 서빙
 
@@ -327,7 +327,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | 핵심 결과 | 확인 / 재현 | 위치 |
 |---|---|---|
 | 재배치 부족 146→78(−47%), MILP = 완전열거 최적해 | `python -m optimization.demo` | 콘솔 출력 (오프라인) |
-| GraphRAG: 검색 없는 raw LLM은 hallucination 10/10 → 근거 응답 0, 정답률 40%→100% | `python -m scripts.graphrag_eval` | 콘솔 출력 (오프라인) |
+| GraphRAG 10문항: 검색 없는 raw LLM은 환각 10/10에 정답 0/10, grounding만 넣으면 정답 4/10, grounding + relevance(GraphRAG)는 정답 10/10에 환각 0 | `python -m scripts.graphrag_eval` | 콘솔 출력 (오프라인), 문항별 표는 아래 MCP 절 |
 | 이벤트 그래프 node 5,770개 / edge 11,850개 | `make seed-graph` | `data/processed/graph/event_graph.json` |
 | 이벤트 feature lift: **철회** — 원래의 +1.65%는 Jersey City 트립이 Staten Island로 오배정돼 섞인 결과였고, NYC 데이터만으로 다시 돌리면 −1.94%(CI [−6.09, −0.86])로 악화합니다 | 결과: `reports/borough_event_lift.json`, 재실행: `make download-citibike` 후 `python -m ml.forecasting.borough_event_lift` | `reports/`, [경위](docs/EVENT_LIFT_FINDINGS.md) |
 | 방향별 lift (수요 급락 95.2% 적중) | 재실행: `python -m ml.forecasting.lift_direction` (트립 필요), 요약: [docs/EVENT_LIFT_FINDINGS.md](docs/EVENT_LIFT_FINDINGS.md) | `reports/`, `docs/` |
@@ -335,7 +335,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | **LLM 뉴스 피처의 조건부 기여**: 이벤트가 지역 특정적일수록 개선 — 평균 borough 4.2개 −0.96 → 2.0개 **+1.24 (CI [0.83, 1.64])**, 단조 관계 | `make v2-news-conditions` | `reports/v2/llm_value/news_feature_conditions.json` |
 | 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
-| 전체 테스트 | `make test` | 494 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
+| 전체 테스트 | `make test` | 505 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
 > Note. 화면의 `7/12` 수치는 라벨을 붙인 데모 리플레이(휴리스틱)이고, WAPE와 방향별 lift, 재배치는
 > 실데이터 측정치입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로, 답변은
@@ -497,6 +497,98 @@ make v2-serving-export                         # serving snapshot 갱신
 curl "https://shockflow-api.onrender.com/v2/model/forecast?top=10"   # 라이브 (첫 요청은 cold start)
 curl "127.0.0.1:8000/v2/model/forecast?top=10"                       # 로컬 (make api 실행 후)
 ```
+
+### MCP 서버로 copilot tool 분리
+
+운영 어시스턴트(`POST /v2/operator/ask`)는 답변에 쓰는 숫자를 LLM이 만들지 않습니다. Python이 먼저
+엔진과 artifact에서 값을 읽어 컨텍스트를 만들고, LLM은 그 컨텍스트만으로 답하며 인용한 이벤트 id를
+사후 검증합니다. 원래는 이 조회가 같은 프로세스의 함수 호출이었는데, 이를 **Model Context Protocol
+서버**(공식 `mcp` Python SDK 2.x, `MCPServer`)로 분리해 어떤 MCP 클라이언트(IDE, 다른 에이전트)든
+같은 근거로 같은 숫자를 얻게 했습니다. Neo4j 조회와 답변 생성 로직은 그대로이고, 바뀐 것은 연결부입니다.
+
+```text
+services/api (FastAPI)                       services/mcp/server.py (MCPServer, subprocess)
+  ops_copilot_answer ── CopilotTools ─┬─ InProcessTools ──┐
+                                      └─ McpStdioTools ── stdio ──► 5 tools ──┤
+                                                                               ▼
+                                                     services/mcp/core.py (두 경로가 공유하는 순수 함수)
+```
+
+| tool | 감싸는 함수 | 인자 | 출력 |
+|---|---|---|---|
+| `get_graph_context` | `graphrag._graph_context_cards` | `cutoff`, `max_events` | 이벤트 카드(증거, 영향 zone, 예측 Δ) |
+| `get_operator_statistics` | `operator_statistics` | `cutoff` | `GET /v2/operator/statistics`와 같은 payload |
+| `get_metric` | `ml/copilot/tools.REGISTRY` 7개 | `name` (enum) | `ResultEnvelope` |
+| `get_model_forecast` | `model_serving.model_forecast` | `top` | `GET /v2/model/forecast`와 같은 payload |
+| `get_pricing_quotes` | `pricing_quotes` | `cutoff`, `stale`, `safety`, **`rules`** | shadow quote + 적용된 규칙 echo |
+
+설계 결정 세 가지입니다.
+
+- **cutoff는 항상 명시 인자.** 서버는 별도 프로세스라 API의 리플레이 상태를 공유하지 못하므로 tool은
+  상태를 갖지 않고 받은 cutoff로만 계산합니다. 이 과정에서 `operator_statistics`와 `pricing_quotes`가
+  계산에는 인자를 쓰면서 응답에는 프로세스 상태(`engine.cutoff`)를 되돌려주던 불일치를 찾아 고쳤습니다.
+  덕분에 두 전송의 payload가 바이트 단위로 같아졌고, 이는 앞서 적어 둔 수평 확장의 전제조건이기도 합니다.
+- **provenance와 에러 구조 유지.** 모든 tool 결과에 `mode`, `cutoff`, `claim_status`, `freshness`가
+  붙고 숫자는 `run_id`와 `artifact_id`를 가진 `ResultEnvelope`로 나갑니다. 실패는 `is_error`와 함께
+  `{error_code, message}`를 실어 API와 같은 코드(`cutoff_out_of_window`, `promoted_model_unavailable`,
+  `validation_error`)를 씁니다.
+- **운영자가 요금 규칙을 인자로 제어.** `get_pricing_quotes`의 `rules`(`PricingRules`)로 기본 요금,
+  할증 상한, tier 임계값, 균형 크레딧, 이벤트 정규화 계수를 바꿔 what-if quote를 뽑습니다. 상한은 계약
+  단계에서 시스템 가드레일(`MAX_MULTIPLIER` 1.5)을 넘지 못하게 막고, 적용된 규칙과 `+operator` 설정
+  버전을 응답에 echo합니다.
+
+전환은 `COPILOT_TOOL_TRANSPORT=inprocess|mcp_stdio` 하나로 하고, 서버 spawn이나 호출이 실패하면 그 요청은
+in-process로 degrade하며 응답의 `tool_transport`에 `inprocess_fallback`으로 표시합니다.
+
+**리팩토링 전후 비교.** 같은 질문 세트, 같은 라우팅 fixture, 같은 RAGAS 판정에 drift guard를 걸고 두
+전송으로 채점했습니다(`make v2-mcp-compare`, `reports/v2/copilot/mcp_transport_comparison.json`).
+
+| 항목 | in-process (전) | MCP stdio (후) |
+|---|---:|---:|
+| 정확도 20문항 (routing / correct / refusal) | 1.0 / 1.0 / 1.0 | 1.0 / 1.0 / 1.0 |
+| 환각 답변, 근거 없는 숫자 | 0, 0 | 0, 0 |
+| RAGAS faithfulness / answer relevancy (답변 10문항) | 1.0 / 0.985 | 1.0 / 0.985 (drift 0) |
+| `get_metric` p50 / p95 / p99 | 0.08 / 0.12 / 0.18 ms | 2.71 / 3.22 / 3.42 ms |
+| `get_graph_context` p50 / p95 / p99 | 1.33 / 1.42 / 1.60 ms | 4.62 / 5.06 / 5.40 ms |
+| `get_operator_statistics` p50 / p95 / p99 | 1.69 / 2.44 / 2.56 ms | 5.46 / 6.00 / 6.29 ms |
+| `get_model_forecast` p50 / p95 / p99 | 2.01 / 2.24 / 2.47 ms | 5.12 / 5.82 / 6.27 ms |
+| `get_pricing_quotes` p50 / p95 / p99 | 1.75 / 1.88 / 2.03 ms | 6.66 / 7.25 / 7.72 ms |
+| `operator/ask` end-to-end p50 / p95 / p99 | 3.46 / 3.64 / 3.79 ms | 11.26 / 12.29 / 13.33 ms |
+
+정확도와 faithfulness는 완전히 같습니다. 전송만 바뀌었으니 같아야 정상이고, 달랐다면 버그였을 것입니다.
+MCP 오버헤드는 tool 호출당 p50 2.6~4.9 ms(JSON-RPC 직렬화, 파이프, 양쪽 스키마 검증)이고, 규칙 기반
+답변이 tool을 두 번 부르는 `operator/ask`는 3.5 → 11.3 ms입니다. 처음 측정에서는 `get_model_forecast`만
+오버헤드가 15 ms였는데, 서버 subprocess의 sklearn predict가 띄우는 OpenMP 스레드가 같은 4코어에서
+클라이언트와 경합한 것이어서 `OMP_NUM_THREADS=1`(배포 설정과 동일)로 양쪽을 다시 재니 3.1 ms가 됐습니다.
+서버 프로세스 메모리는 기동 직후 63 MB, 가벼운 tool 4개를 부른 뒤 122 MB, `get_model_forecast`로
+sklearn을 lazy load한 뒤 233 MB입니다. API 워커 217 MB와 합치면 무료 인스턴스 512 MB에 가까워지므로
+Render 배포는 기본값 `inprocess`를 유지하고, MCP 전송은 로컬과 코어가 있는 인스턴스에서 켭니다.
+
+![MCP 전송 오버헤드](reports/v2/copilot/mcp_transport_comparison.png)
+
+**GraphRAG 10문항, graph 적용 전후.** 아래는 `scripts/graphrag_eval.py`의 10문항(리플레이 상태: PATH
+신호 장애와 Newport 콘서트, 두 이벤트만 존재)에 대해 검색 없는 raw LLM 답과 GraphRAG 답을 나란히 둔
+것입니다. 채점은 제품이 실제로 쓰는 인용 검증(답 속 이벤트 id를 뽑아 컨텍스트에 있는 것만 인정)으로
+하고, 범위 밖 질문은 거부해야 정답입니다. 이 답변들은 harness의 예시 답변이며 실제 LLM 출력이
+아닙니다. 키를 넣으면 같은 채점을 실제 출력에 적용할 수 있습니다.
+
+| # | 질문 | 정답 근거 | graph 적용 전 (raw LLM) | 판정 | graph 적용 후 (GraphRAG) | 판정 |
+|---|---|---|---|---|---|---|
+| 1 | 지금 이벤트 몇 개고 뭐야? | PATH 장애 + Newport 콘서트 | 현재 3건입니다: 양키스 홈경기, 지하철 지연, 폭우 특보. | 환각 | 현재 2건입니다: PATH 신호 장애로 인한 운행 중단과 Newport 워터프론트 대형 콘서트. | 정답 |
+| 2 | 수요가 가장 많이 오른 지역은? | PATH 장애 + Newport 콘서트 | 타임스스퀘어가 가장 붐빕니다. | 환각 | 저지시티 시청이 시간당 +4.5로 가장 큽니다. PATH 장애와 콘서트가 함께 작용했습니다. | 정답 |
+| 3 | PATH 장애가 어느 존에 영향 줬어? | PATH 장애 | 미드타운과 다운타운 맨해튼이 영향받습니다. | 환각 | PATH 신호 장애는 호보켄 터미널, 저지시티 시청, 뉴포트 존 수요를 끌어올립니다. | 정답 |
+| 4 | 미드타운 수요는 왜 올랐어? | 없음 (범위 밖) | 양키스 경기와 브로드웨이 공연 때문입니다. | 환각 | 제공된 컨텍스트에 미드타운 관련 이벤트가 없습니다. 상승은 저지시티권에 국한됩니다. | 거부 (정답) |
+| 5 | 콘서트 어디서 열려? | Newport 콘서트 | 매디슨 스퀘어 가든에서 열립니다. | 환각 | Newport 워터프론트에서 열립니다. | 정답 |
+| 6 | 브루클린에 이벤트 있어? | 없음 (범위 밖) | 네, 바클레이스 센터에서 경기가 있습니다. | 환각 | 컨텍스트의 이벤트는 저지시티권(호보켄, 뉴포트)입니다. 브루클린 관련 이벤트는 없습니다. | 거부 (정답) |
+| 7 | 이벤트가 수요를 낮췄어? | PATH 장애 + Newport 콘서트 | 네, 폭우로 수요가 감소했습니다. | 환각 | 아니요. 두 이벤트 모두 수요를 늘리는 방향입니다. | 정답 |
+| 8 | 세 번째 이벤트는 뭐야? | 없음 (범위 밖) | 세 번째 이벤트는 도로 공사입니다. | 환각 | 현재 컨텍스트에는 이벤트가 2건뿐이라 세 번째 이벤트는 없습니다. | 거부 (정답) |
+| 9 | 저지시티 시청 증가폭은? | PATH 장애 + Newport 콘서트 | 시간당 +12 정도입니다. | 환각 | 저지시티 시청은 시간당 +4.5입니다. | 정답 |
+| 10 | 가장 부족한 개별 대여소는? | 없음 (범위 밖) | 그랜드 센트럴 앞이 가장 부족합니다. | 환각 | 이벤트 컨텍스트에는 개별 대여소 부족 정보가 없어 특정 대여소를 지목할 수 없습니다. | 거부 (정답) |
+
+집계: raw LLM은 정답 0/10, 환각 10/10, 범위 밖 거부 0/4, 인용 F1 0.0. 중간 단계인 "grounding만"(실제
+이벤트를 인용하지만 관련 없는 것도 붙임)은 정답 4/10, 환각 0, 거부 0/4, 인용 F1 0.692. GraphRAG는
+정답 10/10, 환각 0, 거부 4/4, 인용 F1 1.0. 검색이 없으면 이벤트 자체를 지어내고, grounding만으로는
+"없는 것 지어내기"는 막지만 "있는 것을 엉뚱하게 붙이기"는 못 잡습니다. 그래서 relevance 채점을 더했습니다.
 
 ### 관측과 성능
 

@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from functools import lru_cache
 
+from typing import Literal
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -41,6 +43,10 @@ class Settings(BaseSettings):
     # Postgres URL (postgresql+psycopg://…) without code changes. Demo Mode never requires it.
     database_url: str = Field(default="sqlite:///data/processed/shockflow.db")
     local_tz: str = Field(default="America/New_York")
+    # Copilot tool transport: "inprocess" (default) or "mcp_stdio" (spawn services.mcp.server and
+    # call the same five tools over the Model Context Protocol). MCP failures degrade to in-process.
+    copilot_tool_transport: Literal["inprocess", "mcp_stdio"] = Field(default="inprocess")
+    mcp_tool_timeout_s: float = Field(default=20.0, gt=0)
 
 
 @lru_cache

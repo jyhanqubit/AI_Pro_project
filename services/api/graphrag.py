@@ -43,8 +43,13 @@ def _effect_ko(effect: EffectDirection) -> str:
     }.get(effect, "영향 불명")
 
 
-def build_context(engine, cutoff: datetime, *, max_events: int = 12) -> dict:
-    """Assemble the grounded, as-of retrieval context for the query (no fabrication)."""
+def _graph_context_cards(
+    engine, cutoff: datetime, *, max_events: int = 12
+) -> tuple[list[dict], int]:
+    """The retrieval unit: as-of events with grounded evidence, reached zones and their deltas.
+
+    Shared by both tool transports (``services.mcp.core.graph_context``); nothing is fabricated.
+    """
     events = engine.available_events(cutoff)
     forecasts = {zf.zone_id: zf for zf in engine.forecasts(cutoff)}
 
@@ -68,9 +73,27 @@ def build_context(engine, cutoff: datetime, *, max_events: int = 12) -> dict:
                 "zones": zones,
             }
         )
+    return event_cards, len(events)
+
+
+def build_context(engine, cutoff: datetime, *, max_events: int = 12, tools=None) -> dict:
+    """Assemble the grounded, as-of retrieval context for the query (no fabrication).
+
+    With ``tools`` (a :class:`services.api.copilot_tools.CopilotTools`) the cards come through
+    the configured transport — in-process or the MCP server — and the assembly logic is the
+    same function either way.
+    """
+    if tools is not None:
+        ctx = tools.graph_context(cutoff, max_events)
+        return {
+            "cutoff": ctx["cutoff"],
+            "event_count": ctx["event_count"],
+            "events": ctx["events"],
+        }
+    event_cards, n = _graph_context_cards(engine, cutoff, max_events=max_events)
     return {
         "cutoff": cutoff.isoformat(),
-        "event_count": len(events),
+        "event_count": n,
         "events": event_cards,
     }
 
@@ -97,11 +120,13 @@ def _render_context(ctx: dict, stats: dict) -> str:
             f"severity {c['severity']} · zones: {zpart}"
         )
         if c["evidence"]:
-            lines.append(f"      evidence: \"{c['evidence']}\"")
+            lines.append(f'      evidence: "{c["evidence"]}"')
     return "\n".join(lines)
 
 
-def graphrag_answer(engine, query: str, cutoff: datetime, stats: dict) -> dict | None:
+def graphrag_answer(
+    engine, query: str, cutoff: datetime, stats: dict, *, tools=None
+) -> dict | None:
     """LLM answer grounded in the as-of graph, or ``None`` if chat is unavailable / errors.
 
     ``stats`` is the already-computed ``operator_statistics`` (passed in to avoid recomputation).
@@ -109,7 +134,7 @@ def graphrag_answer(engine, query: str, cutoff: datetime, stats: dict) -> dict |
     """
     if not chat_available():
         return None
-    ctx = build_context(engine, cutoff)
+    ctx = build_context(engine, cutoff, tools=tools)
     context_text = _render_context(ctx, stats)
     user = f"CONTEXT:\n{context_text}\n\nQUESTION: {query.strip()}"
     try:

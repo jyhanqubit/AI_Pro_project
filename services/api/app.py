@@ -114,12 +114,14 @@ def _trace_step(d: Driver) -> TraceStep:
 async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Eager model load so the first user request does not pay for it (Demo Mode without the
     # bundle just logs and keeps serving; the endpoint still answers 503 by itself).
+    from .copilot_tools import warm_tools
     from .model_serving import warm_up
 
     if not warm_up():
         logging.getLogger(__name__).warning(
             "promoted model bundle not loaded at startup; /v2/model/forecast will answer 503"
         )
+    logging.getLogger(__name__).info("copilot tool transport: %s", warm_tools())
     yield
 
 

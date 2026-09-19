@@ -25,6 +25,7 @@ from typing import cast
 
 from config.api import DEMO_END, DEMO_START
 from config.collectors import STATION_GAZETTEER_FIXTURE
+from config.pricing_v2 import DynamicFareConfig
 from contracts.enums import EffectDirection
 
 from .rebalancing import build_problem
@@ -287,7 +288,7 @@ def operator_statistics(engine: ReplayEngine, cutoff: datetime) -> dict:
 
     return {
         "mode": engine.mode,
-        "cutoff": engine.cutoff,
+        "cutoff": cutoff,  # the cutoff actually used, not process state
         "model_version": engine.model_version,
         "feature_version": engine.feature_version,
         "note": (
@@ -589,6 +590,7 @@ def pricing_quotes(
     *,
     stale: bool = False,
     safety: bool = False,
+    cfg: DynamicFareConfig | None = None,
 ) -> dict:
     """SIMULATED SHADOW fare quotes for every station as-of the cutoff (V2-05).
 
@@ -597,14 +599,12 @@ def pricing_quotes(
     base-fare fallbacks; the real safety block is also derived from any available SAFETY_INCIDENT
     event. Never applied to a rider (shadow mode); all results are labelled simulated.
     """
-    from config.pricing_v2 import (
-        NO_SURCHARGE_EVENT_TYPES,
-        SIMULATED_DISCLAIMER,
-        DynamicFareConfig,
-    )
+    from config.pricing_v2 import NO_SURCHARGE_EVENT_TYPES, SIMULATED_DISCLAIMER
     from ml.pricing.dynamic import price_quote
 
-    cfg = DynamicFareConfig()
+    # ``cfg`` lets an operator override the rule knobs (MCP get_pricing_quotes); default config
+    # keeps the HTTP endpoint's behaviour unchanged.
+    cfg = cfg or DynamicFareConfig()
     views = station_views(engine, cutoff)
     events = engine.available_events(cutoff)
     # A safety/emergency event anywhere in the system suppresses surcharge (conservative).
@@ -674,7 +674,7 @@ def pricing_quotes(
 
     return {
         "mode": engine.mode,
-        "cutoff": engine.cutoff,
+        "cutoff": cutoff,  # the cutoff actually used, not process state
         "model_version": engine.model_version,
         "pricing_config_version": cfg.version,
         "is_simulated": True,
@@ -783,7 +783,7 @@ def revenue_projection(
     }
 
 
-def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
+def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime, *, tools=None) -> dict:
     """Answer an operator's NL query, grounded in the same artifacts the dashboards use (V2-07).
 
     Every fact is copied from ``operator_statistics`` / ``pricing_quotes`` — the copilot never
@@ -793,7 +793,11 @@ def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
     from .ops_copilot import parse
 
     parsed = parse(query)
-    stats = operator_statistics(engine, cutoff)
+    stats = (
+        tools.operator_statistics(cutoff)["statistics"]
+        if tools is not None
+        else operator_statistics(engine, cutoff)
+    )
     supported = True
     facts: dict[str, object] = {}
     link: dict[str, str] | None = None
@@ -845,10 +849,14 @@ def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
         link = {"label": "운영 통계 열기", "href": "/statistics"}
 
     elif parsed.intent == "events":
-        events = engine.available_events(cutoff)
-        if events:
-            titles = "; ".join(f"{i + 1}) {e.event_title}" for i, e in enumerate(events))
-            answer = f"반영된 이벤트 {len(events)}건: {titles}."
+        if tools is not None:
+            cards = tools.graph_context(cutoff, 100)["events"]
+            titles_list = [c["title"] for c in cards]
+        else:
+            titles_list = [e.event_title for e in engine.available_events(cutoff)]
+        if titles_list:
+            titles = "; ".join(f"{i + 1}) {t}" for i, t in enumerate(titles_list))
+            answer = f"반영된 이벤트 {len(titles_list)}건: {titles}."
         else:
             answer = "현재 시각 기준 공개된 이벤트가 없어요."
         facts = {
@@ -858,7 +866,11 @@ def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
         link = {"label": "뉴스 검색 열기", "href": "/news"}
 
     elif parsed.intent == "pricing":
-        pricing = pricing_quotes(engine, cutoff)
+        pricing = (
+            tools.pricing_quotes(cutoff)["pricing"]
+            if tools is not None
+            else pricing_quotes(engine, cutoff)
+        )
         surcharged = [q for q in pricing["quotes"] if q["scarcity_surcharge"] > 0]
         credited = [q for q in pricing["quotes"] if q["balancing_credit"] > 0]
         max_tier = max((q["tier_multiplier"] for q in pricing["quotes"]), default=1.0)
@@ -934,7 +946,7 @@ def ops_ask(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
     }
 
 
-def ops_copilot_answer(engine: ReplayEngine, query: str, cutoff: datetime) -> dict:
+def ops_copilot_answer(engine: ReplayEngine, query: str, cutoff: datetime, *, tools=None) -> dict:
     """Operator copilot entry point (V2-08). GraphRAG when an LLM is configured, else rule-based.
 
     With ``LLM_PROVIDER=openai``/``anthropic`` + a key, the answer is generated by the model over
@@ -942,11 +954,26 @@ def ops_copilot_answer(engine: ReplayEngine, query: str, cutoff: datetime) -> di
     the LLM SDK/key is missing or the call errors — it degrades to the deterministic
     :func:`ops_ask`. The response shape is a superset of ``ops_ask`` (adds ``answer_mode`` /
     ``citations``), so the UI renders both paths and shows a badge for which one answered.
+
+    Context, statistics and pricing come through a :class:`CopilotTools` transport (in-process or
+    the MCP server, per ``COPILOT_TOOL_TRANSPORT``). A transport failure degrades to in-process
+    for this request and is labelled in ``tool_transport``; the answer logic is unchanged.
     """
+    from .copilot_tools import InProcessTools, TransportError, get_copilot_tools
     from .graphrag import graphrag_answer
 
-    stats = operator_statistics(engine, cutoff)
-    llm = graphrag_answer(engine, query, cutoff, stats)
+    if tools is None:
+        tools = get_copilot_tools(engine)
+    try:
+        stats = tools.operator_statistics(cutoff)["statistics"]
+    except TransportError:
+        tools = InProcessTools(engine, transport="inprocess_fallback")
+        stats = tools.operator_statistics(cutoff)["statistics"]
+    try:
+        llm = graphrag_answer(engine, query, cutoff, stats, tools=tools)
+    except TransportError:
+        tools = InProcessTools(engine, transport="inprocess_fallback")
+        llm = graphrag_answer(engine, query, cutoff, stats, tools=tools)
     if llm is not None:
         return {
             "mode": engine.mode,
@@ -954,9 +981,16 @@ def ops_copilot_answer(engine: ReplayEngine, query: str, cutoff: datetime) -> di
             "model_version": engine.model_version,
             "query": query,
             "link": None,
+            "tool_transport": tools.transport,
             **llm,
         }
-    return ops_ask(engine, query, cutoff)  # deterministic fallback (answer_mode="rule_based")
+    try:
+        out = ops_ask(engine, query, cutoff, tools=tools)  # deterministic fallback
+    except TransportError:
+        tools = InProcessTools(engine, transport="inprocess_fallback")
+        out = ops_ask(engine, query, cutoff, tools=tools)
+    out["tool_transport"] = tools.transport
+    return out
 
 
 def signed_delta(x: float) -> str:

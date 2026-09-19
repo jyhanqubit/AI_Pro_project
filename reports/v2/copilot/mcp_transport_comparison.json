@@ -1,0 +1,206 @@
+{
+  "run_id": "run_v2-06mcp_20260919T013838Z",
+  "artifact_id": "reports/v2/copilot/mcp_transport_comparison.json",
+  "mode": "historical_replay",
+  "claim_status": "offline_benchmark",
+  "freshness": "2026-09-19T01:38:38.145853+00:00",
+  "design": "Same question sets, routing fixture and RAGAS judgments scored with typed-tool calls made in-process (before) and over the MCP server via stdio (after). Latency: 500 sequential calls per tool and 300 end-to-end operator/ask calls per transport.",
+  "environment": {
+    "cpus": 4,
+    "platform": "Linux-6.18.44-fc-v37-x86_64-with-glibc2.39",
+    "mcp_server_spawn_s": 1.17,
+    "mcp_server_rss_mb": null,
+    "llm_key_available": false,
+    "omp_num_threads": 1
+  },
+  "before": {
+    "transport": "inprocess",
+    "benchmarks": {
+      "correctness_20q": {
+        "claude_router": {
+          "routing_accuracy": 1.0,
+          "correctness_accuracy": 1.0,
+          "refusal_accuracy": 1.0,
+          "hallucinated_answers": 0,
+          "ungrounded_numeric_answers": 0,
+          "hard_gates_pass": true
+        },
+        "keyword_router": {
+          "routing_accuracy": 0.75,
+          "correctness_accuracy": 0.833,
+          "refusal_accuracy": 0.625,
+          "hallucinated_answers": 3
+        }
+      },
+      "ragas_10q": {
+        "n_answered": 10,
+        "drift_from_judged_answers": [],
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.985
+      }
+    },
+    "tool_latency": {
+      "get_graph_context": {
+        "p50_ms": 1.327,
+        "p95_ms": 1.423,
+        "p99_ms": 1.595,
+        "n": 500
+      },
+      "get_operator_statistics": {
+        "p50_ms": 1.689,
+        "p95_ms": 2.444,
+        "p99_ms": 2.555,
+        "n": 500
+      },
+      "get_metric": {
+        "p50_ms": 0.084,
+        "p95_ms": 0.121,
+        "p99_ms": 0.175,
+        "n": 500
+      },
+      "get_model_forecast": {
+        "p50_ms": 2.006,
+        "p95_ms": 2.241,
+        "p99_ms": 2.472,
+        "n": 500
+      },
+      "get_pricing_quotes": {
+        "p50_ms": 1.745,
+        "p95_ms": 1.879,
+        "p99_ms": 2.028,
+        "n": 500
+      }
+    },
+    "operator_ask_e2e": {
+      "p50_ms": 3.462,
+      "p95_ms": 3.643,
+      "p99_ms": 3.787,
+      "n": 300
+    }
+  },
+  "after": {
+    "transport": "mcp_stdio",
+    "benchmarks": {
+      "correctness_20q": {
+        "claude_router": {
+          "routing_accuracy": 1.0,
+          "correctness_accuracy": 1.0,
+          "refusal_accuracy": 1.0,
+          "hallucinated_answers": 0,
+          "ungrounded_numeric_answers": 0,
+          "hard_gates_pass": true
+        },
+        "keyword_router": {
+          "routing_accuracy": 0.75,
+          "correctness_accuracy": 0.833,
+          "refusal_accuracy": 0.625,
+          "hallucinated_answers": 3
+        }
+      },
+      "ragas_10q": {
+        "n_answered": 10,
+        "drift_from_judged_answers": [],
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.985
+      }
+    },
+    "tool_latency": {
+      "get_graph_context": {
+        "p50_ms": 4.617,
+        "p95_ms": 5.06,
+        "p99_ms": 5.403,
+        "n": 500
+      },
+      "get_operator_statistics": {
+        "p50_ms": 5.461,
+        "p95_ms": 6.003,
+        "p99_ms": 6.291,
+        "n": 500
+      },
+      "get_metric": {
+        "p50_ms": 2.713,
+        "p95_ms": 3.215,
+        "p99_ms": 3.419,
+        "n": 500
+      },
+      "get_model_forecast": {
+        "p50_ms": 5.121,
+        "p95_ms": 5.822,
+        "p99_ms": 6.27,
+        "n": 500
+      },
+      "get_pricing_quotes": {
+        "p50_ms": 6.661,
+        "p95_ms": 7.247,
+        "p99_ms": 7.717,
+        "n": 500
+      }
+    },
+    "operator_ask_e2e": {
+      "p50_ms": 11.264,
+      "p95_ms": 12.291,
+      "p99_ms": 13.327,
+      "n": 300
+    }
+  },
+  "mcp_overhead_p50_ms": {
+    "get_graph_context": 3.29,
+    "get_operator_statistics": 3.772,
+    "get_metric": 2.629,
+    "get_model_forecast": 3.115,
+    "get_pricing_quotes": 4.916
+  },
+  "accuracy_identical": true,
+  "findings": [
+    "Accuracy, refusal and RAGAS faithfulness/relevancy are identical across transports (drift 0): the refactor changed the transport, not the answers.",
+    "MCP stdio adds ~2.6-4.9 ms p50 per tool call (JSON-RPC over a pipe + schema validation on both ends); end-to-end operator/ask goes from 3.5 to 11.3 ms p50 because the rule-based path makes two tool calls.",
+    "With OMP threads unbounded, get_model_forecast overhead was 14.965 ms instead of 3.115 ms: sklearn predict in the server process spawns OpenMP threads that contend with the client on the same 4 cores. Both transports were re-measured with OMP_NUM_THREADS=1 (the deployed setting)."
+  ],
+  "omp_default_run": {
+    "mcp_overhead_p50_ms": {
+      "get_graph_context": 3.227,
+      "get_operator_statistics": 3.725,
+      "get_metric": 2.537,
+      "get_model_forecast": 14.965,
+      "get_pricing_quotes": 4.857
+    },
+    "after_tool_latency": {
+      "get_graph_context": {
+        "p50_ms": 4.534,
+        "p95_ms": 5.105,
+        "p99_ms": 5.592,
+        "n": 500
+      },
+      "get_operator_statistics": {
+        "p50_ms": 5.395,
+        "p95_ms": 5.951,
+        "p99_ms": 6.179,
+        "n": 500
+      },
+      "get_metric": {
+        "p50_ms": 2.621,
+        "p95_ms": 3.085,
+        "p99_ms": 3.319,
+        "n": 500
+      },
+      "get_model_forecast": {
+        "p50_ms": 16.809,
+        "p95_ms": 17.994,
+        "p99_ms": 19.408,
+        "n": 500
+      },
+      "get_pricing_quotes": {
+        "p50_ms": 6.537,
+        "p95_ms": 7.351,
+        "p99_ms": 7.713,
+        "n": 500
+      }
+    },
+    "operator_ask_e2e_after": {
+      "p50_ms": 10.9,
+      "p95_ms": 11.771,
+      "p99_ms": 12.282,
+      "n": 300
+    }
+  }
+}

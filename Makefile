@@ -183,5 +183,11 @@ v2-spark-bench:  ## EXTRA: pandas vs PySpark shuffle-cost benchmark (needs data/
 v2-abc-plot:  ## EXTRA: forest plot of the A/B/C ablation from rolling_origin_ablation.json; writes reports/v2/llm_value/abc_forest.png
 	python -m scripts.abc_experiment_plot
 
+mcp-server:  ## Run the operator-copilot MCP server on stdio (add --transport streamable-http for a service)
+	python -m services.mcp.server
+
+v2-mcp-compare:  ## EXTRA: copilot benchmarks + tool latency, in-process vs MCP stdio -> reports/v2/copilot/mcp_transport_comparison.*
+	python -m scripts.mcp_before_after
+
 v2-free-tier-probe:  ## EXTRA: serving API under an emulated 0.1-CPU free tier (spawns its own server); writes reports/v2/serving/free_tier_emulation.*
 	python -m scripts.free_tier_probe
