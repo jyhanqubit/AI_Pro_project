@@ -433,8 +433,18 @@ def test_predictive_lift_is_honestly_blocked_offline(client: TestClient) -> None
 # ---- live news sync (V2) ---------------------------------------------------------------------
 
 
-def test_news_sync_degrades_gracefully_without_network(client: TestClient) -> None:
-    # No egress in tests → must return a labelled degraded result, never fabricated articles.
+def test_news_sync_degrades_gracefully_without_network(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The button press opts into a live GDELT pull. Tests must not touch the network and must
+    # not depend on the runner's egress, so stub the provider to fail and assert the labelled
+    # degraded result, never fabricated articles.
+    from pipelines.collectors import backfill
+
+    def unreachable(self: object) -> list[dict]:
+        raise backfill.ProviderUnavailable("stubbed: no egress in tests")
+
+    monkeypatch.setattr(backfill.GdeltNewsProvider, "fetch", unreachable)
     d = client.post("/v2/news/sync", json={"max_records": 5}).json()
     assert d["status"] == "degraded"
     assert d["mode"] == "live"
@@ -443,7 +453,18 @@ def test_news_sync_degrades_gracefully_without_network(client: TestClient) -> No
     assert d["degraded_reason"]
 
 
-def test_station_import_degrades_gracefully_without_network(client: TestClient) -> None:
+def test_station_import_degrades_gracefully_without_network(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The endpoint calls the live GBFS feed (no key, no flag). Tests must not depend on the
+    # runner's egress either way (GitHub Actions has internet, this sandbox does not), so stub
+    # the fetch to fail and assert the labelled degraded path, never a fabricated station list.
+    from pipelines.collectors import gbfs_stations
+
+    def unreachable(**_: object) -> list[dict]:
+        raise gbfs_stations.StationImportUnavailable("stubbed: no egress in tests")
+
+    monkeypatch.setattr(gbfs_stations, "fetch_station_information", unreachable)
     d = client.post("/v2/operator/stations/import", params={"limit": 5}).json()
     assert d["status"] == "degraded"
     assert d["count"] == 0

@@ -20,6 +20,13 @@ GitHub Actions의 빈 환경에서만 테스트 모듈 6개가 수집 단계에�
 CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e ".[dev,ml,api,mcp]"`만으로
 512개 수집, 508 passed / 8 skipped, 두 감사 PASS를 재현했습니다.
 
+두 번째 실행에서는 `/v2/operator/stations/import` 테스트 하나가 실패했습니다. 이 테스트는
+"테스트 환경에는 인터넷이 없다"를 전제로 degraded 응답을 기대했는데, GitHub 러너는 인터넷이
+있어 실제 GBFS 호출이 성공하고 `live`가 돌아왔습니다. `/v2/news/sync` 테스트도 같은 구조로
+GDELT 호출이 실패해야만 통과하는 상태였습니다. 둘 다 provider fetch를 monkeypatch로 실패시켜
+러너의 네트워크 유무와 무관하게 degraded 경로만 검증하도록 바꿨습니다(테스트가 외부 네트워크를
+만지지 않는다는 규칙에도 이제 맞습니다).
+
 
 ## 운영 어시스턴트 tool을 MCP 서버로 분리 (2026-09-19)
 
