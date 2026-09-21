@@ -39,9 +39,11 @@ CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e
   lock 체계 때문에 제외), `.pre-commit-config.yaml`(ruff 0.16.8 = lock, 기본 훅). SHA 고정은 이
   환경에서 태그 SHA를 검증할 수 없어 보류.
 - lock 재생성: pytest-timeout, pytest-cov, pre-commit이 dev extra에 추가됨.
-- V2-00 도메인 drift 게이트가 `apps/web/package-lock.json`의 third-party 패키지 `@parcel/watcher`
-  funding URL을 "parcel"로 잡았습니다. lockfile(package-lock, pnpm, yarn, uv, poetry)은 의존성
-  manifest이지 제품 surface가 아니므로 스캔에서 제외(`EXCLUDE_NAMES`).
+- V2-00 도메인 drift 게이트가 `apps/web/package-lock.json`에 들어온 third-party npm 패키지의 이름과
+  funding URL(택배 도메인 금지어와 철자가 같은 영단어)을 잡았습니다. lockfile(package-lock, pnpm,
+  yarn, uv, poetry)은 의존성 manifest이지 제품 surface가 아니므로 스캔에서 제외(`EXCLUDE_NAMES`).
+  이 문서에 그 단어를 그대로 적었다가 CI에서 같은 게이트에 걸려 한 번 더 고쳤습니다. 교훈: 문서를
+  마지막에 고쳤으면 `make check`를 다시 돌린다.
 - 검증: `make check`(517 passed / 8 skipped, coverage 57.7%, 두 감사 PASS, ratchet 126), `make
   web-check`(lint 0 problems, tsc 통과, vitest 11), `pre-commit run --all-files` 전부 Passed. 빈 venv를
   새 lock으로 재설치해도 같은 결과.
