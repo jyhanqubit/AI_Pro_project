@@ -9,9 +9,11 @@ name: harness
 # Everything installs from a lock (requirements/dev.txt, apps/web/package-lock.json) so a run
 # here is the same environment as `make check` locally and the Render build.
 
+# v2 is the integration branch; master and the feature branches receive the same commits, so
+# running there too only duplicated every result (and every failure email).
 on:
   push:
-    branches: [master, v2, dev]
+    branches: [v2]
   pull_request:
 
 # A newer push to the same branch supersedes the run in flight.

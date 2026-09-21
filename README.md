@@ -129,7 +129,7 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
 
 이 저장소의 숫자는 "코드가 돌았다"가 아니라 "게이트를 통과한 artifact가 있다"로 증명합니다. 그 게이트를
 한 번에 돌리는 진입점이 `make check`이고, 같은 순서가 GitHub Actions(`.github/workflows/ci.yml`)에서
-push와 pull request마다 실행됩니다.
+v2 push와 pull request마다 실행됩니다(master는 v2와 같은 커밋을 받으므로 중복 실행하지 않습니다).
 
 ```text
 pip install -r requirements/dev.txt              환경: lock에 적힌 정확한 버전 (로컬 make install = CI = Render의 serve.txt)
