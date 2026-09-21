@@ -1,22 +1,34 @@
 name: harness
 
-# The verification harness on every push and pull request: lint + format gate, the offline test
-# suite (optional extras such as torch/faiss skip, never fail), and the two V2 audit gates that
-# check every committed artifact's provenance envelope, completion set and traceability.
-# Type checking runs but does not block yet (known debt is tracked in README > 검증 하네스).
+# The verification harness on every push and pull request.
+#   harness  lint + format gate, the offline test suite (optional extras such as torch skip, never
+#            fail) with a coverage floor, the two V2 audit gates that check every committed
+#            artifact's provenance envelope, completion set and traceability, a "generated files
+#            match the commit" gate, and the mypy ratchet (the known type-error count may not grow).
+#   web      the Next.js operator UI: ESLint, tsc --noEmit, vitest.
+# Everything installs from a lock (requirements/dev.txt, apps/web/package-lock.json) so a run
+# here is the same environment as `make check` locally and the Render build.
 
 on:
   push:
     branches: [master, v2, dev]
   pull_request:
 
+# A newer push to the same branch supersedes the run in flight.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   harness:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
           cache: pip
@@ -34,10 +46,10 @@ jobs:
           ruff format --check .
       - name: Build the event graph snapshot (offline, ~1 s; three copilot tests need it)
         run: make seed-graph
-      - name: Tests (offline; optional extras skip)
+      - name: Tests (offline, public network blocked, 120 s per-test timeout, coverage floor)
         env:
           OMP_NUM_THREADS: "1"
-        run: python -m pytest -q
+        run: python -m pytest -q --cov --cov-report=term --cov-fail-under=55
       - name: V2 audit gates (envelope, completion, traceability)
         run: |
           python -m scripts.v2_audit
@@ -47,6 +59,27 @@ jobs:
       # re-running the harness — fail here instead of letting the tree drift.
       - name: Generated artifacts match the committed tree
         run: git diff --exit-code --stat
-      - name: Type check (advisory)
-        continue-on-error: true
-        run: python -m mypy .
+      - name: Type-error ratchet (count may not exceed config/mypy_baseline.json)
+        run: python -m scripts.mypy_ratchet
+
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install from the lock
+        run: npm ci --no-audit --no-fund
+      - name: Lint (ESLint, Next.js rules)
+        run: npm run lint
+      - name: Type check (tsc --noEmit, strict)
+        run: npm run typecheck
+      - name: Tests (vitest, pure UI logic)
+        run: npm test

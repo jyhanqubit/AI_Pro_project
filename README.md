@@ -133,18 +133,32 @@ push와 pull request마다 실행됩니다.
 
 ```text
 pip install -r requirements/dev.txt              환경: lock에 적힌 정확한 버전 (로컬 make install = CI = Render의 serve.txt)
-make check
+pre-commit install                               커밋 시점에 ruff check/format (선택, CI와 같은 버전)
+
+make check                                       Python 하네스 (CI `harness` job과 같은 순서)
  ├─ 1. ruff check . / ruff format --check .      정적 게이트 (F, I, B, UP, E; 줄 길이는 포매터에 위임)
  ├─ 2. make seed-graph                           이벤트 graph 스냅숏 (오프라인, 1초; copilot 테스트 3개의 입력)
- ├─ 3. pytest                                    517 passed / 8 skipped, 공용 네트워크 차단(pytest-socket)
+ ├─ 3. pytest --cov --cov-fail-under=55          517 passed / 8 skipped, coverage 57.7% (바닥 55)
+ │     │                                         공용 네트워크 차단(pytest-socket), 테스트당 120초 timeout,
+ │     │                                         경고는 전부 오류(허용 목록 3건은 사유와 함께 pyproject에)
  │     ├─ tests/unit         59 파일 432개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀, 하네스 가드(9)
  │     ├─ tests/integration   8 파일  88개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB
  │     └─ tests/e2e           1 파일   1개   13:59 → 14:00 골든패스 전체 흐름
  ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
  ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
  ├─ 6. git diff --exit-code (CI만)               게이트가 다시 만든 artifact가 커밋본과 같은지
- └─ 7. python -m mypy .                          advisory (알려진 오류 125건, 아래 참고)
+ └─ 7. scripts.mypy_ratchet                      mypy 오류 수가 config/mypy_baseline.json(126)을 넘으면 실패, 줄면 baseline을 내리라고 실패
+
+make web-check                                   프론트 하네스 (CI `web` job과 같은 순서, apps/web)
+ ├─ eslint .                                     next/core-web-vitals + next/typescript 규칙, 0 problems
+ ├─ tsc --noEmit                                 strict
+ └─ vitest run                                   11개: 라이더 가용성 등급, 부호 표기, 장소 이름 fallback
 ```
+
+CI는 두 job이 병렬로 돌고(`harness`, `web`), 같은 브랜치에 새 push가 오면 진행 중인 실행을
+취소합니다. Dependabot이 GitHub Actions(주간)와 apps/web의 npm(월간) 업데이트 PR을 열고, 각 PR은
+같은 하네스를 통과해야 합니다. Python 의존성은 lock 체계 때문에 bot이 아니라 `make lock`으로만
+갱신합니다.
 
 **네 층으로 나뉩니다.**
 
@@ -205,6 +219,26 @@ scikit-learn이 기록과 다르면 서빙을 거부하며(503), 테스트는 �
 - 최종 감사가 매번 `claim_matrix.json`의 run_id와 freshness를 새로 써서 `make check`가 커밋된 파일을
   수정한 채로 끝났습니다. 검증 게이트가 검증 대상을 바꾸면 안 되므로 내용이 실제로 달라질 때만 쓰게
   했고, 그 덕에 CI가 "게이트가 다시 만든 artifact가 커밋본과 같다"를 `git diff --exit-code`로 확인합니다.
+
+**게이트의 범위와 견고성을 넓히면서 드러난 것.** 위 세 가지를 막은 뒤 남은 지적(게이트가 Python뿐,
+hang이나 경고에 무방비, Actions 위생)을 처리하는 과정에서도 실제 결함이 나왔습니다.
+
+- 프론트 `npm run lint`는 `next lint`가 deprecated되어 대화형 프롬프트에서 멈추는 상태였습니다. ESLint
+  flat config(`apps/web/eslint.config.mjs`)로 옮기고 vitest를 붙여 순수 로직 11개를 검사하며, CI에
+  `web` job을 추가했습니다. `tsc --noEmit`은 원래 통과하고 있었습니다.
+- mypy를 advisory로 두면 부채가 늘어도 아무도 모릅니다. `scripts/mypy_ratchet.py`가 오류 수를
+  `config/mypy_baseline.json`과 비교해 늘면 실패하고, 줄면 baseline을 내리라고 실패합니다. 그래서
+  부채는 한 방향으로만 움직입니다.
+- 경고를 전부 오류로 바꾸자 MCP stdio 클라이언트가 event loop를 닫지 않아 socketpair가 가비지
+  컬렉션에서 `ResourceWarning`으로 새는 것이 드러났습니다. 모델을 처음 로드하는 테스트에서 터져서
+  원인과 무관해 보이는 실패였고, `close()`가 loop까지 닫도록 고쳤습니다. 허용 목록에 남긴 경고는
+  starlette의 anyio alias, pytest-socket의 차단 안내, 일부러 300회만 도는 MLP smoke의 수렴 경고
+  셋뿐이며 각각 사유를 적었습니다.
+- coverage를 처음 쟀습니다. 테스트, 프론트, 벤치마크 스크립트를 뺀 제품 코드 기준 57.7%이고 바닥은
+  55로 두어 내려가면 실패합니다. 숫자 자체보다 "어디가 비었는지"가 목적이라 report는 CI 로그에 남깁니다.
+- 테스트당 120초 timeout(hang이면 30분 CI 예산 대신 2분에 실패), 같은 브랜치 중복 실행 취소,
+  Node 24용 action 버전(checkout v5, setup-python v6, setup-node v5), Dependabot, pre-commit 훅을
+  추가했습니다. action을 SHA로 고정하는 것은 이 환경에서 태그의 SHA를 검증할 수 없어 하지 않았습니다.
 
 ## 서빙
 

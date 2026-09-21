@@ -20,6 +20,32 @@ GitHub Actions의 빈 환경에서만 테스트 모듈 6개가 수집 단계에�
 CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e ".[dev,ml,api,mcp]"`만으로
 512개 수집, 508 passed / 8 skipped, 두 감사 PASS를 재현했습니다.
 
+## 하네스 보강 2: 게이트 범위, 견고성, Actions 위생 (2026-09-21)
+
+- **프론트 게이트.** `next lint`가 deprecated되어 대화형 프롬프트에서 멈추던 것을 ESLint flat
+  config(`apps/web/eslint.config.mjs`, next/core-web-vitals + next/typescript)로 옮겼습니다.
+  vitest 11개(`lib/format.test.ts`, `lib/places.test.ts`)를 추가했고 CI `web` job이 `npm ci`,
+  lint, `tsc --noEmit`, vitest를 돕니다. `make web-check`가 같은 순서입니다. eslint-config-next는
+  설치된 Next 15 major에 맞췄습니다.
+- **mypy ratchet.** `scripts/mypy_ratchet.py` + `config/mypy_baseline.json`(126). 초과하면 실패,
+  미만이면 `--update`로 baseline을 내리라고 실패합니다. CI와 `make check`의 advisory 단계를 대체.
+- **경고 정책.** pytest `filterwarnings = error` + 허용 3건(starlette anyio alias, pytest-socket
+  차단 안내, MLP smoke 수렴 경고). 이 정책이 `McpStdioTools`가 event loop를 닫지 않던 누수를
+  잡았습니다(`_run_loop` finally에서 `shutdown_asyncgens` + `close`, `close()` idempotent).
+- **timeout과 coverage.** `--timeout=120`(pytest-timeout). coverage는 제품 코드 기준 57.7%
+  (tests, apps, 벤치마크 스크립트 omit), CI와 `make check`의 바닥은 55.
+- **Actions 위생.** concurrency cancel-in-progress, `permissions: contents: read`, checkout v5 /
+  setup-python v6 / setup-node v5(Node 24), `.github/dependabot.yml`(actions 주간, npm 월간; pip는
+  lock 체계 때문에 제외), `.pre-commit-config.yaml`(ruff 0.16.8 = lock, 기본 훅). SHA 고정은 이
+  환경에서 태그 SHA를 검증할 수 없어 보류.
+- lock 재생성: pytest-timeout, pytest-cov, pre-commit이 dev extra에 추가됨.
+- V2-00 도메인 drift 게이트가 `apps/web/package-lock.json`의 third-party 패키지 `@parcel/watcher`
+  funding URL을 "parcel"로 잡았습니다. lockfile(package-lock, pnpm, yarn, uv, poetry)은 의존성
+  manifest이지 제품 surface가 아니므로 스캔에서 제외(`EXCLUDE_NAMES`).
+- 검증: `make check`(517 passed / 8 skipped, coverage 57.7%, 두 감사 PASS, ratchet 126), `make
+  web-check`(lint 0 problems, tsc 통과, vitest 11), `pre-commit run --all-files` 전부 Passed. 빈 venv를
+  새 lock으로 재설치해도 같은 결과.
+
 ## 하네스 엔지니어링 보강: lock, 모델 버전 강제, 감사 idempotent (2026-09-21)
 
 CI가 두 번 연속 깨진 뒤 "왜 로컬에서 못 잡았나"를 기준으로 세 가지를 구조적으로 막았습니다.

@@ -142,6 +142,13 @@ class McpStdioTools:
         except BaseException as exc:  # noqa: BLE001 - surfaced to the caller via _error
             self._error = exc
             self._ready.set()
+        finally:
+            # The loop owns a self-pipe socketpair; leaving it open surfaces later as a
+            # ResourceWarning at garbage collection (the test suite treats warnings as errors).
+            try:
+                self._loop.run_until_complete(self._loop.shutdown_asyncgens())
+            finally:
+                self._loop.close()
 
     async def _serve(self) -> None:
         from mcp.client.session import ClientSession
@@ -163,10 +170,22 @@ class McpStdioTools:
         self._session = None
 
     def close(self) -> None:
-        if self._loop is not None and self._stop is not None and self._session is not None:
-            self._loop.call_soon_threadsafe(self._stop.set)
-            if self._thread is not None:
-                self._thread.join(timeout=5)
+        """Stop the server session and release the loop thread (idempotent)."""
+        with self._lock:
+            loop, thread = self._loop, self._thread
+            if loop is None:
+                return
+            if self._stop is not None and self._session is not None and not loop.is_closed():
+                loop.call_soon_threadsafe(self._stop.set)
+            if thread is not None:
+                thread.join(timeout=5)
+            if not loop.is_closed() and (thread is None or not thread.is_alive()):
+                loop.close()
+            self._loop = None
+            self._thread = None
+            self._session = None
+            self._stop = None
+            self._ready.clear()
 
     # -- calls -----------------------------------------------------------------------------
     def _call(self, name: str, arguments: dict[str, Any]) -> dict[str, Any]:

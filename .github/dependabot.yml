@@ -1,0 +1,22 @@
+# Dependency update PRs. Each one runs the harness, so an update that breaks a gate is visible
+# before it lands.
+#
+# Python is deliberately absent: the Python environment is a compiled lock (requirements/*.txt,
+# `make lock`) with a constraints file that pins scikit-learn to the promoted model's version.
+# A bot editing one lock line at a time would desynchronise dev.txt/serve.txt/constraints.txt;
+# Python updates go through `make lock` and a normal PR instead.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      web-dev-tooling:
+        dependency-type: development

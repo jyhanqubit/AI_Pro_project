@@ -1,0 +1,24 @@
+# Local hooks so a lint/format failure is caught at commit time, not in CI.
+#   pip install -r requirements/dev.txt   (or: make install)   # includes pre-commit
+#   pre-commit install
+# The ruff version matches requirements/dev.txt; bump both together (`make lock`).
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.8
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      # Committed evidence and fixtures are byte-exact inputs (hashes, recorded payloads); the
+      # whitespace fixers must not touch them.
+      - id: end-of-file-fixer
+        exclude: ^(reports/|data/|VERSION$)
+      - id: trailing-whitespace
+        exclude: ^(reports/|data/|VERSION$)
+      - id: check-yaml
+      - id: check-json
+        exclude: ^apps/web/tsconfig\.json$
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]

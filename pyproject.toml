@@ -23,6 +23,9 @@ dev = [
     "scipy>=1.11",  # statistical hypothesis tests for EDA verification
     "aiohttp>=3.9",  # closed-loop load-test client (scripts/load_test_api, scripts/free_tier_probe)
     "pytest-socket>=0.7",  # tests never reach the public network (see [tool.pytest.ini_options])
+    "pytest-timeout>=2.3",  # a hung test fails in 120 s instead of eating the 30 min CI budget
+    "pytest-cov>=6.0",  # coverage measurement + floor in CI (see [tool.coverage])
+    "pre-commit>=4.0",  # local ruff hooks so format/lint failures never reach CI (`pre-commit install`)
 ]
 graph = [
     "neo4j>=5.0",  # optional live graph backend (Demo Mode runs offline without it)
@@ -117,10 +120,31 @@ testpaths = ["tests"]
 # internet, the dev sandbox does not). pytest-socket refuses every TCP connection except
 # loopback (TestClient, the "cluster unreachable" degrade tests) and Unix sockets (asyncio's
 # self-pipe, the MCP stdio client's subprocess plumbing).
-addopts = "--disable-socket --allow-hosts=127.0.0.1,::1,localhost --allow-unix-socket"
+addopts = "--disable-socket --allow-hosts=127.0.0.1,::1,localhost --allow-unix-socket --timeout=120"
+# Warnings policy: every warning is an error unless it is listed here with a reason. A new
+# warning therefore fails the suite at the change that introduced it, instead of accumulating.
 filterwarnings = [
+    "error",
     # The promoted serving model is a pickle; sklearn warns (does not fail) when a different
     # version unpickles it. That is a silent reproducibility drift, so the harness treats it as
     # an error (the loader in ml/forecasting/promoted.py refuses the mismatch at runtime too).
     "error::sklearn.exceptions.InconsistentVersionWarning",
+    # starlette's TestClient still references an anyio alias; upstream, not ours.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+    # pytest-socket also emits a UserWarning when it blocks a connect; the guard test expects it.
+    "ignore:A test tried to use socket.socket.connect:UserWarning",
+    # tests/unit/test_recsys.py::test_mlp_scorer_smoke fits a tiny MLP with max_iter=300 on
+    # purpose (speed); the optimiser reporting non-convergence is expected there.
+    "ignore:Stochastic Optimizer.*Maximum iterations:sklearn.exceptions.ConvergenceWarning",
 ]
+
+[tool.coverage.run]
+# What counts: the product and pipeline code. Tests, the web app, generated and vendored trees
+# are excluded so the number describes the code under test, not the tests themselves.
+source = ["."]
+omit = ["tests/*", "apps/*", ".venv/*", "*/node_modules/*", "scripts/free_tier_probe.py", "scripts/load_test_api.py", "scripts/spark_shuffle_bench.py"]
+branch = false
+
+[tool.coverage.report]
+skip_empty = true
+precision = 1

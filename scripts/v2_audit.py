@@ -47,6 +47,9 @@ EXCLUDE_PREFIXES = (
     "docs/v2/",  # the V2 plan docs restate the prohibition
     "reports/v2/",  # V2 audit/report artifacts quote the gate
 )
+# Dependency lockfiles list third-party package names and funding URLs (e.g. the npm package
+# `@parcel/watcher` pulled in by the web toolchain); they are manifests, not product surfaces.
+EXCLUDE_NAMES = {"package-lock.json", "pnpm-lock.yaml", "yarn.lock", "uv.lock", "poetry.lock"}
 
 
 def _iter_files():
@@ -56,7 +59,7 @@ def _iter_files():
         if any(part in SKIP_DIRS for part in path.parts):
             continue
         rel = path.relative_to(REPO_ROOT).as_posix()
-        if rel.startswith(EXCLUDE_PREFIXES):
+        if rel.startswith(EXCLUDE_PREFIXES) or path.name in EXCLUDE_NAMES:
             continue
         yield path, rel
 

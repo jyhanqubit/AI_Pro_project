@@ -1,0 +1,4 @@
+{
+  "max_errors": 126,
+  "note": "Accepted mypy error count (scripts/mypy_ratchet.py). May only go down: a run above this number fails, a run below asks you to lower it."
+}

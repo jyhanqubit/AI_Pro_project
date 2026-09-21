@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lock lint typecheck test check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
+.PHONY: install lock lint typecheck test coverage check web-check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
 
 install:  ## Install the dev environment from the lock (exact versions CI and Render use)
 	python -m pip install -r requirements/dev.txt
@@ -20,20 +20,26 @@ lint:  ## Ruff lint + format check
 	ruff check .
 	ruff format --check .
 
-typecheck:  ## Static type check (advisory: known debt, see README 검증 하네스)
-	python -m mypy .
+typecheck:  ## mypy ratchet: the error count may not exceed config/mypy_baseline.json (lower it as debt is paid)
+	python -m scripts.mypy_ratchet
 
-test:  ## Run the test suite (optional extras skip, never fail)
+test:  ## Run the test suite (offline, public network blocked, 120 s per-test timeout; optional extras skip)
 	python -m pytest
 
-check:  ## The whole harness: lint + format gate, graph snapshot, tests, V2 audit gates (typecheck is advisory)
+coverage:  ## Test suite with the coverage report and the CI floor (measured 57.7% on 2026-09-21; floor 55)
+	python -m pytest -q --cov --cov-report=term-missing:skip-covered --cov-fail-under=55
+
+check:  ## The whole Python harness, same order as CI: lint + format, graph snapshot, tests + coverage floor, V2 audit gates, mypy ratchet
 	ruff check .
 	ruff format --check .
 	python -m scripts.build_graph > /dev/null
-	python -m pytest -q
+	python -m pytest -q --cov --cov-report=term --cov-fail-under=55
 	python -m scripts.v2_audit
 	python -m scripts.v2_final_audit
-	-python -m mypy . > /dev/null 2>&1 || echo "typecheck: advisory (known debt), see README"
+	python -m scripts.mypy_ratchet
+
+web-check:  ## The web harness, same as the CI `web` job: ESLint, tsc --noEmit, vitest (needs `cd apps/web && npm ci` once)
+	cd apps/web && npm run lint && npm run typecheck && npm test
 
 collect-demo:  ## Run all three fixture collectors offline and print a summary
 	python -m pipelines.collectors.demo
