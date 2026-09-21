@@ -241,6 +241,8 @@ truststore==0.10.4 ; sys_platform != 'emscripten'
     # via
     #   httpcore2
     #   httpx2
+types-pyyaml==6.0.12.20260906
+    # via shockflow-ai (pyproject.toml)
 typing-extensions==4.16.0
     # via
     #   aiohttp

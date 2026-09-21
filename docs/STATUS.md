@@ -27,8 +27,12 @@ CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e
   vitest 11개(`lib/format.test.ts`, `lib/places.test.ts`)를 추가했고 CI `web` job이 `npm ci`,
   lint, `tsc --noEmit`, vitest를 돕니다. `make web-check`가 같은 순서입니다. eslint-config-next는
   설치된 Next 15 major에 맞췄습니다.
-- **mypy ratchet.** `scripts/mypy_ratchet.py` + `config/mypy_baseline.json`(126). 초과하면 실패,
+- **mypy ratchet.** `scripts/mypy_ratchet.py` + `config/mypy_baseline.json`. 초과하면 실패,
   미만이면 `--update`로 baseline을 내리라고 실패합니다. CI와 `make check`의 advisory 단계를 대체.
+  첫 CI 실행이 로컬 126 대 CI 127로 실패했습니다. 로컬에만 있던 PyYAML stub(→ `types-PyYAML`을
+  dev extra와 lock에 추가)과 로컬에만 있던 pyspark(→ `pyspark.*`를 mypy ignore_missing_imports에
+  추가)가 원인이었고, 두 환경이 122로 일치한 것을 확인한 뒤 baseline을 122로 내렸습니다.
+  `copilot_tools.McpStdioTools._stop`의 타입 주석 누락 2건도 이때 고쳤습니다.
 - **경고 정책.** pytest `filterwarnings = error` + 허용 3건(starlette anyio alias, pytest-socket
   차단 안내, MLP smoke 수렴 경고). 이 정책이 `McpStdioTools`가 event loop를 닫지 않던 누수를
   잡았습니다(`_run_loop` finally에서 `shutdown_asyncgens` + `close`, `close()` idempotent).

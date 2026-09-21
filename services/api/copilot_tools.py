@@ -118,7 +118,7 @@ class McpStdioTools:
         self._session: Any = None
         self._ready = threading.Event()
         self._error: BaseException | None = None
-        self._stop = None  # asyncio.Event created on the loop
+        self._stop: asyncio.Event | None = None  # created on the loop thread
         self._lock = threading.Lock()
 
     # -- lifecycle -------------------------------------------------------------------------

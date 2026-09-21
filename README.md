@@ -147,7 +147,7 @@ make check                                       Python 하네스 (CI `harness` 
  ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
  ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
  ├─ 6. git diff --exit-code (CI만)               게이트가 다시 만든 artifact가 커밋본과 같은지
- └─ 7. scripts.mypy_ratchet                      mypy 오류 수가 config/mypy_baseline.json(126)을 넘으면 실패, 줄면 baseline을 내리라고 실패
+ └─ 7. scripts.mypy_ratchet                      mypy 오류 수가 config/mypy_baseline.json(122)을 넘으면 실패, 줄면 baseline을 내리라고 실패
 
 make web-check                                   프론트 하네스 (CI `web` job과 같은 순서, apps/web)
  ├─ eslint .                                     next/core-web-vitals + next/typescript 규칙, 0 problems
@@ -228,7 +228,11 @@ hang이나 경고에 무방비, Actions 위생)을 처리하는 과정에서도 
   `web` job을 추가했습니다. `tsc --noEmit`은 원래 통과하고 있었습니다.
 - mypy를 advisory로 두면 부채가 늘어도 아무도 모릅니다. `scripts/mypy_ratchet.py`가 오류 수를
   `config/mypy_baseline.json`과 비교해 늘면 실패하고, 줄면 baseline을 내리라고 실패합니다. 그래서
-  부채는 한 방향으로만 움직입니다.
+  부채는 한 방향으로만 움직입니다. 첫 CI 실행에서 바로 걸렸는데, 로컬 126 대 CI 127이었습니다.
+  원인은 코드가 아니라 환경이었습니다. 로컬에는 PyYAML stub이 있고 CI에는 없었으며, 반대로 로컬에는
+  pyspark가 있어 벤치마크 스크립트의 import 오류가 안 보였습니다. stub을 lock에 넣고 optional인
+  pyspark를 mypy ignore 목록에 올려 두 환경의 수를 같게 만든 뒤 baseline을 122로 내렸습니다.
+  오류 수는 환경의 함수가 아니어야 ratchet이 의미가 있습니다.
 - 경고를 전부 오류로 바꾸자 MCP stdio 클라이언트가 event loop를 닫지 않아 socketpair가 가비지
   컬렉션에서 `ResourceWarning`으로 새는 것이 드러났습니다. 모델을 처음 로드하는 테스트에서 터져서
   원인과 무관해 보이는 실패였고, `close()`가 loop까지 닫도록 고쳤습니다. 허용 목록에 남긴 경고는
