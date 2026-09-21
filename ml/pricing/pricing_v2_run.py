@@ -16,11 +16,9 @@ from pathlib import Path
 
 import numpy as np
 
-from config.pricing_v2 import MAX_MULTIPLIER, NO_SURCHARGE_EVENT_TYPES
+from config.pricing_v2 import MAX_MULTIPLIER
 from ml.pricing.pricing_v2_eval import (
-    BASE_FARE,
     CREDIT_BUDGET,
-    SURGE_TIERS,
     ZoneHour,
     _net_surge,
     audit_action,
@@ -97,7 +95,9 @@ def main(argv=None) -> int:
     guardrail = {
         "run_id": f"run_v2-05_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/pricing/guardrail_audit.json",
-        "mode": "research", "claim_status": "simulated", "freshness": stamp.isoformat(),
+        "mode": "research",
+        "claim_status": "simulated",
+        "freshness": stamp.isoformat(),
         "assumption_set_version": A.version,
         "n_zone_hours": len(zhs),
         "action_mix": kinds,
@@ -129,28 +129,42 @@ def main(argv=None) -> int:
             total_net = sum(a["net"] for a in acts)
             surge_rev = sum((a["surge"] - 1.0) for a in acts if a["kind"] == "surge")
             n_surge = sum(1 for a in acts if a["kind"] == "surge")
-            grid.append({"elasticity": round(e, 4), "m_max": m_max,
-                         "total_net": round(total_net, 1), "surge_actions": n_surge,
-                         "surge_intensity": round(surge_rev, 2)})
+            grid.append(
+                {
+                    "elasticity": round(e, 4),
+                    "m_max": m_max,
+                    "total_net": round(total_net, 1),
+                    "surge_actions": n_surge,
+                    "surge_intensity": round(surge_rev, 2),
+                }
+            )
 
     # --- A/A experiment dry-run (design validity, not a treatment effect) --------------------
     # Switchback: alternate hour-blocks to arms; apply the SAME policy to both (A/A).
     nets = np.array([a["net"] for a in actions])
     arm = np.array([(i // 8) % 2 for i in range(len(actions))])  # switchback by zone-block
     blocks = np.array([i // 8 for i in range(len(actions))])
-    eff, lo, hi = _block_bootstrap_mean_diff(nets[arm == 0], nets[arm == 1],
-                                             blocks[arm == 1][: (arm == 1).sum()])
-    aa = {"design": "switchback A/A (identical policy both arms)",
-          "estimated_effect": round(eff, 4), "ci_95": [round(lo, 4), round(hi, 4)],
-          "ci_covers_zero": lo <= 0 <= hi,
-          "interpretation": "A/A effect ~0 with CI covering 0 => estimator unbiased (design valid)"}
+    eff, lo, hi = _block_bootstrap_mean_diff(
+        nets[arm == 0], nets[arm == 1], blocks[arm == 1][: (arm == 1).sum()]
+    )
+    aa = {
+        "design": "switchback A/A (identical policy both arms)",
+        "estimated_effect": round(eff, 4),
+        "ci_95": [round(lo, 4), round(hi, 4)],
+        "ci_covers_zero": lo <= 0 <= hi,
+        "interpretation": "A/A effect ~0 with CI covering 0 => estimator unbiased (design valid)",
+    }
 
     sensitivity = {
         "run_id": guardrail["run_id"],
         "artifact_id": "reports/v2/pricing/sensitivity.json",
-        "mode": "research", "claim_status": "simulated", "freshness": stamp.isoformat(),
-        "assumption_set_version": A.version, "base_elasticity": A.elasticity,
-        "grid": grid, "experiment_dry_run_AA": aa,
+        "mode": "research",
+        "claim_status": "simulated",
+        "freshness": stamp.isoformat(),
+        "assumption_set_version": A.version,
+        "base_elasticity": A.elasticity,
+        "grid": grid,
+        "experiment_dry_run_AA": aa,
         "note": "Simulated shadow pricing; net is assumption-conditioned; no causal/live claim.",
     }
 
@@ -159,10 +173,16 @@ def main(argv=None) -> int:
     (OUT_DIR / "sensitivity.json").write_text(json.dumps(sensitivity, indent=2), encoding="utf-8")
 
     print(f"V2-05 bounded pricing — {len(zhs)} zone-hours (SIMULATED shadow quotes)")
-    print(f"action mix: {kinds}  credit spend {spend:.1f}/{CREDIT_BUDGET} (respected: {guardrail['budget_respected']})")
-    print(f"guardrail violations: {guardrail['violation_count']}  "
-          f"safety zones base-fare: {safety_clean}  audit catches planted: {audit_catches_planted}")
-    print(f"A/A dry-run effect: {eff:+.3f}  CI95 [{lo:.3f}, {hi:.3f}]  covers 0: {aa['ci_covers_zero']}")
+    print(
+        f"action mix: {kinds}  credit spend {spend:.1f}/{CREDIT_BUDGET} (respected: {guardrail['budget_respected']})"
+    )
+    print(
+        f"guardrail violations: {guardrail['violation_count']}  "
+        f"safety zones base-fare: {safety_clean}  audit catches planted: {audit_catches_planted}"
+    )
+    print(
+        f"A/A dry-run effect: {eff:+.3f}  CI95 [{lo:.3f}, {hi:.3f}]  covers 0: {aa['ci_covers_zero']}"
+    )
     print(f"reports -> {OUT_DIR}/guardrail_audit.json, {OUT_DIR}/sensitivity.json")
     return 0
 

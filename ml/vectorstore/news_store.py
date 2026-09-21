@@ -93,8 +93,13 @@ class NewsVectorStore:
         for i in range(len(self)):
             for j in range(i + 1, len(self)):
                 if sims[i, j] >= thr:
-                    out.append((self._records[i].article_id, self._records[j].article_id,
-                                float(sims[i, j])))
+                    out.append(
+                        (
+                            self._records[i].article_id,
+                            self._records[j].article_id,
+                            float(sims[i, j]),
+                        )
+                    )
         return out
 
     # --- persistence (accumulates across runs) ------------------------------------------------
@@ -105,7 +110,8 @@ class NewsVectorStore:
         (d / "meta.json").write_text(
             json.dumps(
                 {"dim": self.cfg.dim, "records": [asdict(r) for r in self._records]},
-                ensure_ascii=False, indent=2,
+                ensure_ascii=False,
+                indent=2,
             ),
             encoding="utf-8",
         )

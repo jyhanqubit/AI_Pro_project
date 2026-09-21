@@ -48,8 +48,14 @@ def _apply_truck(stations: list[ScenarioStation]) -> tuple[list[ScenarioStation]
     """Greedy rebalancing toward rent demand; returns updated stations + truck bike-km."""
     opt = [
         OptStation(
-            station_id=s.station_id, name=s.station_id, lat=s.lat, lng=s.lng,
-            bikes=s.bikes, capacity=s.capacity, target=s.rent_demand, zone_id=s.zone_id,
+            station_id=s.station_id,
+            name=s.station_id,
+            lat=s.lat,
+            lng=s.lng,
+            bikes=s.bikes,
+            capacity=s.capacity,
+            target=s.rent_demand,
+            zone_id=s.zone_id,
         )
         for s in stations
     ]

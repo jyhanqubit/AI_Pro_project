@@ -34,9 +34,7 @@ def final_holdout(hour_idx: np.ndarray, final_test_hours: int) -> tuple[np.ndarr
     return dev, test
 
 
-def holdout_by_time(
-    hours: list[datetime], test_start: datetime
-) -> tuple[np.ndarray, np.ndarray]:
+def holdout_by_time(hours: list[datetime], test_start: datetime) -> tuple[np.ndarray, np.ndarray]:
     """Split row positions at a calendar boundary: test = hours >= ``test_start``.
 
     An expanding-window holdout (development is every hour strictly before ``test_start``, so no

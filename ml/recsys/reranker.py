@@ -25,8 +25,12 @@ from .stations import Station, StationMaster
 
 # Pair feature order == PAIR_* token order.
 PAIR_FEATURES = [
-    "distance", "detour", "forecast_risk", "event_impact",
-    "operational_benefit", "inventory_freshness",
+    "distance",
+    "detour",
+    "forecast_risk",
+    "event_impact",
+    "operational_benefit",
+    "inventory_freshness",
 ]
 N_PAIR = len(PAIR_FEATURES)
 # Segment ids for CLS, QUERY, SEP, STATION, PAIR.
@@ -44,8 +48,10 @@ def pair_features(
     if station is not None and station.inventory_known and station.capacity:
         from contracts.v1.enums import RecommendationMode
 
-        have = (station.bikes_available or 0) if sample.mode == RecommendationMode.RENT else (
-            station.docks_available or 0
+        have = (
+            (station.bikes_available or 0)
+            if sample.mode == RecommendationMode.RENT
+            else (station.docks_available or 0)
         )
         operational_benefit = min(1.0, have / float(station.capacity))
         freshness = 1.0
@@ -53,8 +59,12 @@ def pair_features(
         operational_benefit = 0.0
         freshness = 0.0
     return [
-        cand.distance_km, cand.detour_km, forecast_risk, event_impact,
-        operational_benefit, freshness,
+        cand.distance_km,
+        cand.detour_km,
+        forecast_risk,
+        event_impact,
+        operational_benefit,
+        freshness,
     ]
 
 
@@ -73,8 +83,12 @@ class ShockFlowRecFormerReranker(nn.Module):
         nn.init.normal_(self.cls, std=0.02)
         nn.init.normal_(self.sep, std=0.02)
         layer = nn.TransformerEncoderLayer(
-            d_model=d, nhead=cfg.nhead, dim_feedforward=cfg.dim_feedforward,
-            dropout=cfg.dropout, batch_first=True, activation="gelu",
+            d_model=d,
+            nhead=cfg.nhead,
+            dim_feedforward=cfg.dim_feedforward,
+            dropout=cfg.dropout,
+            batch_first=True,
+            activation="gelu",
         )
         self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.num_layers)
         self.head = nn.Linear(d, 1)

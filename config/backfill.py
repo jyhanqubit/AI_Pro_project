@@ -107,7 +107,7 @@ GUARDIAN_NYC_QUERY = (
     '"Madison Square Garden" OR "Penn Station") '
     'AND ("bike share" OR "Citi Bike" OR "bike lane" OR cycling OR subway OR MTA OR '
     '"service change" OR "road closure" OR detour OR concert OR festival OR parade OR '
-    'marathon OR flood OR storm)'
+    "marathon OR flood OR storm)"
 )
 GUARDIAN_QUERY_PRESETS: dict[str, str] = {"jc": GUARDIAN_JC_QUERY, "nyc": GUARDIAN_NYC_QUERY}
 

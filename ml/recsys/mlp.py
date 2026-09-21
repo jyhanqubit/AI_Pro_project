@@ -90,8 +90,7 @@ class MlpPairScorer:
         if not self._fitted or not cands:
             # Deterministic fallback: nearest feasible first.
             return [
-                c.station_id
-                for c in sorted(cands, key=lambda c: (not c.feasible, c.distance_km))
+                c.station_id for c in sorted(cands, key=lambda c: (not c.feasible, c.distance_km))
             ]
         X = self._scaler.transform([_pair_row(sample, c, master) for c in cands])
         proba = self._clf.predict_proba(X)[:, 1]

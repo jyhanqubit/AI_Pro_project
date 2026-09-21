@@ -45,8 +45,10 @@ def main(argv: list[str] | None = None) -> int:
     print("=" * 48)
     print(f"A1 permitted   : {len(p):5d} borough-hour cells with signal")
     print(f"A2 news (LLM)  : {len(n):5d} cells")
-    print(f"  overlap      : {len(overlap):5d} cells already covered by permitted "
-          f"({100 * len(overlap) / max(len(n), 1):.0f}% of news)")
+    print(
+        f"  overlap      : {len(overlap):5d} cells already covered by permitted "
+        f"({100 * len(overlap) / max(len(n), 1):.0f}% of news)"
+    )
     print(f"  genuinely new: {len(new_only):5d} cells the news adds beyond permitted")
     print(f"per-borough (permitted): {dict(Counter(k[0] for k in p))}")
     print(f"per-borough (news)     : {dict(Counter(k[0] for k in n))}")

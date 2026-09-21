@@ -33,18 +33,13 @@ _EVENT_ATTRIBUTABLE = {
 }
 
 
-def attribute_root_cause(
-    alerts: list[AnomalyAlert], events: list[EventLink]
-) -> list[AnomalyAlert]:
+def attribute_root_cause(alerts: list[AnomalyAlert], events: list[EventLink]) -> list[AnomalyAlert]:
     out: list[AnomalyAlert] = []
     for a in alerts:
         if a.anomaly_type not in _EVENT_ATTRIBUTABLE:
             out.append(a)  # data-quality keeps likely_data_quality
             continue
-        linked = [
-            e for e in events
-            if e.zone_id == a.zone_id and e.available_at <= a.detected_at
-        ]
+        linked = [e for e in events if e.zone_id == a.zone_id and e.available_at <= a.detected_at]
         if linked:
             out.append(
                 a.model_copy(

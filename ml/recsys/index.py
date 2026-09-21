@@ -25,8 +25,13 @@ class IndexKey:
 
     def fingerprint(self) -> str:
         raw = "|".join(
-            [self.cutoff, self.model_version, self.feature_version,
-             self.event_feature_version, self.station_snapshot_hash]
+            [
+                self.cutoff,
+                self.model_version,
+                self.feature_version,
+                self.event_feature_version,
+                self.station_snapshot_hash,
+            ]
         )
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]
 

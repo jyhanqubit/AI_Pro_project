@@ -66,7 +66,9 @@ def test_oracle_is_upper_bound_regret_nonnegative():
     actual = rng.integers(0, 12, size=500).astype(float)
     forecast = np.clip(actual + rng.normal(0, 3, size=500), 0, None)
     seasonal = np.clip(actual + rng.normal(0, 5, size=500), 0, None)
-    o = account(oracle_stock(actual, A), actual, baseline_stock=oracle_stock(actual, A), assumptions=A)
+    o = account(
+        oracle_stock(actual, A), actual, baseline_stock=oracle_stock(actual, A), assumptions=A
+    )
     for stock in (forecast, seasonal):
         pol = account(np.rint(stock), actual, baseline_stock=np.rint(stock), assumptions=A)
         assert regret(pol, o) >= -1e-9  # oracle nets at least as much as any policy

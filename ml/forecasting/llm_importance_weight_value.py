@@ -29,7 +29,12 @@ import numpy as np
 import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
-from ml.forecasting.borough_event_lift import _EVENT_COLS, _fit_eval, build_event_index, stream_borough_cells
+from ml.forecasting.borough_event_lift import (
+    _EVENT_COLS,
+    _fit_eval,
+    build_event_index,
+    stream_borough_cells,
+)
 from ml.forecasting.event_features_v2 import EventFeatureCfg, build_permitized_index
 from ml.forecasting.llm_feature_value import llm_feature_value
 from ml.forecasting.metrics import mae, wape
@@ -75,10 +80,21 @@ def run(data_dir, events_path, news_path, perm_events, test_from, target=PRIMARY
         rec["ev_crowd_newswt"] = rec["ev_crowd"] * (1.0 + s)
         recs.append(rec)
         if s > 0 and rec["ev_active"] > 0:  # collect real co-occurrence examples to show
-            examples.append({"borough": r.zone_id, "hour": hk, "ev_active": rec["ev_active"],
-                             "ev_crowd": rec["ev_crowd"], "news_salience": round(s, 3),
-                             "ev_active_newswt": round(rec["ev_active_newswt"], 3)})
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+            examples.append(
+                {
+                    "borough": r.zone_id,
+                    "hour": hk,
+                    "ev_active": rec["ev_active"],
+                    "ev_crowd": rec["ev_crowd"],
+                    "news_salience": round(s, 3),
+                    "ev_active_newswt": round(rec["ev_active_newswt"], 3),
+                }
+            )
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -91,27 +107,42 @@ def run(data_dir, events_path, news_path, perm_events, test_from, target=PRIMARY
         "A1_plus_permitted": b1_cols + list(_EVENT_COLS),
         "A_news_importance_weighted": b1_cols + list(_EVENT_COLS) + list(_WT_COLS),
     }
-    preds = {a: _fit_eval(df[cc].to_numpy(dtype=float)[dev_pos], y[dev_pos],
-                          df[cc].to_numpy(dtype=float)[test_pos], 0) for a, cc in cols.items()}
+    preds = {
+        a: _fit_eval(
+            df[cc].to_numpy(dtype=float)[dev_pos],
+            y[dev_pos],
+            df[cc].to_numpy(dtype=float)[test_pos],
+            0,
+        )
+        for a, cc in cols.items()
+    }
     y_test = y[test_pos]
     blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test_pos]]
     active = df.loc[test_pos, "news_salience"].to_numpy() > 0
 
-    arms = {a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
-            for a, p in preds.items()}
-    lfv = llm_feature_value(y_test, preds["A1_plus_permitted"],
-                            preds["A_news_importance_weighted"], active, blocks)
+    arms = {
+        a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
+        for a, p in preds.items()
+    }
+    lfv = llm_feature_value(
+        y_test, preds["A1_plus_permitted"], preds["A_news_importance_weighted"], active, blocks
+    )
 
     examples = sorted(examples, key=lambda e: -e["news_salience"])[:8]
     return {
         "run_id": f"run_v2-03impwt_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/importance_weight_contribution.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
-        "n_train_rows": int(len(dev_pos)), "n_test_rows": int(len(test_pos)),
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
+        "n_train_rows": int(len(dev_pos)),
+        "n_test_rows": int(len(test_pos)),
         "feature_form": {
             "news_salience": "news importance in the borough-hour (severity x half-life decay, "
-                             "availability-gated); 0 where no news",
+            "availability-gated); 0 where no news",
             "ev_active_newswt": "ev_active * (1 + news_salience)  -- permit activity amplified if newsworthy",
             "ev_crowd_newswt": "ev_crowd * (1 + news_salience)",
             "invariant": "no news => salience 0 => weight x1.0 => permit feature UNCHANGED (dense base intact)",
@@ -121,7 +152,7 @@ def run(data_dir, events_path, news_path, perm_events, test_from, target=PRIMARY
         "arms": arms,
         "importance_weight_value_vs_A1": lfv,
         "note": "News reweights the dense permit feed instead of standing alone; can only modulate "
-                "permit borough-hours that co-occur with news, never corrupt the base signal.",
+        "permit borough-hours that co-occur with news, never corrupt the base signal.",
     }
 
 
@@ -130,23 +161,33 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default="data/raw/nyc")
     ap.add_argument("--events", default="data/fixtures/nyc_permitted_events_filtered.jsonl.gz")
     ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl")
-    ap.add_argument("--perm-events", default="data/fixtures/news_live/claude_events_permitized_2026h1.jsonl")
+    ap.add_argument(
+        "--perm-events", default="data/fixtures/news_live/claude_events_permitized_2026h1.jsonl"
+    )
     ap.add_argument("--test-from", default="2026-05-01")
     ns = ap.parse_args(argv)
     res = run(ns.data_dir, ns.events, ns.news, ns.perm_events, ns.test_from)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "importance_weight_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    (OUT_DIR / "importance_weight_contribution.json").write_text(
+        json.dumps(res, indent=2), encoding="utf-8"
+    )
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']} news_active={res['test_rows_news_active']}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']} news_active={res['test_rows_news_active']}"
+    )
     print("\nEXAMPLE feature values (what enters the model) — permit x news importance:")
     print(f"  {'borough-hour':26s} {'ev_active':>9s} {'news_sal':>9s} {'ev_active_newswt':>16s}")
     for e in res["example_feature_values"]:
-        print(f"  {e['borough']+' '+e['hour']:26s} {e['ev_active']:>9.0f} {e['news_salience']:>9.3f} {e['ev_active_newswt']:>16.3f}")
+        print(
+            f"  {e['borough'] + ' ' + e['hour']:26s} {e['ev_active']:>9.0f} {e['news_salience']:>9.3f} {e['ev_active_newswt']:>16.3f}"
+        )
     for a, s in res["arms"].items():
         print(f"  {a:28s} WAPE={s['wape']:.4f}")
     lfv = res["importance_weight_value_vs_A1"]
-    print(f"IMPORTANCE-WEIGHT value vs A1: {lfv['decision']}  skill={lfv['llm_active_skill_pct']}%  "
-          f"CI={lfv['active_error_gain_ci95']} (n={lfv['n_llm_active_rows']})")
+    print(
+        f"IMPORTANCE-WEIGHT value vs A1: {lfv['decision']}  skill={lfv['llm_active_skill_pct']}%  "
+        f"CI={lfv['active_error_gain_ci95']} (n={lfv['n_llm_active_rows']})"
+    )
     print(f"report -> {OUT_DIR}/importance_weight_contribution.json")
     return 0
 

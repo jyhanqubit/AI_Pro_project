@@ -13,20 +13,36 @@ from services.api.v2 import StationView
 
 
 def _sv(sid, ko, lat, lng, bikes, docks):
-    return StationView(station_id=sid, ko=ko, en=ko, area="JC", zone_id=sid, bikes=bikes,
-                       capacity=bikes + docks, docks_free=docks, target=10, base_target=10,
-                       shortage=0, surplus=0, level="ok", level_label="빌릴 수 있어요",
-                       lat=lat, lng=lng, demand_delta=0.0, baseline_forecast=0.0,
-                       event_aware_forecast=0.0)
+    return StationView(
+        station_id=sid,
+        ko=ko,
+        en=ko,
+        area="JC",
+        zone_id=sid,
+        bikes=bikes,
+        capacity=bikes + docks,
+        docks_free=docks,
+        target=10,
+        base_target=10,
+        shortage=0,
+        surplus=0,
+        level="ok",
+        level_label="빌릴 수 있어요",
+        lat=lat,
+        lng=lng,
+        demand_delta=0.0,
+        baseline_forecast=0.0,
+        event_aware_forecast=0.0,
+    )
 
 
 # a tiny synthetic network: origin has NO bikes, destination is FULL (0 docks) → planner must walk
 # to the nearest station that has bikes / free docks.
 _NET = [
-    _sv("O", "출발역", 40.700, -74.040, bikes=0, docks=5),    # origin: empty
-    _sv("R", "대여역", 40.702, -74.041, bikes=12, docks=3),   # nearest to origin WITH bikes
-    _sv("T", "반납역", 40.720, -74.030, bikes=4, docks=9),    # nearest to dest WITH docks
-    _sv("D", "목적역", 40.722, -74.029, bikes=2, docks=0),    # destination: full (no docks)
+    _sv("O", "출발역", 40.700, -74.040, bikes=0, docks=5),  # origin: empty
+    _sv("R", "대여역", 40.702, -74.041, bikes=12, docks=3),  # nearest to origin WITH bikes
+    _sv("T", "반납역", 40.720, -74.030, bikes=4, docks=9),  # nearest to dest WITH docks
+    _sv("D", "목적역", 40.722, -74.029, bikes=2, docks=0),  # destination: full (no docks)
 ]
 
 
@@ -47,13 +63,15 @@ def test_plan_picks_nearest_rentable_and_returnable(monkeypatch):
 
 
 def test_plan_uses_origin_station_when_it_has_bikes(monkeypatch):
-    net = [_sv("O", "출발역", 40.700, -74.040, bikes=8, docks=5),
-           _sv("D", "목적역", 40.720, -74.030, bikes=2, docks=6)]
+    net = [
+        _sv("O", "출발역", 40.700, -74.040, bikes=8, docks=5),
+        _sv("D", "목적역", 40.720, -74.030, bikes=2, docks=6),
+    ]
     monkeypatch.setattr(v2, "station_views", lambda engine, cutoff: net)
     plan = plan_trip(_engine_stub(), datetime.now(UTC), "O", "D")
-    assert plan["rent_station"]["id"] == "O"          # rent at origin (has bikes) → first walk 0 m
+    assert plan["rent_station"]["id"] == "O"  # rent at origin (has bikes) → first walk 0 m
     assert plan["segments"][0]["distance_m"] == 0
-    assert plan["return_station"]["id"] == "D"         # return at destination (has docks)
+    assert plan["return_station"]["id"] == "D"  # return at destination (has docks)
 
 
 def test_plan_refuses_unknown_endpoint(monkeypatch):
@@ -63,8 +81,10 @@ def test_plan_refuses_unknown_endpoint(monkeypatch):
 
 
 def test_plan_warns_when_rent_tight_or_return_tight(monkeypatch):
-    net = [_sv("O", "출발역", 40.700, -74.040, bikes=2, docks=5),   # tight bikes
-           _sv("D", "목적역", 40.720, -74.030, bikes=5, docks=2)]   # tight docks
+    net = [
+        _sv("O", "출발역", 40.700, -74.040, bikes=2, docks=5),  # tight bikes
+        _sv("D", "목적역", 40.720, -74.030, bikes=5, docks=2),
+    ]  # tight docks
     monkeypatch.setattr(v2, "station_views", lambda engine, cutoff: net)
     plan = plan_trip(_engine_stub(), datetime.now(UTC), "O", "D")
     assert plan["warnings"] and plan["confidence"] == "low"
@@ -89,14 +109,15 @@ def test_trip_parse_benchmark_llm_beats_rules_on_hard_cases():
     import json
     from pathlib import Path
 
+    from ml.copilot import trip_parse_benchmark as tpb
     from ml.copilot.trip_parse_benchmark import main
 
     assert main([]) == 0
-    d = json.loads(Path("reports/v2/copilot/trip_parse_benchmark.json").read_text(encoding="utf-8"))
+    d = json.loads(Path(tpb.OUT).read_text(encoding="utf-8"))
     assert d["llm_accuracy"] >= d["rule_based_accuracy"]
     assert d["llm_accuracy"] == 1.0
-    assert d["rule_based_accuracy"] < 1.0            # there ARE cases rules miss (else no point)
-    assert d["hard_cases_where_llm_wins"]            # non-empty
+    assert d["rule_based_accuracy"] < 1.0  # there ARE cases rules miss (else no point)
+    assert d["hard_cases_where_llm_wins"]  # non-empty
     for p in d["per_query"]:
         if p["id"] in d["hard_cases_where_llm_wins"]:
             assert p["llm_ok"] and not p["rule_ok"]
@@ -109,10 +130,11 @@ def test_trip_answer_has_no_hallucinated_numbers():
     import json
     from pathlib import Path
 
+    from ml.copilot import trip_faithfulness as tf
     from ml.copilot.trip_faithfulness import main
 
     assert main([]) == 0
-    d = json.loads(Path("reports/v2/copilot/trip_faithfulness.json").read_text(encoding="utf-8"))
+    d = json.loads(Path(tf.OUT).read_text(encoding="utf-8"))
     assert d["mean_faithfulness"] == 1.0
     assert d["ungrounded_numbers_total"] == 0
-    assert d["negative_control"]["guard_works"] is True   # a fabricated 999 IS flagged
+    assert d["negative_control"]["guard_works"] is True  # a fabricated 999 IS flagged

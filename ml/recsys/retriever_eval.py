@@ -105,13 +105,19 @@ def main() -> int:
     _OUT.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
     m, r = result["manifest"], result["R4_retriever"]
-    print(f"source={result['source']}  train_used={m['n_train_used']}  "
-          f"test_eval={m['n_test_eval']}  stations={m['num_stations']}")
-    print(f"  R4 retriever  R@5={r['recall_at_5']:.3f} R@10={r['recall_at_10']:.3f} "
-          f"R@20={r['recall_at_20']:.3f} MRR@20={r['mrr_at_20']:.3f} NDCG@20={r['ndcg_at_20']:.3f}")
+    print(
+        f"source={result['source']}  train_used={m['n_train_used']}  "
+        f"test_eval={m['n_test_eval']}  stations={m['num_stations']}"
+    )
+    print(
+        f"  R4 retriever  R@5={r['recall_at_5']:.3f} R@10={r['recall_at_10']:.3f} "
+        f"R@20={r['recall_at_20']:.3f} MRR@20={r['mrr_at_20']:.3f} NDCG@20={r['ndcg_at_20']:.3f}"
+    )
     print(f"  R0 nearest    R@20={result['R0_baseline_recall_at_20']:.3f}")
-    print(f"  cold-start R@20={r['cold_start_recall_at_20']:.3f} (n={r['cold_start_n']})  "
-          f"embed={r['embed_ms_per_query']:.2f}ms search={r['search_ms_per_query']:.3f}ms/q")
+    print(
+        f"  cold-start R@20={r['cold_start_recall_at_20']:.3f} (n={r['cold_start_n']})  "
+        f"embed={r['embed_ms_per_query']:.2f}ms search={r['search_ms_per_query']:.3f}ms/q"
+    )
     print(f"  event_ablation={result['event_ablation']}")
     print(f"wrote {_OUT.relative_to(_ROOT)}")
     return 0

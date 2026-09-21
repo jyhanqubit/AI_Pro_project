@@ -10,8 +10,6 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import numpy as np
-
 from ml.forecasting.h3_multiholdout import (
     _agg,
     bounded_holdout,
@@ -53,7 +51,7 @@ def test_build_monthly_windows_returns_last_n_and_skips_warmup():
     windows = build_monthly_windows(hours, 3)
     assert len(windows) == 3
     # Consecutive, month-long, expanding-origin windows.
-    for (s, e) in windows:
+    for s, e in windows:
         assert s.day == 1 and e.day == 1
     starts = [s.month for s, _ in windows]
     assert starts == sorted(starts)  # chronological

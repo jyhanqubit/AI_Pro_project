@@ -32,7 +32,12 @@ import numpy as np
 import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
-from ml.forecasting.borough_event_lift import _EVENT_COLS, _fit_eval, build_event_index, stream_borough_cells
+from ml.forecasting.borough_event_lift import (
+    _EVENT_COLS,
+    _fit_eval,
+    build_event_index,
+    stream_borough_cells,
+)
 from ml.forecasting.event_features_v2 import (
     DIRECT_COLS,
     GRAPH_COLS,
@@ -54,8 +59,14 @@ def _load_events(path: Path) -> list[dict]:
     return [json.loads(x) for x in path.read_text(encoding="utf-8").splitlines() if x.strip()]
 
 
-def run(data_dir: str, events_path: str, news_path: str, claude_events: str, test_from: str,
-        target: str = PRIMARY_TARGET) -> dict:
+def run(
+    data_dir: str,
+    events_path: str,
+    news_path: str,
+    claude_events: str,
+    test_from: str,
+    target: str = PRIMARY_TARGET,
+) -> dict:
     test_start = datetime.fromisoformat(test_from).replace(tzinfo=_NY)
     paths = sorted(Path(data_dir).glob("*.zip"))
     if not paths:
@@ -88,7 +99,11 @@ def run(data_dir: str, events_path: str, news_path: str, claude_events: str, tes
         for c in GRAPH_COLS:
             rec[c] = ge[c] if ge else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -106,22 +121,33 @@ def run(data_dir: str, events_path: str, news_path: str, claude_events: str, tes
         "A2_direct_improved": b1_cols + list(_EVENT_COLS) + list(DIRECT_COLS),
         "A3_plus_graph": b1_cols + list(_EVENT_COLS) + list(DIRECT_COLS) + list(GRAPH_COLS),
     }
-    preds = {arm: _fit_eval(df[cc].to_numpy(dtype=float)[dev_pos], y[dev_pos],
-                            df[cc].to_numpy(dtype=float)[test_pos], 0) for arm, cc in cols.items()}
+    preds = {
+        arm: _fit_eval(
+            df[cc].to_numpy(dtype=float)[dev_pos],
+            y[dev_pos],
+            df[cc].to_numpy(dtype=float)[test_pos],
+            0,
+        )
+        for arm, cc in cols.items()
+    }
     y_test = y[test_pos]
     blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test_pos]]
 
-    arms = {a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
-            for a, p in preds.items()}
+    arms = {
+        a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
+        for a, p in preds.items()
+    }
 
     direct_active = df.loc[test_pos, list(DIRECT_COLS)].abs().sum(axis=1).to_numpy() > 0
     graph_active = df.loc[test_pos, list(GRAPH_COLS)].abs().sum(axis=1).to_numpy() > 0
 
     # improved LLM feature value (vs A1) and the GRAPH contribution (vs the improved direct arm)
-    improved_vs_a1 = llm_feature_value(y_test, preds["A1_plus_permitted"],
-                                       preds["A2_direct_improved"], direct_active, blocks)
-    graph_vs_direct = llm_feature_value(y_test, preds["A2_direct_improved"],
-                                        preds["A3_plus_graph"], graph_active, blocks)
+    improved_vs_a1 = llm_feature_value(
+        y_test, preds["A1_plus_permitted"], preds["A2_direct_improved"], direct_active, blocks
+    )
+    graph_vs_direct = llm_feature_value(
+        y_test, preds["A2_direct_improved"], preds["A3_plus_graph"], graph_active, blocks
+    )
 
     return {
         "run_id": f"run_v2-03graph_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
@@ -164,16 +190,22 @@ def main(argv: list[str] | None = None) -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "graph_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']}  "
-          f"direct_active={res['test_rows_direct_active']} graph_active={res['test_rows_graph_active']}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']}  "
+        f"direct_active={res['test_rows_direct_active']} graph_active={res['test_rows_graph_active']}"
+    )
     for a, s in res["arms"].items():
         print(f"  {a:20s} WAPE={s['wape']:.4f}")
     iv = res["improved_llm_feature_value_vs_A1"]
     gv = res["graph_contribution_value_vs_direct"]
-    print(f"IMPROVED LLM feature (vs A1) : {iv['decision']}  skill={iv['llm_active_skill_pct']}%  "
-          f"CI95={iv['active_error_gain_ci95']}  (n={iv['n_llm_active_rows']})")
-    print(f"GRAPH contribution (vs direct): {gv['decision']}  skill={gv['llm_active_skill_pct']}%  "
-          f"CI95={gv['active_error_gain_ci95']}  (n={gv['n_llm_active_rows']})")
+    print(
+        f"IMPROVED LLM feature (vs A1) : {iv['decision']}  skill={iv['llm_active_skill_pct']}%  "
+        f"CI95={iv['active_error_gain_ci95']}  (n={iv['n_llm_active_rows']})"
+    )
+    print(
+        f"GRAPH contribution (vs direct): {gv['decision']}  skill={gv['llm_active_skill_pct']}%  "
+        f"CI95={gv['active_error_gain_ci95']}  (n={gv['n_llm_active_rows']})"
+    )
     print(f"report -> {OUT_DIR}/graph_contribution.json")
     return 0
 

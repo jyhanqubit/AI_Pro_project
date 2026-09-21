@@ -37,8 +37,15 @@ def build_demo_scenario() -> tuple[list[StationObs], list[EventLink]]:
             docks = cap - bikes
             obs.append(
                 StationObs(
-                    station_id=sid, zone_id=zone, ts=ts, bikes=bikes, docks=docks,
-                    capacity=cap, last_reported=ts, forecast=float(bikes), actual=float(bikes),
+                    station_id=sid,
+                    zone_id=zone,
+                    ts=ts,
+                    bikes=bikes,
+                    docks=docks,
+                    capacity=cap,
+                    last_reported=ts,
+                    forecast=float(bikes),
+                    actual=float(bikes),
                 )
             )
 

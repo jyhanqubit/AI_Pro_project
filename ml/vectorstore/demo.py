@@ -29,8 +29,11 @@ def _records() -> list[NewsRecord]:
         a = json.loads(line)
         out.append(
             NewsRecord(
-                article_id=a["article_id"], title=a["title"], source=a.get("source", ""),
-                published_at=a.get("published_at", ""), url_hash=a.get("url_hash", ""),
+                article_id=a["article_id"],
+                title=a["title"],
+                source=a.get("source", ""),
+                published_at=a.get("published_at", ""),
+                url_hash=a.get("url_hash", ""),
             )
         )
     return out
@@ -59,8 +62,10 @@ def main() -> int:
     store.save(_STORE)
     reloaded = NewsVectorStore.load(_STORE)
     re_added = reloaded.add(recs)  # accumulation is idempotent
-    print(f"\npersist -> reload: {len(reloaded)} articles; "
-          f"re-add duplicates added {re_added} (0 = idempotent)")
+    print(
+        f"\npersist -> reload: {len(reloaded)} articles; "
+        f"re-add duplicates added {re_added} (0 = idempotent)"
+    )
     return 0
 
 

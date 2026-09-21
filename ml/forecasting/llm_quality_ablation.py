@@ -73,7 +73,7 @@ def build_index(events_path: Path, mode: str) -> dict:
 
         if mode == "coarse_time":
             day = start.replace(hour=0, minute=0, second=0, microsecond=0)
-            span = [(day + timedelta(hours=k)) for k in range(24)]           # flat over the day
+            span = [(day + timedelta(hours=k)) for k in range(24)]  # flat over the day
         else:
             span_end = min(end, start + timedelta(hours=48)) if end else start
             h = start.replace(minute=0, second=0, microsecond=0)
@@ -107,8 +107,15 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         raise SystemExit(f"no trip zips in {data_dir}")
     rows = build_demand_features(stream_borough_cells(paths))
     b1_cols = sorted({k for r in rows for k in r.features})
-    base = [{"borough": r.zone_id, "hour_start": r.hour_start, target: r.targets[target],
-             **{k: r.features.get(k) for k in b1_cols}} for r in rows]
+    base = [
+        {
+            "borough": r.zone_id,
+            "hour_start": r.hour_start,
+            target: r.targets[target],
+            **{k: r.features.get(k) for k in b1_cols},
+        }
+        for r in rows
+    ]
     base_df = pd.DataFrame.from_records(base)
 
     results = []
@@ -116,8 +123,10 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         idx = build_index(Path(events_path), mode)
         df = base_df.copy()
         for c in _EVENT_COLS:
-            df[c] = [idx.get((b, h.strftime("%Y-%m-%d %H")), {}).get(c, 0.0)
-                     for b, h in zip(df["borough"], df["hour_start"], strict=True)]
+            df[c] = [
+                idx.get((b, h.strftime("%Y-%m-%d %H")), {}).get(c, 0.0)
+                for b, h in zip(df["borough"], df["hour_start"], strict=True)
+            ]
         d = df.sort_values(["hour_start", "borough"]).reset_index(drop=True)
         for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
             if c in d.columns:
@@ -126,28 +135,49 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         hours = list(d["hour_start"])
         dev_pos, test_pos = holdout_by_time(hours, test_start)
         y = d[target].to_numpy(dtype=float)
-        p0 = _fit_eval(d[b1_cols].to_numpy(dtype=float)[dev_pos], y[dev_pos], d[b1_cols].to_numpy(dtype=float)[test_pos], 0)
+        p0 = _fit_eval(
+            d[b1_cols].to_numpy(dtype=float)[dev_pos],
+            y[dev_pos],
+            d[b1_cols].to_numpy(dtype=float)[test_pos],
+            0,
+        )
         cc = b1_cols + list(_EVENT_COLS)
-        p1 = _fit_eval(d[cc].to_numpy(dtype=float)[dev_pos], y[dev_pos], d[cc].to_numpy(dtype=float)[test_pos], 0)
+        p1 = _fit_eval(
+            d[cc].to_numpy(dtype=float)[dev_pos],
+            y[dev_pos],
+            d[cc].to_numpy(dtype=float)[test_pos],
+            0,
+        )
         y_test = y[test_pos]
         blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test_pos]]
         active = d.loc[test_pos, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0
         lfv = llm_feature_value(y_test, p0, p1, active, blocks)
-        results.append({"mode": mode, "wape_A0": round(float(wape(y_test, p0)), 4),
-                        "wape_A1": round(float(wape(y_test, p1)), 4),
-                        "active_bh": int(active.sum()), "decision": lfv["decision"],
-                        "skill_pct": lfv["llm_active_skill_pct"], "ci95": lfv["active_error_gain_ci95"]})
+        results.append(
+            {
+                "mode": mode,
+                "wape_A0": round(float(wape(y_test, p0)), 4),
+                "wape_A1": round(float(wape(y_test, p1)), 4),
+                "active_bh": int(active.sum()),
+                "decision": lfv["decision"],
+                "skill_pct": lfv["llm_active_skill_pct"],
+                "ci95": lfv["active_error_gain_ci95"],
+            }
+        )
 
     return {
         "run_id": f"run_v2-03quality_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/quality_ablation.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
         "controls": "density held at FULL (all permit events); one quality axis degraded per mode",
         "modes": {r["mode"]: r for r in results},
         "note": "full is the control (+2.69%). A degradation that collapses the value is a necessary "
-                "quality axis. coarse_time = news-like time; citywide = news-like location; retro = "
-                "news-like retrospective availability.",
+        "quality axis. coarse_time = news-like time; citywide = news-like location; retro = "
+        "news-like retrospective availability.",
     }
 
 
@@ -162,11 +192,15 @@ def main(argv=None) -> int:
     (OUT_DIR / "quality_ablation.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 
     print("PERMIT QUALITY DEGRADATION (density held FULL; degrade one axis to news-like)")
-    print(f"  {'mode':12s} {'active_bh':>9s} {'WAPE_A0':>8s} {'WAPE_A1':>8s}  {'permit A1-A0':>18s}")
+    print(
+        f"  {'mode':12s} {'active_bh':>9s} {'WAPE_A0':>8s} {'WAPE_A1':>8s}  {'permit A1-A0':>18s}"
+    )
     for m in MODES:
         r = res["modes"][m]
-        print(f"  {m:12s} {r['active_bh']:>9d} {r['wape_A0']:>8.4f} {r['wape_A1']:>8.4f}  "
-              f"{r['decision'][:16]:>16s} {str(r['skill_pct'])+'%':>10s}")
+        print(
+            f"  {m:12s} {r['active_bh']:>9d} {r['wape_A0']:>8.4f} {r['wape_A1']:>8.4f}  "
+            f"{r['decision'][:16]:>16s} {str(r['skill_pct']) + '%':>10s}"
+        )
     print(f"report -> {OUT_DIR}/quality_ablation.json")
     return 0
 

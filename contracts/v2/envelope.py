@@ -78,7 +78,10 @@ class ResultEnvelope(ContractModel, Generic[T]):
                 "(no evidence-free numbers outside demo mode)"
             )
         # 2. demo_fixture results only in demo mode.
-        if self.claim_status is ClaimStatus.DEMO_FIXTURE and self.mode is not OperatingMode.DEMO_FIXTURE:
+        if (
+            self.claim_status is ClaimStatus.DEMO_FIXTURE
+            and self.mode is not OperatingMode.DEMO_FIXTURE
+        ):
             raise ValueError("claim_status=demo_fixture is allowed only in mode=demo_fixture")
         # 3. research results only in research mode (research never feeds product surfaces).
         if self.claim_status is ClaimStatus.RESEARCH and self.mode is not OperatingMode.RESEARCH:

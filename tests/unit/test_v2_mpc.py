@@ -13,8 +13,14 @@ from contracts.v2.ledger import LedgerAssumptions
 from optimization.mpc import PolicyResult, default_network, demand_series, simulate
 
 A = LedgerAssumptions(
-    version="test", sourced=False, margin_per_rental=1.5, shortage_externality=1.0,
-    overflow_penalty=0.3, reposition_cost_per_unit=0.4, distance_cost_per_unit_km=0.5, elasticity=-0.3,
+    version="test",
+    sourced=False,
+    margin_per_rental=1.5,
+    shortage_externality=1.0,
+    overflow_penalty=0.3,
+    reposition_cost_per_unit=0.4,
+    distance_cost_per_unit_km=0.5,
+    elasticity=-0.3,
 )
 POLICIES = ("no_action", "greedy", "milp", "mpc", "oracle")
 

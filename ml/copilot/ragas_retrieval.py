@@ -66,7 +66,9 @@ def _evaluate(method, queries, title, deg, sample_cls, cp, cr) -> dict:
         r = asyncio.run(cr.single_turn_ascore(sample))
         ps.append(p)
         rs.append(r)
-        per.append({"id": row["id"], "context_precision": round(p, 4), "context_recall": round(r, 4)})
+        per.append(
+            {"id": row["id"], "context_precision": round(p, 4), "context_recall": round(r, 4)}
+        )
     n = len(queries)
     return {
         "context_precision": round(sum(ps) / n, 4),
@@ -88,6 +90,8 @@ def main(argv=None) -> int:
             json.dumps(
                 {
                     "run_id": f"run_v2-06ragas_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
+                    "artifact_id": "reports/v2/copilot/ragas_retrieval_benchmark.json",
+                    "mode": "historical_replay",
                     "claim_status": "blocked_external",
                     "reason": f"ragas/rapidfuzz not importable: {e}",
                     "freshness": stamp.isoformat(),
@@ -115,8 +119,11 @@ def main(argv=None) -> int:
         "mode": "historical_replay",
         "claim_status": "offline_benchmark",
         "freshness": stamp.isoformat(),
-        "tool": {"package": "ragas", "version": ragas.__version__,
-                 "metrics": ["NonLLMContextPrecisionWithReference", "NonLLMContextRecall"]},
+        "tool": {
+            "package": "ragas",
+            "version": ragas.__version__,
+            "metrics": ["NonLLMContextPrecisionWithReference", "NonLLMContextRecall"],
+        },
         "task": "text lookup (paraphrase -> which event?), method-independent gold, top-k retrieval",
         "top_k": TOP_K,
         "exact_match_threshold": EXACT_THRESHOLD,
@@ -126,12 +133,12 @@ def main(argv=None) -> int:
         ),
         "generation_side_metrics": {
             "faithfulness": "measured in-session — see reports/v2/copilot/ragas_generation_benchmark.json "
-                            "(judge=claude-opus-4-8-insession; no API key for an automated ragas LLM judge, "
-                            "so judged in-session with verdicts committed as a fixture, as in V2-03/V2-06)",
+            "(judge=claude-opus-4-8-insession; no API key for an automated ragas LLM judge, "
+            "so judged in-session with verdicts committed as a fixture, as in V2-03/V2-06)",
             "answer_relevancy": "measured in-session (direct relevance judgment, not the embedding proxy) — "
-                                "see ragas_generation_benchmark.json",
+            "see ragas_generation_benchmark.json",
             "automated_ragas_llm_judge": "blocked_external — ragas' own LLM-judge path needs an API key; "
-                                         "not available here, so we judged in-session instead of faking it",
+            "not available here, so we judged in-session instead of faking it",
         },
         "finding": (
             "Real ragas non-LLM retrieval metrics agree with the top1/MRR result: graph_boosted does "
@@ -144,14 +151,18 @@ def main(argv=None) -> int:
         ),
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "ragas_retrieval_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT_DIR / "ragas_retrieval_benchmark.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8"
+    )
 
     print(f"V2-06 RAGAS (ragas {ragas.__version__}, non-LLM) — {len(queries)} queries, top-{TOP_K}")
     print(f"  {'method':16s} {'ctx_precision':>14s} {'ctx_recall':>11s}")
     print(f"  {'flat_text':16s} {flat['context_precision']:>14} {flat['context_recall']:>11}")
     print(f"  {'graph_boosted':16s} {graph['context_precision']:>14} {graph['context_recall']:>11}")
-    print(f"\ngraph − flat (ctx_precision): {report['graph_minus_flat_context_precision']:+}  "
-          f"(<=0 => graph gives no retrieval lift; consistent with top1/MRR)")
+    print(
+        f"\ngraph − flat (ctx_precision): {report['graph_minus_flat_context_precision']:+}  "
+        f"(<=0 => graph gives no retrieval lift; consistent with top1/MRR)"
+    )
     print("faithfulness / answer_relevancy: measured in-session -> ragas_generation_benchmark.json")
     print(f"report -> {OUT_DIR}/ragas_retrieval_benchmark.json")
     return 0

@@ -61,8 +61,12 @@ def build_questions(props, zone_events, cutoff_iso: str):
       zone-agnostic retriever pulls — the fair non-graph reference; independent of the zone edge).
     """
     # Global as-of universe + per-type recency ranking (zone-agnostic), for the flat baseline.
-    universe = {e for eids in zone_events.values() for e in eids
-                if _avail(props, e) and _avail(props, e) <= cutoff_iso}
+    universe = {
+        e
+        for eids in zone_events.values()
+        for e in eids
+        if _avail(props, e) and _avail(props, e) <= cutoff_iso
+    }
     by_type: dict[str, list[str]] = {}
     for e in universe:
         by_type.setdefault(_etype(props, e), []).append(e)
@@ -77,22 +81,36 @@ def build_questions(props, zone_events, cutoff_iso: str):
         types_present = {_etype(props, e) for e in asof}
         for t in sorted(types_present):
             gold = sorted({e for e in asof if _etype(props, e) == t})
-            qs.append({"zone": z, "type": t, "gold": gold, "oos": False,
-                       "flat_candidates": by_type.get(t, [])})
+            qs.append(
+                {
+                    "zone": z,
+                    "type": t,
+                    "gold": gold,
+                    "oos": False,
+                    "flat_candidates": by_type.get(t, []),
+                }
+            )
         for t in ("ROAD_CLOSURE", "SAFETY_INCIDENT", "TRANSIT_DISRUPTION", "WEATHER_SHOCK"):
             if t not in types_present:
-                qs.append({"zone": z, "type": t, "gold": [], "oos": True,
-                           "flat_candidates": by_type.get(t, [])})
+                qs.append(
+                    {
+                        "zone": z,
+                        "type": t,
+                        "gold": [],
+                        "oos": True,
+                        "flat_candidates": by_type.get(t, []),
+                    }
+                )
                 break
     return qs, universe
 
 
 def answerer(strategy: str, q: dict) -> list[str]:
-    if strategy == "no_retrieval":      # floor: no grounding at all -> invents an id
+    if strategy == "no_retrieval":  # floor: no grounding at all -> invents an id
         return [FAKE_ID]
-    if strategy == "flat_retrieval":    # fair reference: top-K type-matched by recency, zone-agnostic
+    if strategy == "flat_retrieval":  # fair reference: top-K type-matched by recency, zone-agnostic
         return list(q["flat_candidates"][:TOPK])
-    if strategy == "graphrag":          # uses the Event->Zone graph edge + type filter; refuse if none
+    if strategy == "graphrag":  # uses the Event->Zone graph edge + type filter; refuse if none
         return list(q["gold"])
     raise ValueError(strategy)
 
@@ -102,11 +120,13 @@ def score(strategy: str, qs: list[dict], universe: set[str]) -> dict:
     correct = oos_total = oos_refused = hallucinated = 0
     for q in qs:
         raw = answerer(strategy, q)
-        cited = {i for i in raw if i in universe}     # grounding: real events only (drop invented)
+        cited = {i for i in raw if i in universe}  # grounding: real events only (drop invented)
         halluc = any(i not in universe for i in raw)
         hallucinated += int(halluc)
         gold = set(q["gold"])
-        tp += len(cited & gold); fp += len(cited - gold); fn += len(gold - cited)
+        tp += len(cited & gold)
+        fp += len(cited - gold)
+        fn += len(gold - cited)
         if q["oos"]:
             oos_total += 1
             refused = not cited and not halluc
@@ -118,11 +138,16 @@ def score(strategy: str, qs: list[dict], universe: set[str]) -> dict:
     rec = tp / (tp + fn) if (tp + fn) else 1.0
     f1 = 2 * prec * rec / (prec + rec) if (prec + rec) else 0.0
     n = len(qs)
-    return {"n_questions": n, "answer_correct": f"{correct}/{n}", "correct_ratio": round(correct / n, 3),
-            "citation_f1": round(f1, 3), "out_of_scope": oos_total,
-            "out_of_scope_refused": oos_refused,
-            "refusal_ratio": round(oos_refused / oos_total, 3) if oos_total else None,
-            "hallucinated_answers": hallucinated}
+    return {
+        "n_questions": n,
+        "answer_correct": f"{correct}/{n}",
+        "correct_ratio": round(correct / n, 3),
+        "citation_f1": round(f1, 3),
+        "out_of_scope": oos_total,
+        "out_of_scope_refused": oos_refused,
+        "refusal_ratio": round(oos_refused / oos_total, 3) if oos_total else None,
+        "hallucinated_answers": hallucinated,
+    }
 
 
 def main(argv=None) -> int:
@@ -148,7 +173,9 @@ def main(argv=None) -> int:
     report = {
         "run_id": f"run_v2-06graphscale_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/graphrag_benchmark.json",
-        "mode": "historical_replay", "claim_status": "offline_benchmark", "freshness": stamp.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "offline_benchmark",
+        "freshness": stamp.isoformat(),
         "retrieval": "real event graph (data/processed/graph/event_graph.json; news + NYC permitted)",
         "cutoff": ns.cutoff,
         "graph_scale": {"events": n_events, "zones": len(zone_events), "event_zone_edges": n_edges},
@@ -157,7 +184,7 @@ def main(argv=None) -> int:
         "baselines": {
             "no_retrieval_floor": "invents an event id (grounding floor)",
             "flat_retrieval_baseline": f"fair reference: top-{TOPK} type-matched events by recency, "
-                                       "ZONE-AGNOSTIC (a plain RAG that has no graph zone edge)",
+            "ZONE-AGNOSTIC (a plain RAG that has no graph zone edge)",
             "graphrag": "uses the Event->Zone graph edge + type filter",
         },
         "answerers": ans,
@@ -183,15 +210,21 @@ def main(argv=None) -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "graphrag_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    print(f"V2-06 GraphRAG @ scale — graph: {n_events} events, {len(zone_events)} zones, "
-          f"{n_edges} edges; {len(qs)} questions as-of {ns.cutoff[:10]}")
+    print(
+        f"V2-06 GraphRAG @ scale — graph: {n_events} events, {len(zone_events)} zones, "
+        f"{n_edges} edges; {len(qs)} questions as-of {ns.cutoff[:10]}"
+    )
     print(f"  {'answerer':32s} {'correct':>9s} {'F1':>6s} {'refuse':>8s} {'halluc':>7s}")
     for name, m in ans.items():
         rr = f"{m['out_of_scope_refused']}/{m['out_of_scope']}"
-        print(f"  {name:32s} {m['answer_correct']:>9s} {m['citation_f1']:>6} {rr:>8s} {m['hallucinated_answers']:>7d}")
-    print(f"\ngraph vs flat: correct +{report['graph_vs_flat_correct_gain']}, "
-          f"F1 +{report['graph_vs_flat_f1_gain']}  (gap = value of the Event->Zone edge over plain retrieval)")
-    print(f"caveat: gold is graph-defined -> GraphRAG high by construction; see report caveats.")
+        print(
+            f"  {name:32s} {m['answer_correct']:>9s} {m['citation_f1']:>6} {rr:>8s} {m['hallucinated_answers']:>7d}"
+        )
+    print(
+        f"\ngraph vs flat: correct +{report['graph_vs_flat_correct_gain']}, "
+        f"F1 +{report['graph_vs_flat_f1_gain']}  (gap = value of the Event->Zone edge over plain retrieval)"
+    )
+    print("caveat: gold is graph-defined -> GraphRAG high by construction; see report caveats.")
     print(f"report -> {OUT_DIR}/graphrag_benchmark.json")
     # Success = the flat baseline is a genuine middle (not 0, not perfect): a fair, non-strawman control.
     return 0 if 0.0 < flat["correct_ratio"] < graph["correct_ratio"] else 1

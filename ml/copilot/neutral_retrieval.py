@@ -94,10 +94,12 @@ def main(argv=None) -> int:
     report = {
         "run_id": f"run_v2-06neutral_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
-        "mode": "historical_replay", "claim_status": "offline_benchmark", "freshness": stamp.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "offline_benchmark",
+        "freshness": stamp.isoformat(),
         "task": "text lookup: find the event a paraphrased description refers to",
         "why_neutral": "gold is a hand-authored query->event mapping independent of any retriever; "
-                       "the task is text-native so plain retrieval is genuinely competitive.",
+        "the task is text-native so plain retrieval is genuinely competitive.",
         "corpus_events": len(title),
         "methods": {
             "flat_text": "Jaccard token overlap (query vs event title)",
@@ -114,14 +116,18 @@ def main(argv=None) -> int:
         ),
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "neutral_retrieval_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT_DIR / "neutral_retrieval_benchmark.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8"
+    )
 
     print(f"V2-06 NEUTRAL text-lookup benchmark — {len(queries)} queries over {len(title)} events")
     print(f"  {'method':16s} {'top1':>6s} {'mrr':>6s}")
     print(f"  {'flat_text':16s} {flat['top1_accuracy']:>6} {flat['mrr']:>6}")
     print(f"  {'graph_boosted':16s} {graph['top1_accuracy']:>6} {graph['mrr']:>6}")
-    print(f"\ngraph − flat (top1): {report['graph_minus_flat_top1']:+}  "
-          f"(≈0 or negative => graph gives no lift on text lookup; fair, unrigged)")
+    print(
+        f"\ngraph − flat (top1): {report['graph_minus_flat_top1']:+}  "
+        f"(≈0 or negative => graph gives no lift on text lookup; fair, unrigged)"
+    )
     print(f"report -> {OUT_DIR}/neutral_retrieval_benchmark.json")
     return 0
 

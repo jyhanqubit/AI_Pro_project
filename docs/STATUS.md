@@ -1,6 +1,18 @@
 # Project Status
 
-_Last updated: 2026-09-19_
+_Last updated: 2026-09-21_
+
+## 검증 하네스 점검과 정비 (2026-09-21)
+
+`make check` 한 번으로 정적 게이트, graph 스냅숏, 테스트, V2 감사 두 개를 돌리고 같은 순서를
+GitHub Actions(`.github/workflows/ci.yml`)에 올렸습니다. 점검에서 드러나 고친 것: torch 없는 환경의
+수집 오류와 `/v1/recommendations` 500(→ 503 degrade), 항상 빨간 lint/format 게이트(저장소 전체
+포맷, 실제 결함 수정, E501은 포매터에 위임), 테스트가 커밋된 `reports/v2/**`를 덮어쓰던 문제
+(`tests/conftest.py` 세션 샌드박스), ragas 부재 stub의 envelope 누락, mypy 실행 경로. 현재
+`make check`: ruff 두 게이트 통과, 508 passed / 8 skipped(모두 optional extra), v2_audit PASS,
+v2_final_audit PASS(artifact 45개). mypy는 오류 125건이 남아 advisory로 둡니다. README의
+"검증 하네스" 절에 구조도와 층별 설명이 있습니다.
+
 
 ## 운영 어시스턴트 tool을 MCP 서버로 분리 (2026-09-19)
 

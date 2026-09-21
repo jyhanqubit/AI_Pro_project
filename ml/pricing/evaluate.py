@@ -45,9 +45,11 @@ def main() -> int:
     print(f"SIMULATED policy comparison (seed={cfg.seed}, budget={cfg.incentive_budget})")
     print(f"{'policy':34s} fulfilled  short(min)  truck(km)  spend  net_cost  disparity")
     for r in results:
-        print(f"{r.policy_key+' '+r.policy_label:34.34s} {r.fulfilled_demand_rate:8.3f}  "
-              f"{r.shortage_minutes:9.0f}  {r.truck_bike_km:8.2f}  {r.incentive_spend:5.1f}  "
-              f"{r.net_operating_cost:7.1f}  {r.service_disparity:8.3f}")
+        print(
+            f"{r.policy_key + ' ' + r.policy_label:34.34s} {r.fulfilled_demand_rate:8.3f}  "
+            f"{r.shortage_minutes:9.0f}  {r.truck_bike_km:8.2f}  {r.incentive_spend:5.1f}  "
+            f"{r.net_operating_cost:7.1f}  {r.service_disparity:8.3f}"
+        )
     print(f"wrote {_OUT.relative_to(_ROOT)}  ({SIMULATED_DISCLAIMER})")
     return 0
 

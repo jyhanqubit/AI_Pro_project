@@ -56,4 +56,6 @@ class PolicyLedger(ContractModel):
     overflow_cost: float = Field(ge=0.0)
     relocation_cost: float = Field(ge=0.0)
     net: float
-    regret_vs_oracle: float = Field(ge=0.0, description="Oracle net − policy net; >= 0 by construction.")
+    regret_vs_oracle: float = Field(
+        ge=0.0, description="Oracle net − policy net; >= 0 by construction."
+    )

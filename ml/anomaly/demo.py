@@ -14,8 +14,10 @@ def main() -> None:
     print(f"{len(alerts)} alert(s); false alerts on clean baseline: {len(detect_all(clean))}")
     for a in alerts:
         links = f" <- {a.linked_event_ids}" if a.linked_event_ids else ""
-        print(f"  [{a.severity:.2f}] {a.anomaly_type.value:16s} {a.station_id:12s} "
-              f"{a.detector:15s} {a.root_cause_status.value}{links}  synth={a.is_synthetic_fault}")
+        print(
+            f"  [{a.severity:.2f}] {a.anomaly_type.value:16s} {a.station_id:12s} "
+            f"{a.detector:15s} {a.root_cause_status.value}{links}  synth={a.is_synthetic_fault}"
+        )
 
 
 if __name__ == "__main__":

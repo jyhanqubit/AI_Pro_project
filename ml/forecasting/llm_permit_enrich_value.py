@@ -56,23 +56,45 @@ ENRICH_COLS = ("permit_demand_signal", "permit_surge", "permit_suppress")
 # Reasoning is per type; committed for audit. Surge = draws riders to/through the area; suppress =
 # takes the roadway/lanes and deters riding (filming, construction closures).
 _TYPE_EFFECT = {
-    "Parade": (0.40, 1.0), "Athletic Race / Tour": (0.45, 1.0), "Street Festival": (0.35, 0.9),
-    "Single Block Festival": (0.30, 0.7), "Block Party": (0.25, 0.6), "Street Event": (0.20, 0.6),
-    "Open Street Partner Event": (0.30, 0.7), "Plaza Partner Event": (0.15, 0.5),
-    "Plaza Event": (0.15, 0.5), "Farmers Market": (0.20, 0.6), "Sidewalk Sale": (0.05, 0.3),
-    "Religious Event": (0.10, 0.4), "Health Fair": (0.10, 0.4), "Open Culture": (0.20, 0.5),
-    "Stationary Demonstration": (0.30, 0.6), "Stickball": (0.05, 0.2), "Clean-Up": (0.0, 0.2),
-    "Press Conference": (0.0, 0.2), "Miscellaneous": (0.0, 0.3),
-    "Production Event": (-0.30, 0.7),   # filming: takes curb/street, deters riding -> suppress
+    "Parade": (0.40, 1.0),
+    "Athletic Race / Tour": (0.45, 1.0),
+    "Street Festival": (0.35, 0.9),
+    "Single Block Festival": (0.30, 0.7),
+    "Block Party": (0.25, 0.6),
+    "Street Event": (0.20, 0.6),
+    "Open Street Partner Event": (0.30, 0.7),
+    "Plaza Partner Event": (0.15, 0.5),
+    "Plaza Event": (0.15, 0.5),
+    "Farmers Market": (0.20, 0.6),
+    "Sidewalk Sale": (0.05, 0.3),
+    "Religious Event": (0.10, 0.4),
+    "Health Fair": (0.10, 0.4),
+    "Open Culture": (0.20, 0.5),
+    "Stationary Demonstration": (0.30, 0.6),
+    "Stickball": (0.05, 0.2),
+    "Clean-Up": (0.0, 0.2),
+    "Press Conference": (0.0, 0.2),
+    "Miscellaneous": (0.0, 0.3),
+    "Production Event": (-0.30, 0.7),  # filming: takes curb/street, deters riding -> suppress
 }
 _NAME_BOOST = {  # free-text name keywords the LLM would weight up
-    "marathon": (0.10, 0.5), "bike tour": (0.15, 0.5), "5k": (0.05, 0.3), "10k": (0.05, 0.3),
-    "half marathon": (0.10, 0.4), "festival": (0.05, 0.2), "concert": (0.10, 0.3),
+    "marathon": (0.10, 0.5),
+    "bike tour": (0.15, 0.5),
+    "5k": (0.05, 0.3),
+    "10k": (0.05, 0.3),
+    "half marathon": (0.10, 0.4),
+    "festival": (0.05, 0.2),
+    "concert": (0.10, 0.3),
 }
 _CLOSURE_SCALE = {  # closure extent scales the magnitude
-    "Full Street Closure": 1.0, "Full Sidewalk Closure": 0.6, "Sidewalk and Street Closure": 1.0,
-    "Sidewalk and Curb Lane Closure": 0.7, "Curb Lane Only": 0.5, "Partial Sidewalk Closure": 0.4,
-    "Pedestrian Plaza": 0.6, "N/A": 0.5,
+    "Full Street Closure": 1.0,
+    "Full Sidewalk Closure": 0.6,
+    "Sidewalk and Street Closure": 1.0,
+    "Sidewalk and Curb Lane Closure": 0.7,
+    "Curb Lane Only": 0.5,
+    "Partial Sidewalk Closure": 0.4,
+    "Pedestrian Plaza": 0.6,
+    "N/A": 0.5,
 }
 
 
@@ -141,7 +163,11 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         for c in ENRICH_COLS:
             rec[c] = en[c] if en else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -155,35 +181,52 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         "A1_crude_counts": b1 + list(_EVENT_COLS),
         "A1_llm_enriched": b1 + list(_EVENT_COLS) + list(ENRICH_COLS),
     }
-    preds = {a: _fit_eval(df[cc].to_numpy(dtype=float)[dev], y[dev], df[cc].to_numpy(dtype=float)[test], 0)
-             for a, cc in cols.items()}
+    preds = {
+        a: _fit_eval(
+            df[cc].to_numpy(dtype=float)[dev], y[dev], df[cc].to_numpy(dtype=float)[test], 0
+        )
+        for a, cc in cols.items()
+    }
     y_test = y[test]
     blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test]]
     active = df.loc[test, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0
 
-    arms = {a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
-            for a, p in preds.items()}
-    enrich_vs_crude = llm_feature_value(y_test, preds["A1_crude_counts"], preds["A1_llm_enriched"], active, blocks)
-    crude_vs_a0 = llm_feature_value(y_test, preds["A0_demand_calendar"], preds["A1_crude_counts"], active, blocks)
-    enriched_vs_a0 = llm_feature_value(y_test, preds["A0_demand_calendar"], preds["A1_llm_enriched"], active, blocks)
+    arms = {
+        a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
+        for a, p in preds.items()
+    }
+    enrich_vs_crude = llm_feature_value(
+        y_test, preds["A1_crude_counts"], preds["A1_llm_enriched"], active, blocks
+    )
+    crude_vs_a0 = llm_feature_value(
+        y_test, preds["A0_demand_calendar"], preds["A1_crude_counts"], active, blocks
+    )
+    enriched_vs_a0 = llm_feature_value(
+        y_test, preds["A0_demand_calendar"], preds["A1_llm_enriched"], active, blocks
+    )
 
     return {
         "run_id": f"run_v2-03permitenrich_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/permit_enrich_contribution.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
         "source": "REAL NYC permit feed (satisfies all 4 conditions); LLM adds signed direction + scale",
         "llm_enrichment": "in-session semantic judgment: event_type + closure + name-keywords -> "
-                          "(signed demand_effect, scale); committed in this module for audit",
-        "n_train_rows": int(len(dev)), "n_test_rows": int(len(test)),
+        "(signed demand_effect, scale); committed in this module for audit",
+        "n_train_rows": int(len(dev)),
+        "n_test_rows": int(len(test)),
         "test_active_cells": int(active.sum()),
         "arms": arms,
         "crude_counts_vs_A0": crude_vs_a0,
         "llm_enriched_vs_A0": enriched_vs_a0,
         "llm_enrichment_value_vs_crude": enrich_vs_crude,
         "note": "The source is real and forward-looking; the LLM contribution is the SEMANTIC "
-                "structuring (direction+magnitude) that crude counts lack. enrich_vs_crude is the "
-                "measured incremental LLM value on top of the counting baseline.",
+        "structuring (direction+magnitude) that crude counts lack. enrich_vs_crude is the "
+        "measured incremental LLM value on top of the counting baseline.",
     }
 
 
@@ -195,16 +238,24 @@ def main(argv=None) -> int:
     ns = ap.parse_args(argv)
     res = run(ns.data_dir, ns.events, ns.test_from)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "permit_enrich_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    (OUT_DIR / "permit_enrich_contribution.json").write_text(
+        json.dumps(res, indent=2), encoding="utf-8"
+    )
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']} active={res['test_active_cells']}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']} active={res['test_active_cells']}"
+    )
     for a, s in res["arms"].items():
         print(f"  {a:22s} WAPE={s['wape']:.4f}")
-    for key, lbl in (("crude_counts_vs_A0", "crude counts vs A0"),
-                     ("llm_enriched_vs_A0", "LLM-enriched vs A0"),
-                     ("llm_enrichment_value_vs_crude", "LLM enrichment vs crude")):
+    for key, lbl in (
+        ("crude_counts_vs_A0", "crude counts vs A0"),
+        ("llm_enriched_vs_A0", "LLM-enriched vs A0"),
+        ("llm_enrichment_value_vs_crude", "LLM enrichment vs crude"),
+    ):
         m = res[key]
-        print(f"  {lbl:26s}: {m['decision']}  skill={m['llm_active_skill_pct']}%  CI={m['active_error_gain_ci95']}")
+        print(
+            f"  {lbl:26s}: {m['decision']}  skill={m['llm_active_skill_pct']}%  CI={m['active_error_gain_ci95']}"
+        )
     print(f"report -> {OUT_DIR}/permit_enrich_contribution.json")
     return 0
 

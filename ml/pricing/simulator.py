@@ -145,6 +145,7 @@ class ChoiceSimulator:
         # Recommendation steering: a compliant fraction picks the best-stocked feasible station.
         if recommend and rng.random() < self.cfg.recommendation_compliance:
             return max(feasible, key=lambda st: st.capacity)  # steer toward high-capacity balancers
+
         # Otherwise utility = -distance + incentive_weight * credit.
         def utility(st: ScenarioStation) -> float:
             d = haversine_km(r.origin_lat, r.origin_lng, st.lat, st.lng)

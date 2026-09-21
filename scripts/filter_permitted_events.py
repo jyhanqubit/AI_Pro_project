@@ -53,8 +53,11 @@ def _iter_records(path: Path):
         with path.open("rb") as f:
             yield from ijson.items(f, "item")
     except ImportError:
-        print("[note] ijson not installed — loading the whole file (needs RAM). "
-              "For a 1.5 GB input: pip install ijson", file=sys.stderr)
+        print(
+            "[note] ijson not installed — loading the whole file (needs RAM). "
+            "For a 1.5 GB input: pip install ijson",
+            file=sys.stderr,
+        )
         with path.open(encoding="utf-8") as f:
             yield from json.load(f)
 
@@ -64,8 +67,10 @@ def main() -> int:
         print(__doc__)
         return 2
     src = Path(sys.argv[1])
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else Path(
-        "data/fixtures/nyc_permitted_events_filtered.jsonl"
+    out = (
+        Path(sys.argv[2])
+        if len(sys.argv) > 2
+        else Path("data/fixtures/nyc_permitted_events_filtered.jsonl")
     )
     if not src.exists():
         print(f"input not found: {src}")

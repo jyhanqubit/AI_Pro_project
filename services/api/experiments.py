@@ -21,7 +21,9 @@ def run_battery() -> dict:
     stations = build_demo_scenario()
     p = {x.key: x for x in POLICIES}
     rec_only = PolicySpec(
-        "REC", "Recommendation only", recommend=True,
+        "REC",
+        "Recommendation only",
+        recommend=True,
         description="앱 추천으로 라이더를 여유 스테이션으로 유도. 크레딧 없음.",
     )
 

@@ -48,6 +48,7 @@ def _claude_router(rows):
 
     def route_fn(question: str):
         return dec.get(question)
+
     return route_fn
 
 
@@ -60,8 +61,14 @@ def evaluate(rows, route_fn) -> dict:
     for r in rows:
         a = answer(r["question"], route_fn=route_fn)
         exp = r["expected_tool"]
-        rec = {"id": r["id"], "answered": a.answered, "tool": a.tool, "value": a.value,
-               "artifact_id": a.artifact_id, "expected_tool": exp}
+        rec = {
+            "id": r["id"],
+            "answered": a.answered,
+            "tool": a.tool,
+            "value": a.value,
+            "artifact_id": a.artifact_id,
+            "expected_tool": exp,
+        }
         if exp is not None:
             if a.answered and a.tool == exp:
                 routing_ok += 1
@@ -102,19 +109,34 @@ def main(argv=None) -> int:
 
     # Where do the two routers disagree? (the interesting part)
     disagreements = []
-    for qk, qc, src in zip(kw["per_question"], cl["per_question"], rows):
+    for qk, qc, src in zip(kw["per_question"], cl["per_question"], rows, strict=True):
         if qk["tool"] != qc["tool"] or qk["answered"] != qc["answered"]:
-            disagreements.append({
-                "id": src["id"], "question": src["question"], "expected_tool": src["expected_tool"],
-                "keyword": {"tool": qk["tool"], "answered": qk["answered"], "value": qk["value"]},
-                "claude": {"tool": qc["tool"], "answered": qc["answered"], "value": qc["value"]},
-            })
+            disagreements.append(
+                {
+                    "id": src["id"],
+                    "question": src["question"],
+                    "expected_tool": src["expected_tool"],
+                    "keyword": {
+                        "tool": qk["tool"],
+                        "answered": qk["answered"],
+                        "value": qk["value"],
+                    },
+                    "claude": {
+                        "tool": qc["tool"],
+                        "answered": qc["answered"],
+                        "value": qc["value"],
+                    },
+                }
+            )
 
     report = {
         "run_id": f"run_v2-06_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
-        "mode": "research", "claim_status": "offline_benchmark", "freshness": stamp.isoformat(),
-        "question_set": str(QUESTIONS), "n_questions": len(rows),
+        "mode": "research",
+        "claim_status": "offline_benchmark",
+        "freshness": stamp.isoformat(),
+        "question_set": str(QUESTIONS),
+        "n_questions": len(rows),
         "primary_router": "claude-opus-4-8-insession",
         # Primary (real-LLM) router metrics at the top level (what the tests + docs quote).
         "routing_accuracy": cl["routing_accuracy"],
@@ -125,12 +147,30 @@ def main(argv=None) -> int:
         "hallucinated_answers": cl["hallucinated_answers"],
         "hard_gates_pass": cl["hard_gates_pass"],
         "router_comparison": {
-            "keyword": {k: kw[k] for k in ("routing_accuracy", "correctness_accuracy",
-                        "refusal_accuracy", "grounded_ratio", "ungrounded_numeric_answers",
-                        "hallucinated_answers", "hard_gates_pass")},
-            "claude": {k: cl[k] for k in ("routing_accuracy", "correctness_accuracy",
-                       "refusal_accuracy", "grounded_ratio", "ungrounded_numeric_answers",
-                       "hallucinated_answers", "hard_gates_pass")},
+            "keyword": {
+                k: kw[k]
+                for k in (
+                    "routing_accuracy",
+                    "correctness_accuracy",
+                    "refusal_accuracy",
+                    "grounded_ratio",
+                    "ungrounded_numeric_answers",
+                    "hallucinated_answers",
+                    "hard_gates_pass",
+                )
+            },
+            "claude": {
+                k: cl[k]
+                for k in (
+                    "routing_accuracy",
+                    "correctness_accuracy",
+                    "refusal_accuracy",
+                    "grounded_ratio",
+                    "ungrounded_numeric_answers",
+                    "hallucinated_answers",
+                    "hard_gates_pass",
+                )
+            },
             "n_disagreements": len(disagreements),
             "disagreements": disagreements,
         },
@@ -143,18 +183,32 @@ def main(argv=None) -> int:
         ),
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "correctness_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT_DIR / "correctness_benchmark.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8"
+    )
 
-    print(f"V2-06 Copilot benchmark — {len(rows)} questions; primary router = claude-opus-4-8-insession\n")
+    print(
+        f"V2-06 Copilot benchmark — {len(rows)} questions; primary router = claude-opus-4-8-insession\n"
+    )
     print(f"  {'metric':22s} {'keyword':>10s} {'claude':>10s}")
-    for k in ("routing_accuracy", "correctness_accuracy", "refusal_accuracy", "grounded_ratio",
-              "ungrounded_numeric_answers", "hallucinated_answers"):
+    for k in (
+        "routing_accuracy",
+        "correctness_accuracy",
+        "refusal_accuracy",
+        "grounded_ratio",
+        "ungrounded_numeric_answers",
+        "hallucinated_answers",
+    ):
         print(f"  {k:22s} {str(kw[k]):>10s} {str(cl[k]):>10s}")
-    print(f"  {'hard_gates_pass':22s} {str(kw['hard_gates_pass']):>10s} {str(cl['hard_gates_pass']):>10s}")
+    print(
+        f"  {'hard_gates_pass':22s} {str(kw['hard_gates_pass']):>10s} {str(cl['hard_gates_pass']):>10s}"
+    )
     print(f"\n  router disagreements: {len(disagreements)}")
     for d in disagreements:
-        print(f"    [{d['id']}] kw={d['keyword']['tool']}/{d['keyword']['answered']} "
-              f"claude={d['claude']['tool']}/{d['claude']['answered']}  exp={d['expected_tool']}")
+        print(
+            f"    [{d['id']}] kw={d['keyword']['tool']}/{d['keyword']['answered']} "
+            f"claude={d['claude']['tool']}/{d['claude']['answered']}  exp={d['expected_tool']}"
+        )
     print(f"\nreport -> {OUT_DIR}/correctness_benchmark.json")
     return 0 if cl["hard_gates_pass"] else 1
 

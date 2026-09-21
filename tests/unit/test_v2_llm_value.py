@@ -48,8 +48,10 @@ def test_bootstrap_identical_predictions_zero_delta():
 
 def test_llm_cost_actual_is_zero_estimate_positive(tmp_path):
     f = tmp_path / "news.jsonl"
-    rows = [{"article_id": "a", "title": "t" * 100, "text": "x" * 400},
-            {"article_id": "b", "title": "u" * 100, "text": "y" * 400}]
+    rows = [
+        {"article_id": "a", "title": "t" * 100, "text": "x" * 400},
+        {"article_id": "b", "title": "u" * 100, "text": "y" * 400},
+    ]
     f.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
     cost = _llm_cost(f)
     assert cost["actual_usd"] == 0.0  # mock provider is free

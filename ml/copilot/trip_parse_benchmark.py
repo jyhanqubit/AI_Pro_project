@@ -46,19 +46,30 @@ def main(argv=None) -> int:
         c_hit = (c_o, c_d) == gold
         rule_ok += r_hit
         llm_ok += c_hit
-        per.append({"id": q["id"], "query": q["query"], "gold": list(gold),
-                    "rule_based": [r_o, r_d], "rule_ok": r_hit,
-                    "llm": [c_o, c_d], "llm_ok": c_hit, "llm_rationale": c.get("rationale")})
+        per.append(
+            {
+                "id": q["id"],
+                "query": q["query"],
+                "gold": list(gold),
+                "rule_based": [r_o, r_d],
+                "rule_ok": r_hit,
+                "llm": [c_o, c_d],
+                "llm_ok": c_hit,
+                "llm_rationale": c.get("rationale"),
+            }
+        )
 
     n = len(queries)
     report = {
         "run_id": f"run_v2-07tripparse_{now.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
-        "mode": "historical_replay", "claim_status": "offline_benchmark", "freshness": now.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "offline_benchmark",
+        "freshness": now.isoformat(),
         "judge": "claude-opus-4-8-insession",
         "note": "LLM parses committed to data/fixtures/v2/trip_parse_claude.jsonl (no API key; "
-                "in-session, auditable). The planner's distances/times/stations remain deterministic; "
-                "only the NL→(origin,destination) parse is compared here.",
+        "in-session, auditable). The planner's distances/times/stations remain deterministic; "
+        "only the NL→(origin,destination) parse is compared here.",
         "n": n,
         "rule_based_accuracy": round(rule_ok / n, 3),
         "llm_accuracy": round(llm_ok / n, 3),
@@ -67,21 +78,25 @@ def main(argv=None) -> int:
         "hard_cases_where_llm_wins": [p["id"] for p in per if p["llm_ok"] and not p["rule_ok"]],
         "per_query": per,
         "finding": "Rule-based substring matching handles explicit phrasings but fails on typos, "
-                   "negation, and origin-stated-last; the LLM parses all correctly. This is the seam "
-                   "where an LLM parser (when a key is configured) replaces resolve_endpoints — the "
-                   "measured V2-06 lesson (intent understanding is the LLM's value), applied to trips.",
+        "negation, and origin-stated-last; the LLM parses all correctly. This is the seam "
+        "where an LLM parser (when a key is configured) replaces resolve_endpoints — the "
+        "measured V2-06 lesson (intent understanding is the LLM's value), applied to trips.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 
     print(f"V2-07 trip-parse benchmark — {n} queries")
     print(f"  rule_based accuracy: {report['rule_based_accuracy']}  ({rule_ok}/{n})")
-    print(f"  LLM accuracy       : {report['llm_accuracy']}  ({llm_ok}/{n})  [in-session, committed]")
+    print(
+        f"  LLM accuracy       : {report['llm_accuracy']}  ({llm_ok}/{n})  [in-session, committed]"
+    )
     print(f"  LLM wins on hard cases: {report['hard_cases_where_llm_wins']}")
     for p in per:
         if not p["rule_ok"]:
-            print(f"    [{p['id']}] rule FAIL: {p['query']!r} -> {p['rule_based']} (gold {p['gold']}); "
-                  f"LLM {'OK' if p['llm_ok'] else 'FAIL'}")
+            print(
+                f"    [{p['id']}] rule FAIL: {p['query']!r} -> {p['rule_based']} (gold {p['gold']}); "
+                f"LLM {'OK' if p['llm_ok'] else 'FAIL'}"
+            )
     print(f"report -> {OUT}")
     return 0
 

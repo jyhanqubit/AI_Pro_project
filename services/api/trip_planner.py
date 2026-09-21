@@ -23,8 +23,8 @@ from pipelines.features.kernels import haversine_km
 
 WALK_KMH = 4.8
 BIKE_KMH = 15.0
-_TIGHT_BIKES = 3    # rent station considered tight at/below this many bikes
-_TIGHT_DOCKS = 3    # return station considered tight at/below this many free docks
+_TIGHT_BIKES = 3  # rent station considered tight at/below this many bikes
+_TIGHT_DOCKS = 3  # return station considered tight at/below this many free docks
 
 
 def _leg_minutes(km: float, kmh: float) -> int:
@@ -37,25 +37,44 @@ def plan_trip(engine, cutoff: datetime, origin_id: str, destination_id: str) -> 
 
     views = station_views(engine, cutoff)
     by_id = _views_by_id(views)
-    base = {"mode": "historical_replay", "cutoff": cutoff.isoformat(),
-            "disclaimer": "거리는 직선거리 근사(도로 경로 아님) · 재고는 과거 재생(as-of) 기준"}
+    base = {
+        "mode": "historical_replay",
+        "cutoff": cutoff.isoformat(),
+        "disclaimer": "거리는 직선거리 근사(도로 경로 아님) · 재고는 과거 재생(as-of) 기준",
+    }
 
     if origin_id not in by_id:
-        return {**base, "feasible": False, "reason": "unknown_origin",
-                "answer": "출발지를 알 수 없어요. 등록된 지역 이름으로 다시 알려주세요."}
+        return {
+            **base,
+            "feasible": False,
+            "reason": "unknown_origin",
+            "answer": "출발지를 알 수 없어요. 등록된 지역 이름으로 다시 알려주세요.",
+        }
     if destination_id not in by_id:
-        return {**base, "feasible": False, "reason": "unknown_destination",
-                "answer": "목적지를 알 수 없어요. 등록된 지역 이름으로 다시 알려주세요."}
+        return {
+            **base,
+            "feasible": False,
+            "reason": "unknown_destination",
+            "answer": "목적지를 알 수 없어요. 등록된 지역 이름으로 다시 알려주세요.",
+        }
 
     o, d = by_id[origin_id], by_id[destination_id]
     rentable = [v for v in views if v.bikes > 0]
     returnable = [v for v in views if v.docks_free > 0]
     if not rentable:
-        return {**base, "feasible": False, "reason": "no_bikes_anywhere",
-                "answer": "지금은 어느 대여소에도 자전거가 없어요."}
+        return {
+            **base,
+            "feasible": False,
+            "reason": "no_bikes_anywhere",
+            "answer": "지금은 어느 대여소에도 자전거가 없어요.",
+        }
     if not returnable:
-        return {**base, "feasible": False, "reason": "no_docks_anywhere",
-                "answer": "지금은 어느 대여소에도 반납할 빈 칸이 없어요."}
+        return {
+            **base,
+            "feasible": False,
+            "reason": "no_docks_anywhere",
+            "answer": "지금은 어느 대여소에도 반납할 빈 칸이 없어요.",
+        }
 
     def hv(a, b) -> float:
         return haversine_km(a.lat, a.lng, b.lat, b.lng)
@@ -91,17 +110,43 @@ def plan_trip(engine, cutoff: datetime, origin_id: str, destination_id: str) -> 
         "origin": {"id": o.station_id, "ko": o.ko, "en": o.en},
         "destination": {"id": d.station_id, "ko": d.ko, "en": d.en},
         "segments": [
-            {"kind": "walk", "from": o.ko, "to": rent.ko,
-             "distance_m": int(round(walk1 * 1000)), "minutes": _leg_minutes(walk1, WALK_KMH)},
-            {"kind": "bike", "from": rent.ko, "to": ret.ko,
-             "distance_m": int(round(bike * 1000)), "minutes": bike_min},
-            {"kind": "walk", "from": ret.ko, "to": d.ko,
-             "distance_m": int(round(walk2 * 1000)), "minutes": _leg_minutes(walk2, WALK_KMH)},
+            {
+                "kind": "walk",
+                "from": o.ko,
+                "to": rent.ko,
+                "distance_m": int(round(walk1 * 1000)),
+                "minutes": _leg_minutes(walk1, WALK_KMH),
+            },
+            {
+                "kind": "bike",
+                "from": rent.ko,
+                "to": ret.ko,
+                "distance_m": int(round(bike * 1000)),
+                "minutes": bike_min,
+            },
+            {
+                "kind": "walk",
+                "from": ret.ko,
+                "to": d.ko,
+                "distance_m": int(round(walk2 * 1000)),
+                "minutes": _leg_minutes(walk2, WALK_KMH),
+            },
         ],
-        "rent_station": {"id": rent.station_id, "ko": rent.ko, "en": rent.en, "bikes": rent.bikes,
-                         "level": rent.level, "level_label": rent.level_label},
-        "return_station": {"id": ret.station_id, "ko": ret.ko, "en": ret.en,
-                           "docks_free": ret.docks_free, "capacity": ret.capacity},
+        "rent_station": {
+            "id": rent.station_id,
+            "ko": rent.ko,
+            "en": rent.en,
+            "bikes": rent.bikes,
+            "level": rent.level,
+            "level_label": rent.level_label,
+        },
+        "return_station": {
+            "id": ret.station_id,
+            "ko": ret.ko,
+            "en": ret.en,
+            "docks_free": ret.docks_free,
+            "capacity": ret.capacity,
+        },
         "total_walk_minutes": walk_min,
         "bike_minutes": bike_min,
         "total_minutes": walk_min + bike_min,
@@ -111,7 +156,9 @@ def plan_trip(engine, cutoff: datetime, origin_id: str, destination_id: str) -> 
     }
 
 
-def resolve_endpoints(query: str, aliases: dict[str, tuple[str, ...]]) -> tuple[str | None, str | None]:
+def resolve_endpoints(
+    query: str, aliases: dict[str, tuple[str, ...]]
+) -> tuple[str | None, str | None]:
     """Rule-based origin/destination extraction: find gazetteer place mentions in the query and use
     Korean particle cues (…에서/…인데 = origin, …까지/…가 = destination), else first/second by position.
 
@@ -133,7 +180,12 @@ def resolve_endpoints(query: str, aliases: dict[str, tuple[str, ...]]) -> tuple[
     # if "까지/가고" attaches to the 1st mention, swap.
     dest_markers = ("까지", "가고", "가려", "로 가", "으로 가")
     first_pos = hits[0][0]
-    if any((m in q) and (q.find(m) < hits[1][0]) and (q.find(m) >= first_pos) and (q.find(m) < first_pos + 6)
-           for m in dest_markers):
+    if any(
+        (m in q)
+        and (q.find(m) < hits[1][0])
+        and (q.find(m) >= first_pos)
+        and (q.find(m) < first_pos + 6)
+        for m in dest_markers
+    ):
         origin, destination = hits[1][1], hits[0][1]
     return origin, destination

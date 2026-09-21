@@ -28,7 +28,7 @@ def test_meaningful_positive_when_llm_consistently_reduces_error():
     pred_base = y.copy()
     pred_llm = y.copy()
     pred_base[active] = y[active] + 5.0  # base wrong on active rows
-    pred_llm[active] = y[active] + 0.2   # LLM almost perfect on active rows
+    pred_llm[active] = y[active] + 0.2  # LLM almost perfect on active rows
     r = llm_feature_value(y, pred_base, pred_llm, active, _blocks(n))
     assert r["decision"] == MEANINGFUL_POSITIVE
     assert r["llm_active_skill_score"] > 0
@@ -46,7 +46,7 @@ def test_meaningful_negative_when_llm_consistently_worsens_error():
     pred_base = y.copy()
     pred_llm = y.copy()
     pred_base[active] = y[active] + 0.2  # base good
-    pred_llm[active] = y[active] + 5.0   # LLM worse on active rows
+    pred_llm[active] = y[active] + 5.0  # LLM worse on active rows
     r = llm_feature_value(y, pred_base, pred_llm, active, _blocks(n))
     assert r["decision"] == MEANINGFUL_NEGATIVE
     assert r["llm_active_skill_score"] < 0

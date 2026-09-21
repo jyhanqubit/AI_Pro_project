@@ -104,8 +104,14 @@ def test_metrics_in_range(trips: pd.DataFrame, master) -> None:
         cases.append((cands, ranked, s.chosen_station_id))
     rep = evaluate(cases)
     assert rep.n == len(cases)
-    for v in (rep.hit_rate_at_1, rep.hit_rate_at_3, rep.mrr, rep.ndcg_at_3,
-              rep.positive_in_candidate_rate, rep.inventory_missing_rate):
+    for v in (
+        rep.hit_rate_at_1,
+        rep.hit_rate_at_3,
+        rep.mrr,
+        rep.ndcg_at_3,
+        rep.positive_in_candidate_rate,
+        rep.inventory_missing_rate,
+    ):
         assert 0.0 <= v <= 1.0
     assert rep.hit_rate_at_1 <= rep.hit_rate_at_3
     assert rep.positive_in_candidate_rate == pytest.approx(1.0)  # chosen always in candidates

@@ -90,10 +90,15 @@ def apply_policy(
     cfg = cfg or PolicyConfig()
     if not feasible:
         return RecommendationResult(
-            request_id=request_id, mode=mode, cutoff=cutoff,
-            retriever_version=retriever_version, reranker_version=reranker_version,
-            stations=[], no_feasible_candidate=True,
-            claim_state=claim_state, operating_mode=operating_mode,
+            request_id=request_id,
+            mode=mode,
+            cutoff=cutoff,
+            retriever_version=retriever_version,
+            reranker_version=reranker_version,
+            stations=[],
+            no_feasible_candidate=True,
+            claim_state=claim_state,
+            operating_mode=operating_mode,
         )
 
     scored = sorted(feasible, key=lambda c: -_final_score(c, cfg))[: cfg.top_k]
@@ -117,8 +122,13 @@ def apply_policy(
         for i, c in enumerate(scored)
     ]
     return RecommendationResult(
-        request_id=request_id, mode=mode, cutoff=cutoff,
-        retriever_version=retriever_version, reranker_version=reranker_version,
-        stations=stations, no_feasible_candidate=False,
-        claim_state=claim_state, operating_mode=operating_mode,
+        request_id=request_id,
+        mode=mode,
+        cutoff=cutoff,
+        retriever_version=retriever_version,
+        reranker_version=reranker_version,
+        stations=stations,
+        no_feasible_candidate=False,
+        claim_state=claim_state,
+        operating_mode=operating_mode,
     )

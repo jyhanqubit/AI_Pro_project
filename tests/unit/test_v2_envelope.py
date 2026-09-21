@@ -55,7 +55,9 @@ def test_measured_value_outside_demo_requires_artifact():
 
 def test_demo_fixture_value_needs_no_artifact():
     env = ResultEnvelope(
-        **_env(mode=OperatingMode.DEMO_FIXTURE, claim_status=ClaimStatus.DEMO_FIXTURE, artifact_id=None)
+        **_env(
+            mode=OperatingMode.DEMO_FIXTURE, claim_status=ClaimStatus.DEMO_FIXTURE, artifact_id=None
+        )
     )
     assert env.artifact_id is None
     assert env.is_product_decisionable is False
@@ -72,9 +74,7 @@ def test_research_status_only_in_research_mode():
 
 
 def test_research_status_in_research_mode_ok():
-    env = ResultEnvelope(
-        **_env(claim_status=ClaimStatus.RESEARCH, mode=OperatingMode.RESEARCH)
-    )
+    env = ResultEnvelope(**_env(claim_status=ClaimStatus.RESEARCH, mode=OperatingMode.RESEARCH))
     assert env.claim_status is ClaimStatus.RESEARCH
 
 

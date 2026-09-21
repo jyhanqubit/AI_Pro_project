@@ -104,26 +104,48 @@ def build_dataset(
         elat, elng = float(row.end_lat), float(row.end_lng)
         if RecommendationMode.RENT in modes and _valid_coord(slat, slng):
             samples.append(
-                _make(rid, RecommendationMode.RENT, cfg, member,
-                      started_at=row.started_at,
-                      station_id=str(row.start_station_id), slat=slat, slng=slng)
+                _make(
+                    rid,
+                    RecommendationMode.RENT,
+                    cfg,
+                    member,
+                    started_at=row.started_at,
+                    station_id=str(row.start_station_id),
+                    slat=slat,
+                    slng=slng,
+                )
             )
         # RETURN needs a valid destination; the origin is optional (only used for detour).
         if RecommendationMode.RETURN in modes and _valid_coord(elat, elng):
             samples.append(
-                _make(rid, RecommendationMode.RETURN, cfg, member,
-                      started_at=row.started_at,
-                      station_id=str(row.end_station_id), slat=elat, slng=elng,
-                      origin_lat=slat if _valid_coord(slat, slng) else None,
-                      origin_lng=slng if _valid_coord(slat, slng) else None)
+                _make(
+                    rid,
+                    RecommendationMode.RETURN,
+                    cfg,
+                    member,
+                    started_at=row.started_at,
+                    station_id=str(row.end_station_id),
+                    slat=elat,
+                    slng=elng,
+                    origin_lat=slat if _valid_coord(slat, slng) else None,
+                    origin_lng=slng if _valid_coord(slat, slng) else None,
+                )
             )
     return samples
 
 
 def _make(
-    rid: str, mode: RecommendationMode, cfg: RecsysConfig, member: bool, *,
-    started_at: object, station_id: str, slat: float, slng: float,
-    origin_lat: float | None = None, origin_lng: float | None = None,
+    rid: str,
+    mode: RecommendationMode,
+    cfg: RecsysConfig,
+    member: bool,
+    *,
+    started_at: object,
+    station_id: str,
+    slat: float,
+    slng: float,
+    origin_lat: float | None = None,
+    origin_lng: float | None = None,
 ) -> RecSample:
     cutoff = _parse_dt(started_at)
     qlat, qlng = _jitter(slat, slng, f"{rid}:{mode.value}:{cfg.seed}", cfg.jitter_max_m)

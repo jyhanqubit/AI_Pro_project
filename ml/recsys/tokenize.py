@@ -37,8 +37,10 @@ def _geo(lat: float, lng: float) -> list[float]:
 
 def _time(hour: int, dow: int) -> list[float]:
     return [
-        math.sin(2 * math.pi * hour / 24), math.cos(2 * math.pi * hour / 24),
-        math.sin(2 * math.pi * dow / 7), math.cos(2 * math.pi * dow / 7),
+        math.sin(2 * math.pi * hour / 24),
+        math.cos(2 * math.pi * hour / 24),
+        math.sin(2 * math.pi * dow / 7),
+        math.cos(2 * math.pi * dow / 7),
     ]
 
 
@@ -96,15 +98,20 @@ class RetrieverTokenizer:
         ev_feats, ev_present, ev_rec = self._events(query_zones, events, dev)
         return {
             "scalar_feats": {
-                "MODE": mode.to(dev), "GEO": geo.to(dev), "TIME": time.to(dev),
-                "CONSTRAINT": constraint.to(dev), "FORECAST": fc.to(dev),
+                "MODE": mode.to(dev),
+                "GEO": geo.to(dev),
+                "TIME": time.to(dev),
+                "CONSTRAINT": constraint.to(dev),
+                "FORECAST": fc.to(dev),
                 "LOCAL_INVENTORY": inv.to(dev),
             },
             "scalar_present": {
                 "FORECAST": fc_present.to(dev),
                 "LOCAL_INVENTORY": inv_present.to(dev),
             },
-            "event_feats": ev_feats, "event_present": ev_present, "event_recency": ev_rec,
+            "event_feats": ev_feats,
+            "event_present": ev_present,
+            "event_recency": ev_rec,
         }
 
     def cfg_detour(self, s: RecSample) -> float:
@@ -127,24 +134,42 @@ class RetrieverTokenizer:
         )
         geo = torch.tensor([_geo(st.lat, st.lng) for st in stations], dtype=torch.float)
         inv = torch.tensor(
-            [[float(st.bikes_available or 0), float(st.docks_available or 0),
-              float(st.capacity or 0)] for st in stations], dtype=torch.float
+            [
+                [
+                    float(st.bikes_available or 0),
+                    float(st.docks_available or 0),
+                    float(st.capacity or 0),
+                ]
+                for st in stations
+            ],
+            dtype=torch.float,
         )
         inv_present = torch.tensor([st.inventory_known for st in stations], dtype=torch.bool)
         op = torch.tensor(
-            [[float(st.is_renting), float(st.is_returning),
-              float((st.bikes_available or 0) - (st.docks_available or 0))] for st in stations],
+            [
+                [
+                    float(st.is_renting),
+                    float(st.is_returning),
+                    float((st.bikes_available or 0) - (st.docks_available or 0)),
+                ]
+                for st in stations
+            ],
             dtype=torch.float,
         )
         fc, fc_present = self._forecast_stations(stations, forecast)
         ev_feats, ev_present, ev_rec = self._events([st.zone_id for st in stations], events, dev)
         return {
             "scalar_feats": {
-                "STATION_STATIC": static.to(dev), "STATION_GEO": geo.to(dev),
-                "INVENTORY": inv.to(dev), "FORECAST": fc.to(dev), "OPERATION": op.to(dev),
+                "STATION_STATIC": static.to(dev),
+                "STATION_GEO": geo.to(dev),
+                "INVENTORY": inv.to(dev),
+                "FORECAST": fc.to(dev),
+                "OPERATION": op.to(dev),
             },
             "scalar_present": {"INVENTORY": inv_present.to(dev), "FORECAST": fc_present.to(dev)},
-            "event_feats": ev_feats, "event_present": ev_present, "event_recency": ev_rec,
+            "event_feats": ev_feats,
+            "event_present": ev_present,
+            "event_recency": ev_rec,
         }
 
     def _forecast(

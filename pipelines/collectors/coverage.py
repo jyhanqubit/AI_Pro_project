@@ -60,9 +60,7 @@ def coverage_gate(report: CoverageReport, config) -> GateResult:
     if report.degraded:
         reasons.append(f"provider degraded: {report.degraded_reason}")
     if report.accepted_count < config.min_accepted_articles:
-        reasons.append(
-            f"accepted {report.accepted_count} < min {config.min_accepted_articles}"
-        )
+        reasons.append(f"accepted {report.accepted_count} < min {config.min_accepted_articles}")
     if report.unique_source_count < config.min_unique_sources:
         reasons.append(
             f"unique sources {report.unique_source_count} < min {config.min_unique_sources}"
@@ -73,7 +71,5 @@ def coverage_gate(report: CoverageReport, config) -> GateResult:
         else 0.0
     )
     if ratio < config.min_ontology_match_ratio:
-        reasons.append(
-            f"candidate ratio {ratio:.2f} < min {config.min_ontology_match_ratio}"
-        )
+        reasons.append(f"candidate ratio {ratio:.2f} < min {config.min_ontology_match_ratio}")
     return GateResult(passed=not reasons, reasons=reasons)

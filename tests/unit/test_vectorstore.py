@@ -14,8 +14,13 @@ from ml.vectorstore import LexicalEmbedder, NewsRecord, NewsVectorStore  # noqa:
 
 
 def _rec(i: int, title: str) -> NewsRecord:
-    return NewsRecord(article_id=f"n{i}", title=title, source="wire",
-                      published_at="2026-06-12T00:00:00+00:00", url_hash=f"h{i}")
+    return NewsRecord(
+        article_id=f"n{i}",
+        title=title,
+        source="wire",
+        published_at="2026-06-12T00:00:00+00:00",
+        url_hash=f"h{i}",
+    )
 
 
 def test_embedder_is_deterministic_and_normalised() -> None:
@@ -28,11 +33,15 @@ def test_embedder_is_deterministic_and_normalised() -> None:
 
 def test_add_search_and_batch_dedup() -> None:
     store = NewsVectorStore()
-    added = store.add([
-        _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),
-        _rec(2, "Waterfront concert expected to draw large crowds in Newport"),
-        _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),  # dup id in batch
-    ])
+    added = store.add(
+        [
+            _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),
+            _rec(2, "Waterfront concert expected to draw large crowds in Newport"),
+            _rec(
+                1, "Signal failure suspends PATH service near Hoboken Terminal"
+            ),  # dup id in batch
+        ]
+    )
     assert added == 2 and len(store) == 2  # within-batch duplicate id skipped
     hits = store.search("PATH suspended Hoboken", k=2)
     assert hits and hits[0][0].article_id == "n1"  # nearest is the PATH article
@@ -48,11 +57,13 @@ def test_idempotent_accumulation() -> None:
 
 def test_near_duplicate_detection() -> None:
     store = NewsVectorStore(VectorStoreConfig(dedup_threshold=0.9))
-    store.add([
-        _rec(1, "PATH service suspended near Hoboken Terminal today"),
-        _rec(2, "PATH service suspended near Hoboken Terminal today!"),  # near-identical
-        _rec(3, "Completely unrelated Jersey City budget vote"),
-    ])
+    store.add(
+        [
+            _rec(1, "PATH service suspended near Hoboken Terminal today"),
+            _rec(2, "PATH service suspended near Hoboken Terminal today!"),  # near-identical
+            _rec(3, "Completely unrelated Jersey City budget vote"),
+        ]
+    )
     dups = store.near_duplicates()
     pair_ids = {frozenset((a, b)) for a, b, _ in dups}
     assert frozenset(("n1", "n2")) in pair_ids
@@ -76,12 +87,14 @@ def test_same_event_clustering() -> None:
     from ml.vectorstore.cluster import cluster_news
 
     store = NewsVectorStore()
-    store.add([
-        _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),
-        _rec(2, "PATH service halted after signal problem at Hoboken"),
-        _rec(3, "Hoboken PATH trains suspended due to signal failure"),
-        _rec(4, "Jersey City budget vote scheduled for next week"),
-    ])
+    store.add(
+        [
+            _rec(1, "Signal failure suspends PATH service near Hoboken Terminal"),
+            _rec(2, "PATH service halted after signal problem at Hoboken"),
+            _rec(3, "Hoboken PATH trains suspended due to signal failure"),
+            _rec(4, "Jersey City budget vote scheduled for next week"),
+        ]
+    )
     clusters = cluster_news(store, threshold=0.3)
     biggest = clusters[0]
     assert biggest.size == 3  # the three PATH wire copies group into one event

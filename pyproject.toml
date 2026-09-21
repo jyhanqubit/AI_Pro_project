@@ -92,6 +92,9 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+# Line length is enforced by `ruff format`; E501 would only re-flag long strings/comments it
+# cannot wrap, so the check gate stays meaningful instead of permanently red.
+ignore = ["E501"]
 
 [tool.mypy]
 # Matches the interpreter used for development (see docs/STATUS.md); numpy's 3.12 stubs

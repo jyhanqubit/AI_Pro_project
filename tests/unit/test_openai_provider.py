@@ -44,9 +44,7 @@ def _fake_client(events: list[dict]):
     fake serialises the events the same way the real API would.
     """
     call = SimpleNamespace(
-        function=SimpleNamespace(
-            name="record_events", arguments=json.dumps({"events": events})
-        )
+        function=SimpleNamespace(name="record_events", arguments=json.dumps({"events": events}))
     )
     message = SimpleNamespace(tool_calls=[call])
     response = SimpleNamespace(choices=[SimpleNamespace(message=message)])

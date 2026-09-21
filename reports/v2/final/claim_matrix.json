@@ -1,20 +1,20 @@
 {
-  "run_id": "run_v2-09_20260822T110152Z",
+  "run_id": "run_v2-09_20260921T051012Z",
   "artifact_id": "reports/v2/final/claim_matrix.json",
   "mode": "historical_replay",
   "claim_status": "measured",
-  "freshness": "2026-08-22T11:01:52.974567+00:00",
+  "freshness": "2026-09-21T05:10:12.289696+00:00",
   "gates": {
     "envelope_honesty": true,
     "completion_artifacts": true,
     "traceability": true
   },
-  "n_artifacts": 39,
+  "n_artifacts": 45,
   "by_claim_status": {
     "blocked_data": 1,
     "demo_fixture": 2,
-    "measured": 21,
-    "offline_benchmark": 8,
+    "measured": 26,
+    "offline_benchmark": 9,
     "research": 1,
     "simulated": 6
   },
@@ -55,11 +55,11 @@
   "claims": [
     {
       "artifact": "reports/v2/copilot/correctness_benchmark.json",
-      "run_id": "run_v2-06_20260819T153050Z",
+      "run_id": "run_v2-06_20260822T110206Z",
       "artifact_id": "reports/v2/copilot/correctness_benchmark.json",
       "mode": "research",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-19T15:30:50.905920+00:00",
+      "freshness": "2026-08-22T11:02:06.198670+00:00",
       "headline": {
         "routing_accuracy": 1.0,
         "hallucinated_answers": 0,
@@ -76,6 +76,15 @@
       "headline": {}
     },
     {
+      "artifact": "reports/v2/copilot/mcp_transport_comparison.json",
+      "run_id": "run_v2-06mcp_20260919T013838Z",
+      "artifact_id": "reports/v2/copilot/mcp_transport_comparison.json",
+      "mode": "historical_replay",
+      "claim_status": "offline_benchmark",
+      "freshness": "2026-09-19T01:38:38.145853+00:00",
+      "headline": {}
+    },
+    {
       "artifact": "reports/v2/copilot/neutral_retrieval_benchmark.json",
       "run_id": "run_v2-06neutral_20260722T082523Z",
       "artifact_id": "reports/v2/copilot/neutral_retrieval_benchmark.json",
@@ -86,11 +95,11 @@
     },
     {
       "artifact": "reports/v2/copilot/ragas_generation_benchmark.json",
-      "run_id": "run_v2-06ragasgen_20260819T153050Z",
+      "run_id": "run_v2-06ragasgen_20260822T110206Z",
       "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-19T15:30:50.912661+00:00",
+      "freshness": "2026-08-22T11:02:06.207244+00:00",
       "headline": {
         "faithfulness": 1.0,
         "answer_relevancy": 0.985
@@ -107,11 +116,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_faithfulness.json",
-      "run_id": "run_v2-07faith_20260819T153119Z",
+      "run_id": "run_v2-07faith_20260822T110229Z",
       "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-19T15:31:19.211201+00:00",
+      "freshness": "2026-08-22T11:02:29.541269+00:00",
       "headline": {
         "mean_faithfulness": 1.0,
         "ungrounded_numbers_total": 0
@@ -119,11 +128,11 @@
     },
     {
       "artifact": "reports/v2/copilot/trip_parse_benchmark.json",
-      "run_id": "run_v2-07tripparse_20260819T153119Z",
+      "run_id": "run_v2-07tripparse_20260822T110229Z",
       "artifact_id": "reports/v2/copilot/trip_parse_benchmark.json",
       "mode": "historical_replay",
       "claim_status": "offline_benchmark",
-      "freshness": "2026-08-19T15:31:19.208073+00:00",
+      "freshness": "2026-08-22T11:02:29.537582+00:00",
       "headline": {}
     },
     {
@@ -433,6 +442,51 @@
       "mode": "demo_fixture",
       "claim_status": "offline_benchmark",
       "freshness": "2026-08-16T04:45:14.920192+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/serving/free_tier_emulation.json",
+      "run_id": "run_v2-07freetier_20260915T122847Z",
+      "artifact_id": "reports/v2/serving/free_tier_emulation.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-09-15T12:28:47.974334+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/serving/free_tier_emulation_before.json",
+      "run_id": "run_v2-07freetier_20260915T122423Z",
+      "artifact_id": "reports/v2/serving/free_tier_emulation_before.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-09-15T12:24:23.884362+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/serving/load_test.json",
+      "run_id": "run_v2-07load_20260915T100000Z",
+      "artifact_id": "reports/v2/serving/load_test.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-09-15T09:58:56.884617+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/serving/load_test_configs.json",
+      "run_id": "run_v2-07loadcfg_20260915T101000Z",
+      "artifact_id": "reports/v2/serving/load_test_configs.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-09-15T10:08:00.643986+00:00",
+      "headline": {}
+    },
+    {
+      "artifact": "reports/v2/spark/shuffle_bench.json",
+      "run_id": "run_v2-extra-spark_20260915T104027Z",
+      "artifact_id": "reports/v2/spark/shuffle_bench.json",
+      "mode": "historical_replay",
+      "claim_status": "measured",
+      "freshness": "2026-09-15T10:40:27.864289+00:00",
       "headline": {}
     }
   ],

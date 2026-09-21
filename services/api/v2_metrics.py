@@ -58,17 +58,38 @@ def cockpit_metrics(mode: OperatingMode = OperatingMode.HISTORICAL_REPLAY) -> li
             if claim == ClaimStatus.RESEARCH and mode != OperatingMode.RESEARCH:
                 continue  # research never feeds product surfaces
             env = ResultEnvelope(
-                value=res.value, run_id=run_id, artifact_id=res.artifact_id,
-                mode=mode, claim_status=claim,
+                value=res.value,
+                run_id=run_id,
+                artifact_id=res.artifact_id,
+                mode=mode,
+                claim_status=claim,
                 freshness=freshness or "1970-01-01T00:00:00+00:00",
             )
-            out.append({"key": key, "label": label, "unit": res.unit,
-                        "text": res.text, "envelope": env.model_dump(mode="json")})
+            out.append(
+                {
+                    "key": key,
+                    "label": label,
+                    "unit": res.unit,
+                    "text": res.text,
+                    "envelope": env.model_dump(mode="json"),
+                }
+            )
         except (ToolUnavailable, FileNotFoundError, KeyError, ValueError) as exc:
             # blocked/pending — surface the absence, never a fabricated number
-            out.append({"key": key, "label": label, "unit": None, "text": f"unavailable: {exc}",
-                        "envelope": ResultEnvelope(
-                            value=None, run_id="unknown", artifact_id=None, mode=mode,
-                            claim_status=ClaimStatus.BLOCKED_DATA,
-                            freshness="1970-01-01T00:00:00+00:00").model_dump(mode="json")})
+            out.append(
+                {
+                    "key": key,
+                    "label": label,
+                    "unit": None,
+                    "text": f"unavailable: {exc}",
+                    "envelope": ResultEnvelope(
+                        value=None,
+                        run_id="unknown",
+                        artifact_id=None,
+                        mode=mode,
+                        claim_status=ClaimStatus.BLOCKED_DATA,
+                        freshness="1970-01-01T00:00:00+00:00",
+                    ).model_dump(mode="json"),
+                }
+            )
     return out

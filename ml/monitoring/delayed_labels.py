@@ -30,17 +30,17 @@ OUT = Path("reports/v2/monitoring/delayed_labels.json")
 @dataclass(frozen=True)
 class PendingForecast:
     zone_id: str
-    forecast_cutoff: datetime   # when the forecast was made (information boundary)
-    target_hour: datetime       # the hour being predicted (>= cutoff)
+    forecast_cutoff: datetime  # when the forecast was made (information boundary)
+    target_hour: datetime  # the hour being predicted (>= cutoff)
     predicted: float
 
 
 @dataclass(frozen=True)
 class ArrivedLabel:
     zone_id: str
-    target_hour: datetime       # the hour this actual demand is for
+    target_hour: datetime  # the hour this actual demand is for
     actual: float
-    available_at: datetime      # when this label became known to the system
+    available_at: datetime  # when this label became known to the system
 
 
 def resolve(pending: list[PendingForecast], labels: list[ArrivedLabel]) -> dict:
@@ -57,21 +57,42 @@ def resolve(pending: list[PendingForecast], labels: list[ArrivedLabel]) -> dict:
     for f in pending:
         lb = by_key.get((f.zone_id, f.target_hour.isoformat()))
         if lb is None:
-            still_pending.append({"zone_id": f.zone_id, "target_hour": f.target_hour.isoformat(),
-                                  "reason": "no_label_yet"})
+            still_pending.append(
+                {
+                    "zone_id": f.zone_id,
+                    "target_hour": f.target_hour.isoformat(),
+                    "reason": "no_label_yet",
+                }
+            )
             continue
         if lb.available_at <= f.forecast_cutoff:
             # label predates (or equals) the forecast -> using it would leak. Reject; stay pending.
-            leaked.append({"zone_id": f.zone_id, "target_hour": f.target_hour.isoformat(),
-                           "forecast_cutoff": f.forecast_cutoff.isoformat(),
-                           "label_available_at": lb.available_at.isoformat()})
-            still_pending.append({"zone_id": f.zone_id, "target_hour": f.target_hour.isoformat(),
-                                  "reason": "leakage_rejected"})
+            leaked.append(
+                {
+                    "zone_id": f.zone_id,
+                    "target_hour": f.target_hour.isoformat(),
+                    "forecast_cutoff": f.forecast_cutoff.isoformat(),
+                    "label_available_at": lb.available_at.isoformat(),
+                }
+            )
+            still_pending.append(
+                {
+                    "zone_id": f.zone_id,
+                    "target_hour": f.target_hour.isoformat(),
+                    "reason": "leakage_rejected",
+                }
+            )
             continue
-        closed.append({"zone_id": f.zone_id, "target_hour": f.target_hour.isoformat(),
-                       "predicted": f.predicted, "actual": lb.actual,
-                       "abs_error": abs(f.predicted - lb.actual),
-                       "claim_status": "measured"})
+        closed.append(
+            {
+                "zone_id": f.zone_id,
+                "target_hour": f.target_hour.isoformat(),
+                "predicted": f.predicted,
+                "actual": lb.actual,
+                "abs_error": abs(f.predicted - lb.actual),
+                "claim_status": "measured",
+            }
+        )
 
     denom = sum(abs(c["actual"]) for c in closed)
     wape = round(sum(c["abs_error"] for c in closed) / denom, 4) if denom else None
@@ -89,12 +110,16 @@ def resolve(pending: list[PendingForecast], labels: list[ArrivedLabel]) -> dict:
 
 def _demo(now: datetime) -> tuple[list[PendingForecast], list[ArrivedLabel]]:
     """A tiny fixture: two forecasts get valid delayed labels; one label is leaky (predates cutoff)."""
+
     def h(s: str) -> datetime:
         return datetime.fromisoformat(s).replace(tzinfo=UTC)
+
     pending = [
         PendingForecast("JC-A", h("2026-05-01T14:00"), h("2026-05-01T18:00"), 30.0),
         PendingForecast("JC-B", h("2026-05-01T14:00"), h("2026-05-01T18:00"), 20.0),
-        PendingForecast("JC-C", h("2026-05-01T14:00"), h("2026-05-01T18:00"), 10.0),  # no label -> pending
+        PendingForecast(
+            "JC-C", h("2026-05-01T14:00"), h("2026-05-01T18:00"), 10.0
+        ),  # no label -> pending
     ]
     labels = [
         # valid: available AFTER the 14:00 cutoff (label for the 18:00 hour arrives ~19:05)
@@ -112,20 +137,26 @@ def main(argv=None) -> int:
     report = {
         "run_id": f"run_v2-08labels_{now.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/monitoring/delayed_labels.json",
-        "mode": "demo_fixture", "claim_status": "demo_fixture", "freshness": now.isoformat(),
+        "mode": "demo_fixture",
+        "claim_status": "demo_fixture",
+        "freshness": now.isoformat(),
         "rule": "a label closes a forecast only if label.available_at > forecast.forecast_cutoff "
-                "(base-contract §5.2); otherwise leakage_rejected and the forecast stays pending",
+        "(base-contract §5.2); otherwise leakage_rejected and the forecast stays pending",
         "note": "Demonstrates the leakage-safe pending_live_label -> measured loop on a fixture; a "
-                "real close requires the live shadow-forecast stream (blocked here). The mechanism, "
-                "not the numbers, is the deliverable.",
+        "real close requires the live shadow-forecast stream (blocked here). The mechanism, "
+        "not the numbers, is the deliverable.",
         **res,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
-    print(f"V2-08 delayed labels — closed(measured)={res['n_closed_measured']} "
-          f"still_pending={res['n_still_pending']} leakage_rejected={res['n_leakage_rejected']}")
+    print(
+        f"V2-08 delayed labels — closed(measured)={res['n_closed_measured']} "
+        f"still_pending={res['n_still_pending']} leakage_rejected={res['n_leakage_rejected']}"
+    )
     print(f"  closed WAPE={res['closed_wape']}")
-    print(f"  leakage guard rejected {res['n_leakage_rejected']} label(s) that predated their cutoff")
+    print(
+        f"  leakage guard rejected {res['n_leakage_rejected']} label(s) that predated their cutoff"
+    )
     print(f"report -> {OUT}")
     return 0
 

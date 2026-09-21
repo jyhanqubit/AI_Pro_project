@@ -130,8 +130,12 @@ class _Tower(nn.Module):
         nn.init.normal_(self.cls, std=0.02)
 
         layer = nn.TransformerEncoderLayer(
-            d_model=d, nhead=cfg.nhead, dim_feedforward=cfg.dim_feedforward,
-            dropout=cfg.dropout, batch_first=True, activation="gelu",
+            d_model=d,
+            nhead=cfg.nhead,
+            dim_feedforward=cfg.dim_feedforward,
+            dropout=cfg.dropout,
+            batch_first=True,
+            activation="gelu",
         )
         self.encoder = nn.TransformerEncoder(layer, num_layers=cfg.num_layers)
         self.out = nn.Linear(d, cfg.embedding_dim)
@@ -163,9 +167,7 @@ class _Tower(nn.Module):
                 present = scalar_present[t].unsqueeze(-1)  # (B,1)
                 miss = self.missing(t, b, device)
                 proj = torch.where(present, proj, miss)
-            proj = proj + self.type_emb(
-                torch.full((b,), i, dtype=torch.long, device=device)
-            )
+            proj = proj + self.type_emb(torch.full((b,), i, dtype=torch.long, device=device))
             toks.append(proj.unsqueeze(1))
 
         # Event tokens (padding-masked).

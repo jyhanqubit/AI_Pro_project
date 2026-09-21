@@ -151,6 +151,7 @@ def test_rebalancing_cutoff_out_of_window_is_400(client: TestClient) -> None:
 
 
 def test_recommendations_stations_returns_topk_with_reason_codes(client: TestClient) -> None:
+    pytest.importorskip("torch")  # [recsys] extra; without it the route answers 503 (tested in e2e)
     body = {"mode": "rent", "lat": 40.7196, "lng": -74.0431}
     r = client.post("/v1/recommendations/stations", json=body)
     assert r.status_code == 200
@@ -168,6 +169,7 @@ def test_recommendations_stations_returns_topk_with_reason_codes(client: TestCli
 
 
 def test_recommendations_compare_event_impact_no_overlap(client: TestClient) -> None:
+    pytest.importorskip("torch")
     body = {"mode": "rent", "lat": 40.7196, "lng": -74.0431}
     r = client.post("/v1/recommendations/compare-event-impact", json=body)
     assert r.status_code == 200

@@ -58,9 +58,7 @@ def build_provider(name: str) -> LlmProvider:
         from .openai_provider import OpenAiLlmProvider
 
         return OpenAiLlmProvider()
-    raise ValueError(
-        f"unknown LLM provider: {name!r} (available: 'mock', 'anthropic', 'openai')"
-    )
+    raise ValueError(f"unknown LLM provider: {name!r} (available: 'mock', 'anthropic', 'openai')")
 
 
 def _status_for(confidence: float, threshold: float, low_conf_action: str) -> ExtractionStatus:

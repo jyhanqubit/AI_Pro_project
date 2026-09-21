@@ -123,7 +123,60 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
   → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
 - **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
   (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
-- **테스트:** `make test` 기준 505 passed / 6 skipped(torch 없는 환경에서 v1 recsys 2개 모듈 제외).
+- **테스트:** `make check` 기준 508 passed / 8 skipped. skip 8개는 전부 optional extra(torch, faiss, sqlalchemy, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
+
+## 검증 하네스
+
+이 저장소의 숫자는 "코드가 돌았다"가 아니라 "게이트를 통과한 artifact가 있다"로 증명합니다. 그 게이트를
+한 번에 돌리는 진입점이 `make check`이고, 같은 순서가 GitHub Actions(`.github/workflows/ci.yml`)에서
+push와 pull request마다 실행됩니다.
+
+```text
+make check
+ ├─ 1. ruff check . / ruff format --check .      정적 게이트 (F, I, B, UP, E; 줄 길이는 포매터에 위임)
+ ├─ 2. make seed-graph                           이벤트 graph 스냅숏 (오프라인, 1초; copilot 테스트 3개의 입력)
+ ├─ 3. pytest                                    508 passed / 8 skipped
+ │     ├─ tests/unit         58 파일 434개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀
+ │     ├─ tests/integration   8 파일  92개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB
+ │     └─ tests/e2e           1 파일   1개   13:59 → 14:00 골든패스 전체 흐름
+ ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
+ ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
+ └─ 6. python -m mypy .                          advisory (알려진 오류 125건, 아래 참고)
+```
+
+**네 층으로 나뉩니다.**
+
+| 층 | 무엇을 보장하나 | 어디에 |
+|---|---|---|
+| 정적 게이트 | 미사용 import, 정렬, bugbear 류 실수, 포맷 일관성 | `ruff`, `pyproject.toml` |
+| 계약 테스트 | 시간 의미(DST, `available_at ≤ cutoff`, lag/rolling 누수), Pydantic 계약, HTTP 경계의 상태 코드와 스키마, 재배치 feasibility, MCP 전송 동등성 | `tests/unit`, `tests/integration`, `tests/e2e` |
+| artifact 게이트 | 커밋된 `reports/v2/**` 결과가 `run_id`, `artifact_id`, `mode`, `claim_status`, `freshness`를 갖고, 참조 경로가 실제로 존재하며, 완성 규칙에 필요한 artifact가 모두 있는지. 테스트 9개 모듈이 개별 artifact의 값과 caveat를 핀으로 고정 | `scripts/v2_audit.py`, `scripts/v2_final_audit.py`, `tests/unit/test_v2_*` |
+| 측정 자체의 정직성 | 판정 규칙 사전 고정(CI가 0을 포함하면 보류), 예측을 실행 전에 artifact에 기록(뉴스벤더 q\*), RAGAS 판정의 drift guard(코드 답이 판정 당시 답과 다르면 실패), 시드 앙상블, 단일 분할 결과의 rolling-origin 재현 | `ml/forecasting/predictive_lift.py`, `quantile_cost.py`, `ml/copilot/ragas_generation.py`, `news_feature_conditions.py` |
+
+**fixture와 artifact의 역할 분담.** 테스트는 인터넷 없이 `data/fixtures/`만으로 돕니다(트립 샘플, GBFS 재고,
+뉴스 corpus, 허가 이벤트, gold set, Claude 라우팅과 RAGAS 판정 기록). 측정 결과는 `reports/v2/**`에
+JSON으로 커밋해 다운로드 없이 검토할 수 있고, 무거운 재실행(원본 트립 3 GB)은 `make v2-*` 명령으로
+분리했습니다. optional extra(torch, faiss, sqlalchemy, qiskit, ragas)가 없으면 해당 테스트는 사유와 함께
+skip되고 실패하지 않습니다.
+
+**이번 점검에서 고친 것.** 하네스가 잘 관리되고 있는지 실제로 돌려 보니 다음이 어긋나 있었고 모두 고쳤습니다.
+
+- CI가 없어 게이트가 사람이 기억할 때만 돌았습니다. `ci.yml`과 `make check`를 추가했습니다.
+- `make test`가 torch 없는 환경에서 실패했습니다. recsys 테스트 2개 모듈이 skip 대신 수집 오류를 냈고,
+  `/v1/recommendations` 라우트는 문서와 달리 503이 아니라 500을 냈습니다(lazy import 하나가 try 블록
+  밖에 있었음). 둘 다 고쳐 이제 skip 8개, 실패 0개입니다.
+- `make lint`가 늘 빨간 상태였습니다(E501 347건, 미포맷 101파일). 저장소 전체를 `ruff format`으로
+  맞추고 실제 결함(unused, zip strict, ambiguous name 등)을 고쳤으며, 줄 길이는 포매터가 관리하므로
+  E501은 끕니다. 이제 두 게이트 모두 통과합니다.
+- 테스트가 커밋된 artifact를 덮어쓰고 있었습니다. 벤치마크 러너의 `main()`을 부르는 테스트가 결과를
+  `reports/v2/copilot/`에 그대로 썼고, ragas extra가 없는 환경에서는 실제 측정값을 `blocked_external`
+  stub으로 바꿔 최종 감사 게이트를 깨뜨렸습니다(실행 순서에 따라 나타나는 실패). `tests/conftest.py`가
+  세션마다 `reports/v2`의 사본으로 모든 러너의 출력 경로를 돌려 이제 테스트는 커밋된 증거를 건드리지
+  않습니다. stub 자체도 envelope 필드를 갖도록 고쳤습니다.
+- `mypy`와 `pytest`가 PATH의 다른 인터프리터(uv tool)로 실행돼 프로젝트 의존성을 못 찾았습니다.
+  Makefile과 CI를 `python -m mypy`, `python -m pytest`로 바꾸고
+  `scripts/`를 패키지로 만들자 실제 오류 125건이 드러났습니다. 한 번에 고칠 규모가 아니라 CI에서
+  advisory(`continue-on-error`)로 두고 알려진 부채로 적어 둡니다.
 
 ## 서빙
 
@@ -335,7 +388,7 @@ cd apps/web && npm install && npm run dev   # 프런트: http://localhost:3000
 | **LLM 뉴스 피처의 조건부 기여**: 이벤트가 지역 특정적일수록 개선 — 평균 borough 4.2개 −0.96 → 2.0개 **+1.24 (CI [0.83, 1.64])**, 단조 관계 | `make v2-news-conditions` | `reports/v2/llm_value/news_feature_conditions.json` |
 | 비대칭 비용 최적화: 0.667분위 예측으로 **운영비용(OCS) −3.4%, 품절 −26%** (3개 창 전부) | `make v2-quantile-cost` | `reports/v2/holdout/quantile_cost.json` |
 | 승격 모델 실서빙 API — next-hour H3 예측 (holdout WAPE 0.4974) | 라이브/로컬: `GET /v2/model/forecast`, 재생성: `make v2-holdout` + `make v2-serving-export` | `reports/v2/holdout/` |
-| 전체 테스트 | `make test` | 505 passed / 6 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
+| 전체 테스트 | `make test` | 508 passed / 8 skipped (torch 없는 환경에서 v1 recsys 관련 테스트만 제외한 기준). `torch`를 설치하면 recsys retriever/reranker 테스트까지 함께 실행합니다 |
 
 > Note. 화면의 `7/12` 수치는 라벨을 붙인 데모 리플레이(휴리스틱)이고, WAPE와 방향별 lift, 재배치는
 > 실데이터 측정치입니다. GraphRAG 평가는 지표 설계를 보이기 위한 소규모(N=10) 하네스로, 답변은

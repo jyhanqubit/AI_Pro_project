@@ -20,15 +20,20 @@ def _write_news(tmp_path, rows):
 
 def test_borough_attribution_and_leakage(tmp_path):
     # A transit-disruption article naming Manhattan, available 2026-06-10 08:00 ET.
-    news = _write_news(tmp_path, [{
-        "article_id": "n1",
-        "title": "Subway signal failure snarls Manhattan commute",
-        "text": "A signal failure disrupted subway service across Manhattan on Wednesday morning.",
-        "source": "test",
-        "published_at": "2026-06-10T08:00:00-04:00",
-        "first_seen_at": "2026-06-10T08:00:00-04:00",
-        "url_hash": "h1",
-    }])
+    news = _write_news(
+        tmp_path,
+        [
+            {
+                "article_id": "n1",
+                "title": "Subway signal failure snarls Manhattan commute",
+                "text": "A signal failure disrupted subway service across Manhattan on Wednesday morning.",
+                "source": "test",
+                "published_at": "2026-06-10T08:00:00-04:00",
+                "first_seen_at": "2026-06-10T08:00:00-04:00",
+                "url_hash": "h1",
+            }
+        ],
+    )
     idx, diag = build_news_llm_index(news)
     assert diag["attributed_articles"] == 1
     # Attributed to Manhattan.
@@ -43,15 +48,20 @@ def test_borough_attribution_and_leakage(tmp_path):
 
 
 def test_article_without_borough_is_not_attributed(tmp_path):
-    news = _write_news(tmp_path, [{
-        "article_id": "n2",
-        "title": "Statewide weather advisory issued",
-        "text": "Rain expected across the region with no specific location named.",
-        "source": "test",
-        "published_at": "2026-06-10T08:00:00-04:00",
-        "first_seen_at": "2026-06-10T08:00:00-04:00",
-        "url_hash": "h2",
-    }])
+    news = _write_news(
+        tmp_path,
+        [
+            {
+                "article_id": "n2",
+                "title": "Statewide weather advisory issued",
+                "text": "Rain expected across the region with no specific location named.",
+                "source": "test",
+                "published_at": "2026-06-10T08:00:00-04:00",
+                "first_seen_at": "2026-06-10T08:00:00-04:00",
+                "url_hash": "h2",
+            }
+        ],
+    )
     idx, diag = build_news_llm_index(news)
     assert diag["attributed_articles"] == 0
     assert len(idx) == 0  # no borough named -> no fabricated attribution
@@ -59,15 +69,20 @@ def test_article_without_borough_is_not_attributed(tmp_path):
 
 def test_citywide_cue_attributes_all_boroughs(tmp_path):
     # A citywide subway disruption naming no single borough -> all 5 boroughs (documented rule).
-    news = _write_news(tmp_path, [{
-        "article_id": "n4",
-        "title": "MTA subway signal failure disrupts service across the city",
-        "text": "A signal failure caused citywide subway delays; no single area was spared.",
-        "source": "test",
-        "published_at": "2026-06-10T08:00:00-04:00",
-        "first_seen_at": "2026-06-10T08:00:00-04:00",
-        "url_hash": "h4",
-    }])
+    news = _write_news(
+        tmp_path,
+        [
+            {
+                "article_id": "n4",
+                "title": "MTA subway signal failure disrupts service across the city",
+                "text": "A signal failure caused citywide subway delays; no single area was spared.",
+                "source": "test",
+                "published_at": "2026-06-10T08:00:00-04:00",
+                "first_seen_at": "2026-06-10T08:00:00-04:00",
+                "url_hash": "h4",
+            }
+        ],
+    )
     idx_on, diag_on = build_news_llm_index(news, citywide=True)
     boroughs = {k[0] for k in idx_on}
     assert boroughs == {"Manhattan", "Brooklyn", "Queens", "Bronx", "Staten Island"}
@@ -83,16 +98,33 @@ def test_precomputed_claude_events_index(tmp_path):
 
     from ml.forecasting.llm_value_borough import build_news_llm_index_precomputed
 
-    news = _write_news(tmp_path, [{
-        "article_id": "x1", "title": "LIRR strike halts service", "text": "commuter rail shut down",
-        "source": "t", "published_at": "2026-05-16T06:00:00-04:00",
-        "first_seen_at": "2026-05-16T06:00:00-04:00", "url_hash": "h",
-    }])
+    news = _write_news(
+        tmp_path,
+        [
+            {
+                "article_id": "x1",
+                "title": "LIRR strike halts service",
+                "text": "commuter rail shut down",
+                "source": "t",
+                "published_at": "2026-05-16T06:00:00-04:00",
+                "first_seen_at": "2026-05-16T06:00:00-04:00",
+                "url_hash": "h",
+            }
+        ],
+    )
     ev = tmp_path / "claude_events.jsonl"
-    ev.write_text(json.dumps({
-        "article_id": "x1", "event_type": "TRANSIT_DISRUPTION",
-        "boroughs": ["Manhattan", "Queens"], "severity": 0.8, "evidence": "shut down",
-    }), encoding="utf-8")
+    ev.write_text(
+        json.dumps(
+            {
+                "article_id": "x1",
+                "event_type": "TRANSIT_DISRUPTION",
+                "boroughs": ["Manhattan", "Queens"],
+                "severity": 0.8,
+                "evidence": "shut down",
+            }
+        ),
+        encoding="utf-8",
+    )
     idx, diag = build_news_llm_index_precomputed(news, ev)
     assert diag["attributed_events"] == 1
     assert {k[0] for k in idx} == {"Manhattan", "Queens"}
@@ -107,8 +139,13 @@ def test_curated_claude_events_fixture_parses():
     import json
     from pathlib import Path
 
-    rows = [json.loads(l) for l in Path("data/fixtures/news_live/claude_events_2026h1.jsonl")
-            .read_text(encoding="utf-8").splitlines() if l.strip()]
+    rows = [
+        json.loads(line)
+        for line in Path("data/fixtures/news_live/claude_events_2026h1.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+        if line.strip()
+    ]
     assert len(rows) >= 20
     for r in rows:
         assert r["article_id"] and r["event_type"] and r["boroughs"]
@@ -117,15 +154,20 @@ def test_curated_claude_events_fixture_parses():
 
 
 def test_news_feature_columns_present(tmp_path):
-    news = _write_news(tmp_path, [{
-        "article_id": "n3",
-        "title": "Parade draws huge crowds in Brooklyn",
-        "text": "A large public gathering and parade filled the streets of Brooklyn.",
-        "source": "test",
-        "published_at": "2026-05-01T10:00:00-04:00",
-        "first_seen_at": "2026-05-01T10:00:00-04:00",
-        "url_hash": "h3",
-    }])
+    news = _write_news(
+        tmp_path,
+        [
+            {
+                "article_id": "n3",
+                "title": "Parade draws huge crowds in Brooklyn",
+                "text": "A large public gathering and parade filled the streets of Brooklyn.",
+                "source": "test",
+                "published_at": "2026-05-01T10:00:00-04:00",
+                "first_seen_at": "2026-05-01T10:00:00-04:00",
+                "url_hash": "h3",
+            }
+        ],
+    )
     idx, _ = build_news_llm_index(news)
     bk = next(k for k in idx if k[0] == "Brooklyn")
     for c in _NEWS_COLS:

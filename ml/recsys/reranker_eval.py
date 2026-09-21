@@ -126,14 +126,25 @@ def run(trips: pd.DataFrame, source: str, cfg: RetrieverConfig) -> dict:
     return {
         "source": source,
         "manifest": {
-            "n_samples": len(samples), "n_train": len(train), "n_test": len(test),
-            "n_test_eval": n, "rerank_train_cap": RERANK_TRAIN_CAP, "e2e_eval_cap": E2E_EVAL_CAP,
-            "epochs": cfg.epochs, "num_stations": tok.num_stations,
+            "n_samples": len(samples),
+            "n_train": len(train),
+            "n_test": len(test),
+            "n_test_eval": n,
+            "rerank_train_cap": RERANK_TRAIN_CAP,
+            "e2e_eval_cap": E2E_EVAL_CAP,
+            "epochs": cfg.epochs,
+            "num_stations": tok.num_stations,
         },
         "e2e": {
-            "hit_rate_at_1": h1 / n, "hit_rate_at_3": h3 / n, "mrr": mrr / n, "ndcg_at_3": ndcg / n,
-            "feasible_at_3_rate": feasible3 / n, "no_feasible_rate": no_feas / n,
-            "avg_detour_km": detour_sum / n, "latency_p50_ms": p50, "latency_p95_ms": p95,
+            "hit_rate_at_1": h1 / n,
+            "hit_rate_at_3": h3 / n,
+            "mrr": mrr / n,
+            "ndcg_at_3": ndcg / n,
+            "feasible_at_3_rate": feasible3 / n,
+            "no_feasible_rate": no_feas / n,
+            "avg_detour_km": detour_sum / n,
+            "latency_p50_ms": p50,
+            "latency_p95_ms": p95,
         },
         "event_ablation": "insufficient_event_overlap",
     }
@@ -155,11 +166,15 @@ def main() -> int:
     _OUT.write_text(json.dumps(result, indent=2), encoding="utf-8")
     e = result["e2e"]
     print(f"source={result['source']}  test_eval={result['manifest']['n_test_eval']}")
-    print(f"  E2E HitRate@1={e['hit_rate_at_1']:.3f} @3={e['hit_rate_at_3']:.3f} "
-          f"MRR={e['mrr']:.3f} NDCG@3={e['ndcg_at_3']:.3f}")
-    print(f"  feasible@3={e['feasible_at_3_rate']:.3f} no_feasible={e['no_feasible_rate']:.3f} "
-          f"detour={e['avg_detour_km']:.3f}km  lat p50={e['latency_p50_ms']:.1f}ms "
-          f"p95={e['latency_p95_ms']:.1f}ms")
+    print(
+        f"  E2E HitRate@1={e['hit_rate_at_1']:.3f} @3={e['hit_rate_at_3']:.3f} "
+        f"MRR={e['mrr']:.3f} NDCG@3={e['ndcg_at_3']:.3f}"
+    )
+    print(
+        f"  feasible@3={e['feasible_at_3_rate']:.3f} no_feasible={e['no_feasible_rate']:.3f} "
+        f"detour={e['avg_detour_km']:.3f}km  lat p50={e['latency_p50_ms']:.1f}ms "
+        f"p95={e['latency_p95_ms']:.1f}ms"
+    )
     print(f"wrote {_OUT.relative_to(_ROOT)}")
     return 0
 

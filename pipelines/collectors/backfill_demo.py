@@ -37,9 +37,11 @@ def main() -> int:
     _OUT.parent.mkdir(parents=True, exist_ok=True)
     _OUT.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
 
-    print(f"provider={res.report.provider}  raw={rep.raw_article_count}  "
-          f"candidate={rep.candidate_article_count}  accepted={rep.accepted_count}  "
-          f"sources={rep.unique_source_count}")
+    print(
+        f"provider={res.report.provider}  raw={rep.raw_article_count}  "
+        f"candidate={rep.candidate_article_count}  accepted={rep.accepted_count}  "
+        f"sources={rep.unique_source_count}"
+    )
     print(f"coverage gate passed: {gate.passed}  {gate.reasons or ''}")
     print("real-news accuracy claim: BLOCKED_DATA (GDELT offline; fixture path only)")
     print(f"wrote {_OUT.relative_to(_ROOT)}")

@@ -109,8 +109,10 @@ def test_gdelt_url_and_query_build() -> None:
 
 def test_gdelt_payload_mapping_is_title_only_no_fabrication() -> None:
     raw = {
-        "url": "https://example.com/a", "title": "PATH service change at Hoboken",
-        "domain": "example.com", "seendate": "20260612T131500Z",
+        "url": "https://example.com/a",
+        "title": "PATH service change at Hoboken",
+        "domain": "example.com",
+        "seendate": "20260612T131500Z",
     }
     pl = GdeltNewsProvider._to_payload(raw)
     assert pl["text"] == ""  # GDELT gives no body -> empty, never fabricated

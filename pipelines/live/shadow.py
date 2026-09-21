@@ -97,7 +97,8 @@ def run_shadow_stream(
     for inst in instants:
         key = inst.isoformat()
         new_events = [
-            e for e in events
+            e
+            for e in events
             if e.available_at is not None
             and e.available_at <= inst
             and e.event_id not in seen_event_ids
@@ -105,8 +106,9 @@ def run_shadow_stream(
         if key in processed:
             # Already applied in a prior run: fold in so later batches stay correct; don't re-emit.
             seen_event_ids.update(e.event_id for e in new_events)
-            snapshots = build_graph_features(events, articles, forecast_cutoff=inst,
-                                             config=cfg, created_at=created_at)
+            snapshots = build_graph_features(
+                events, articles, forecast_cutoff=inst, config=cfg, created_at=created_at
+            )
             continue
         if not new_events:
             continue
@@ -115,8 +117,13 @@ def run_shadow_stream(
         base_zones = [s.zone_id for s in snapshots]
         affected = affected_zones(new_events, base_zones, cfg, forecast_cutoff=inst)
         snapshots = refresh_incremental(
-            snapshots, events, articles, forecast_cutoff=inst,
-            new_events=new_events, config=cfg, created_at=created_at,
+            snapshots,
+            events,
+            articles,
+            forecast_cutoff=inst,
+            new_events=new_events,
+            config=cfg,
+            created_at=created_at,
         )
         result.latency_ms_per_batch.append((time.perf_counter() - t0) * 1000)
 

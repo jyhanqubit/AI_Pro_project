@@ -23,10 +23,16 @@ _INTENTS: list[tuple[str, tuple[str, ...]]] = [
     ("guardrail_violations", ("guardrail", "violation", "price bound", "pricing safe")),
     ("llm_news_value", ("llm", "news event", "news-derived", "gpt", "claude value")),
     ("mpc_regret", ("regret", "oracle", "optimality gap", "close to optimal")),
-    ("best_rebalancing_policy", ("best policy", "which policy", "rebalanc", "mpc or", "policy to use")),
+    (
+        "best_rebalancing_policy",
+        ("best policy", "which policy", "rebalanc", "mpc or", "policy to use"),
+    ),
     ("forecast_wape", ("wape", "forecast error", "forecast accuracy", "holdout", "how accurate")),
     ("profit_lift", ("profit", "worth", "beat", "dollar", "money", "revenue lift", "net gain")),
-    ("promoted_model", ("which model", "promoted model", "served model", "what model", "algorithm")),
+    (
+        "promoted_model",
+        ("which model", "promoted model", "served model", "what model", "algorithm"),
+    ),
 ]
 
 
@@ -62,13 +68,22 @@ def answer(question: str, route_fn=route) -> CopilotAnswer:
     deterministic keyword router. Inject a different router (e.g. real-LLM routing) to compare."""
     tool_name = route_fn(question)
     if tool_name is None:
-        return CopilotAnswer(question, False, None, _REFUSAL, None, None, None,
-                             refusal_reason="no_tool_match")
+        return CopilotAnswer(
+            question, False, None, _REFUSAL, None, None, None, refusal_reason="no_tool_match"
+        )
     try:
         res: ToolResult = REGISTRY[tool_name]()
     except ToolUnavailable as exc:
-        return CopilotAnswer(question, False, tool_name,
-                             f"Tool '{tool_name}' unavailable: {exc}", None, None, None,
-                             refusal_reason="tool_unavailable")
-    return CopilotAnswer(question, True, tool_name, res.text, res.value, res.artifact_id,
-                         res.claim_status)
+        return CopilotAnswer(
+            question,
+            False,
+            tool_name,
+            f"Tool '{tool_name}' unavailable: {exc}",
+            None,
+            None,
+            None,
+            refusal_reason="tool_unavailable",
+        )
+    return CopilotAnswer(
+        question, True, tool_name, res.text, res.value, res.artifact_id, res.claim_status
+    )

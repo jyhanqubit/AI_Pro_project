@@ -78,7 +78,9 @@ def main(argv=None) -> int:
         elif _norm(got) != _norm(j["answer"]):
             drift.append(f"{j['id']}: answer changed\n    judged: {j['answer']}\n    live  : {got}")
     if drift:
-        raise SystemExit("RAGAS judgments are stale (re-judge after the change):\n" + "\n".join(drift))
+        raise SystemExit(
+            "RAGAS judgments are stale (re-judge after the change):\n" + "\n".join(drift)
+        )
 
     faiths, per = [], []
     for j in judgments:
@@ -86,25 +88,33 @@ def main(argv=None) -> int:
         supported = sum(1 for c in claims if c["supported"])
         f = supported / len(claims)
         faiths.append(f)
-        per.append({"id": j["id"], "faithfulness": round(f, 3),
-                    "supported_claims": supported, "total_claims": len(claims),
-                    "answer_relevancy": j["answer_relevancy"]})
+        per.append(
+            {
+                "id": j["id"],
+                "faithfulness": round(f, 3),
+                "supported_claims": supported,
+                "total_claims": len(claims),
+                "answer_relevancy": j["answer_relevancy"],
+            }
+        )
     rels = [j["answer_relevancy"] for j in judgments]
     n = len(judgments)
 
     report = {
         "run_id": f"run_v2-06ragasgen_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/ragas_generation_benchmark.json",
-        "mode": "historical_replay", "claim_status": "offline_benchmark", "freshness": stamp.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "offline_benchmark",
+        "freshness": stamp.isoformat(),
         "judge": JUDGE,
         "judge_note": "No LLM API key in sandbox; the model judged in-session (as in V2-03 extraction "
-                      "and V2-06 routing). Every verdict is committed in "
-                      "data/fixtures/v2/copilot_ragas_judgments.jsonl for audit.",
+        "and V2-06 routing). Every verdict is committed in "
+        "data/fixtures/v2/copilot_ragas_judgments.jsonl for audit.",
         "metric_definitions": {
             "faithfulness": "RAGAS: supported_claims / total_claims, claims verified against the "
-                            "typed-tool retrieved context (value + cited artifact).",
+            "typed-tool retrieved context (value + cited artifact).",
             "answer_relevancy": "DIRECT relevance judgment (0..1). NOT RAGAS's embedding-similarity "
-                                "proxy (no embedding model available); labeled as a direct judgment.",
+            "proxy (no embedding model available); labeled as a direct judgment.",
         },
         "scope": "answered questions only (refusals graded by correctness_benchmark.json)",
         "n_answered": n,
@@ -128,11 +138,15 @@ def main(argv=None) -> int:
         ],
     }
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "ragas_generation_benchmark.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    (OUT_DIR / "ragas_generation_benchmark.json").write_text(
+        json.dumps(report, indent=2), encoding="utf-8"
+    )
 
     print(f"V2-06 RAGAS generation-side (judge={JUDGE}) — {n} answered questions")
     print(f"  faithfulness    : {report['faithfulness']}")
-    print(f"  answer_relevancy: {report['answer_relevancy']}  (direct judgment, not embedding proxy)")
+    print(
+        f"  answer_relevancy: {report['answer_relevancy']}  (direct judgment, not embedding proxy)"
+    )
     print(f"  drift guard     : PASS (all {n} judged answers match live Copilot output)")
     print(f"report -> {OUT_DIR}/ragas_generation_benchmark.json")
     return 0

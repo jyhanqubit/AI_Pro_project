@@ -52,8 +52,16 @@ def _engine():
     trips = pd.read_csv(_TRIPS)
     master = build_station_master(trips, gbfs_status_path=_GBFS)
     cfg = RetrieverConfig(
-        d_model=32, embedding_dim=32, nhead=4, num_layers=1, dim_feedforward=64,
-        dropout=0.0, epochs=1, batch_size=8, max_train_samples=12, seed=0,
+        d_model=32,
+        embedding_dim=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.0,
+        epochs=1,
+        batch_size=8,
+        max_train_samples=12,
+        seed=0,
     )
     tok = RetrieverTokenizer(master, cfg)
     samples = build_dataset(trips)
@@ -65,7 +73,13 @@ def _engine():
 
 def recommend(mode: str, lat: float, lng: float, cutoff: datetime | None, is_member: bool = True):
     from contracts.v1.enums import RecommendationMode
-    from ml.recsys.serving import query_from_request
+
+    try:
+        from ml.recsys.serving import query_from_request
+    except ImportError as e:  # same degrade as _engine(): the route answers 503, never a 500
+        raise RecsysUnavailable(
+            "recommendation model needs the [recsys] extra (pip install -e .[recsys])"
+        ) from e
 
     engine = _engine()
     rec_mode = RecommendationMode(mode)

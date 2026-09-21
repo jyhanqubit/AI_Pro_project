@@ -57,12 +57,14 @@ def main(argv=None) -> int:
     report = {
         "run_id": f"run_v2-06graph_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/graphrag_benchmark.json",
-        "mode": "demo_fixture", "claim_status": "offline_benchmark", "freshness": stamp.isoformat(),
+        "mode": "demo_fixture",
+        "claim_status": "offline_benchmark",
+        "freshness": stamp.isoformat(),
         "retrieval": "event graph (Article->Event->H3Zone) at the demo replay cutoff",
         "grounding_source": "services.api.graphrag (product citation extraction + context validation)",
         "n_questions": len(CASES),
         "ground_truth": "2 events (PATH transit + Newport concert), JC-area, both +demand; "
-                        "Midtown/Brooklyn/3rd-event/per-station questions have no relevant event",
+        "Midtown/Brooklyn/3rd-event/per-station questions have no relevant event",
         "answerers": answerers,
         "graphrag_hard_gates_pass": hard_gates_pass,
         "finding": (
@@ -79,8 +81,10 @@ def main(argv=None) -> int:
     print(f"V2-06 GraphRAG (event-graph) benchmark — {len(CASES)} explanation questions")
     print(f"  {'answerer':32s} {'correct':>9s} {'F1':>6s} {'refuse':>7s} {'halluc':>7s}")
     for name, m in answerers.items():
-        print(f"  {name:32s} {m['answer_correct']:>9s} {m['citation_f1']:>6} "
-              f"{m['out_of_scope_refusal']:>7s} {m['hallucinated_answers']:>7d}")
+        print(
+            f"  {name:32s} {m['answer_correct']:>9s} {m['citation_f1']:>6} "
+            f"{m['out_of_scope_refusal']:>7s} {m['hallucinated_answers']:>7d}"
+        )
     print(f"\nGraphRAG hard gates pass (0 hallucinated + full refusal): {hard_gates_pass}")
     print(f"report -> {OUT_DIR}/graphrag_benchmark.json")
     return 0 if hard_gates_pass else 1

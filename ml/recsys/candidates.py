@@ -53,7 +53,10 @@ def generate_candidates(
             detour = 0.0
             if sample.mode == RecommendationMode.RETURN and sample.trip_origin_lat is not None:
                 direct = haversine_km(
-                    sample.trip_origin_lat, sample.trip_origin_lng, st.lat, st.lng  # type: ignore[arg-type]
+                    sample.trip_origin_lat,
+                    sample.trip_origin_lng,
+                    st.lat,
+                    st.lng,  # type: ignore[arg-type]
                 )
                 detour = max(0.0, direct - 0.0)  # detour vs going straight to the station
                 if detour > cfg.max_detour_km and st.station_id != chosen:

@@ -6,7 +6,7 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
+.PHONY: install lint typecheck test check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
 
 install:  ## Create/refresh the dev environment (pip + venv)
 	python -m venv .venv
@@ -16,11 +16,20 @@ lint:  ## Ruff lint + format check
 	ruff check .
 	ruff format --check .
 
-typecheck:  ## Static type check
-	mypy .
+typecheck:  ## Static type check (advisory: known debt, see README 검증 하네스)
+	python -m mypy .
 
-test:  ## Run the test suite
-	pytest
+test:  ## Run the test suite (optional extras skip, never fail)
+	python -m pytest
+
+check:  ## The whole harness: lint + format gate, graph snapshot, tests, V2 audit gates (typecheck is advisory)
+	ruff check .
+	ruff format --check .
+	python -m scripts.build_graph > /dev/null
+	python -m pytest -q
+	python -m scripts.v2_audit
+	python -m scripts.v2_final_audit
+	-python -m mypy . > /dev/null 2>&1 || echo "typecheck: advisory (known debt), see README"
 
 collect-demo:  ## Run all three fixture collectors offline and print a summary
 	python -m pipelines.collectors.demo

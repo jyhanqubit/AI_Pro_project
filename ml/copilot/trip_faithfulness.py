@@ -32,11 +32,27 @@ _NUM = re.compile(r"\d+(?:\.\d+)?")
 
 
 def _sv(sid, ko, lat, lng, bikes, docks):
-    return StationView(station_id=sid, ko=ko, en=ko, area="JC", zone_id=sid, bikes=bikes,
-                       capacity=bikes + docks, docks_free=docks, target=10, base_target=10,
-                       shortage=0, surplus=0, level="ok", level_label="빌릴 수 있어요",
-                       lat=lat, lng=lng, demand_delta=0.0, baseline_forecast=0.0,
-                       event_aware_forecast=0.0)
+    return StationView(
+        station_id=sid,
+        ko=ko,
+        en=ko,
+        area="JC",
+        zone_id=sid,
+        bikes=bikes,
+        capacity=bikes + docks,
+        docks_free=docks,
+        target=10,
+        base_target=10,
+        shortage=0,
+        surplus=0,
+        level="ok",
+        level_label="빌릴 수 있어요",
+        lat=lat,
+        lng=lng,
+        demand_delta=0.0,
+        baseline_forecast=0.0,
+        event_aware_forecast=0.0,
+    )
 
 
 _NET = [
@@ -77,8 +93,11 @@ def score_answer(answer: str, grounded: set[float]) -> dict:
     nums = _answer_numbers(answer)
     ungrounded = [n for n in nums if n not in grounded]
     total = len(nums)
-    return {"total_numbers": total, "ungrounded": ungrounded,
-            "faithfulness": round(1 - len(ungrounded) / total, 4) if total else 1.0}
+    return {
+        "total_numbers": total,
+        "ungrounded": ungrounded,
+        "faithfulness": round(1 - len(ungrounded) / total, 4) if total else 1.0,
+    }
 
 
 def main(argv=None) -> int:
@@ -92,9 +111,15 @@ def main(argv=None) -> int:
         s = score_answer(plan["answer"], grounded)
         total_ung += len(s["ungrounded"])
         faiths.append(s["faithfulness"])
-        per.append({"pair": f"{o}->{d}", "answer": plan["answer"],
-                    "total_numbers": s["total_numbers"], "ungrounded": s["ungrounded"],
-                    "faithfulness": s["faithfulness"]})
+        per.append(
+            {
+                "pair": f"{o}->{d}",
+                "answer": plan["answer"],
+                "total_numbers": s["total_numbers"],
+                "ungrounded": s["ungrounded"],
+                "faithfulness": s["faithfulness"],
+            }
+        )
 
     # negative control: corrupt an answer with a fabricated number -> must be flagged
     plan = plan_trip(object(), now, "A", "D")
@@ -105,21 +130,26 @@ def main(argv=None) -> int:
     report = {
         "run_id": f"run_v2-07faith_{now.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/copilot/trip_faithfulness.json",
-        "mode": "historical_replay", "claim_status": "offline_benchmark", "freshness": now.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "offline_benchmark",
+        "freshness": now.isoformat(),
         "metric": "numeric faithfulness (RAGAS-style): every number in the answer must appear as a "
-                  "value in the typed plan; distances are haversine-computed from real station "
-                  "coordinates, never LLM-generated",
+        "value in the typed plan; distances are haversine-computed from real station "
+        "coordinates, never LLM-generated",
         "n_plans": n,
         "mean_faithfulness": round(sum(faiths) / n, 4),
         "ungrounded_numbers_total": total_ung,
         "per_plan": per,
-        "negative_control": {"injected": "999", "detected_ungrounded": neg["ungrounded"],
-                             "faithfulness_when_corrupted": neg["faithfulness"],
-                             "guard_works": 999.0 in neg["ungrounded"]},
+        "negative_control": {
+            "injected": "999",
+            "detected_ungrounded": neg["ungrounded"],
+            "faithfulness_when_corrupted": neg["faithfulness"],
+            "guard_works": 999.0 in neg["ungrounded"],
+        },
         "finding": "faithfulness 1.0, ungrounded_numbers_total 0 — the answer restates only plan "
-                   "values (grounded by the template). The negative control (injected 999) is caught, "
-                   "so the verifier would flag a hallucinated number if an LLM narrator replaced the "
-                   "template. Same guarantee as V2-06 ungrounded_numeric=0, applied to the trip planner.",
+        "values (grounded by the template). The negative control (injected 999) is caught, "
+        "so the verifier would flag a hallucinated number if an LLM narrator replaced the "
+        "template. Same guarantee as V2-06 ungrounded_numeric=0, applied to the trip planner.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

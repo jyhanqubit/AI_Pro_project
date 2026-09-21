@@ -1,0 +1,41 @@
+name: harness
+
+# The verification harness on every push and pull request: lint + format gate, the offline test
+# suite (optional extras such as torch/faiss skip, never fail), and the two V2 audit gates that
+# check every committed artifact's provenance envelope, completion set and traceability.
+# Type checking runs but does not block yet (known debt is tracked in README > 검증 하네스).
+
+on:
+  push:
+    branches: [master, v2, dev]
+  pull_request:
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install (base + ml + api + mcp extras, no torch)
+        run: pip install -e ".[dev,ml,api,mcp]" aiohttp
+      - name: Lint and format gate
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Build the event graph snapshot (offline, ~1 s; three copilot tests need it)
+        run: make seed-graph
+      - name: Tests (offline; optional extras skip)
+        env:
+          OMP_NUM_THREADS: "1"
+        run: python -m pytest -q
+      - name: V2 audit gates (envelope, completion, traceability)
+        run: |
+          python -m scripts.v2_audit
+          python -m scripts.v2_final_audit
+      - name: Type check (advisory)
+        continue-on-error: true
+        run: python -m mypy .

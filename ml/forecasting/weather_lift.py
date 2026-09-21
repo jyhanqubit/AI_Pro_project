@@ -88,9 +88,7 @@ def _prev_day_features(hour_start: datetime, weather: dict[str, dict[str, float]
     ]
 
 
-def _fit_eval(
-    x_dev: np.ndarray, y_dev: np.ndarray, x_test: np.ndarray, seed: int
-) -> np.ndarray:
+def _fit_eval(x_dev: np.ndarray, y_dev: np.ndarray, x_test: np.ndarray, seed: int) -> np.ndarray:
     model = HistGradientBoostingRegressor(random_state=seed, max_iter=300, learning_rate=0.05)
     model.fit(x_dev, y_dev)
     return np.clip(model.predict(x_test), 0.0, None)
@@ -165,15 +163,21 @@ def main(argv: list[str] | None = None) -> int:
     out.write_text(json.dumps(res, indent=2), encoding="utf-8")
 
     b1, bw, lift = res["baseline_demand_calendar"], res["plus_weather"], res["predictive_lift"]
-    print(f"\ntrain rows={res['n_train_rows']}  test rows={res['n_test_rows']}  "
-          f"zones={res['zones']}  test={res['test_days']}")
+    print(
+        f"\ntrain rows={res['n_train_rows']}  test rows={res['n_test_rows']}  "
+        f"zones={res['zones']}  test={res['test_days']}"
+    )
     print(f"B1  demand+calendar : WAPE={b1['wape']:.4f}  MAE={b1['mae']:.3f}")
     print(f"B1 + weather        : WAPE={bw['wape']:.4f}  MAE={bw['mae']:.3f}")
-    print(f"WAPE reduction      : {res['wape_abs_reduction']:+.4f}  "
-          f"({res['wape_rel_reduction_pct']:+.2f}% relative)")
+    print(
+        f"WAPE reduction      : {res['wape_abs_reduction']:+.4f}  "
+        f"({res['wape_rel_reduction_pct']:+.2f}% relative)"
+    )
     lo, hi = lift["ci_95"]
-    print(f"paired lift verdict : {lift['verdict']}  mean_gain={lift['mean_gain']:.4f}  "
-          f"CI95=[{lo:.4f}, {hi:.4f}]  (over {lift['n_blocks']} day-blocks)")
+    print(
+        f"paired lift verdict : {lift['verdict']}  mean_gain={lift['mean_gain']:.4f}  "
+        f"CI95=[{lo:.4f}, {hi:.4f}]  (over {lift['n_blocks']} day-blocks)"
+    )
     print(f"report -> {out}")
     return 0
 

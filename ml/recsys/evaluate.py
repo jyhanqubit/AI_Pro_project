@@ -117,12 +117,16 @@ def main() -> int:
     _OUT.parent.mkdir(parents=True, exist_ok=True)
     _OUT.write_text(json.dumps(result, indent=2), encoding="utf-8")
 
-    print(f"source={source}  trips={result['manifest']['n_trips']}  "
-          f"samples={result['manifest']['n_samples']}  test={result['manifest']['n_test']}")
+    print(
+        f"source={source}  trips={result['manifest']['n_trips']}  "
+        f"samples={result['manifest']['n_samples']}  test={result['manifest']['n_test']}"
+    )
     for name, m in result["metrics"].items():
-        print(f"  {name:26s} HR@1={m['hit_rate_at_1']:.3f} HR@3={m['hit_rate_at_3']:.3f} "
-              f"MRR={m['mrr']:.3f} NDCG@3={m['ndcg_at_3']:.3f} "
-              f"cov={m['candidate_coverage']:.1f} inv_missing={m['inventory_missing_rate']:.2f}")
+        print(
+            f"  {name:26s} HR@1={m['hit_rate_at_1']:.3f} HR@3={m['hit_rate_at_3']:.3f} "
+            f"MRR={m['mrr']:.3f} NDCG@3={m['ndcg_at_3']:.3f} "
+            f"cov={m['candidate_coverage']:.1f} inv_missing={m['inventory_missing_rate']:.2f}"
+        )
     print(f"wrote {_OUT.relative_to(_ROOT)}")
     return 0
 

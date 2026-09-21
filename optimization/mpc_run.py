@@ -41,8 +41,9 @@ def main(argv: list[str] | None = None) -> int:
     timing: dict[str, float] = {}
     for p in POLICIES:
         t0 = time.perf_counter()
-        results[p] = simulate(p, zones, fc, realized, A, horizon=ns.horizon,
-                              vehicle_capacity=ns.vehicle_capacity)
+        results[p] = simulate(
+            p, zones, fc, realized, A, horizon=ns.horizon, vehicle_capacity=ns.vehicle_capacity
+        )
         timing[p] = time.perf_counter() - t0
     oracle_net = results["oracle"].net
 
@@ -64,7 +65,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # Oracle must be the upper bound (min cost): every policy's regret >= 0.
     for p in POLICIES:
-        assert by_policy[p]["regret_vs_oracle"] >= -1e-6, f"negative regret for {p} — Oracle not a bound"
+        assert by_policy[p]["regret_vs_oracle"] >= -1e-6, (
+            f"negative regret for {p} — Oracle not a bound"
+        )
 
     report = {
         "run_id": f"run_v2-04_{stamp.strftime('%Y%m%dT%H%M%SZ')}",
@@ -76,7 +79,10 @@ def main(argv: list[str] | None = None) -> int:
         "assumption_set_version": A.version,
         "scenario": {
             "grain": "h3_zone_x_hour (synthetic commute scenario)",
-            "n_zones": ns.zones, "hours": ns.hours, "mpc_horizon": ns.horizon, "seed": ns.seed,
+            "n_zones": ns.zones,
+            "hours": ns.hours,
+            "mpc_horizon": ns.horizon,
+            "seed": ns.seed,
             "vehicle_capacity": ns.vehicle_capacity,
             "note": "seeded residential/commercial commute demand; forecast=mean, realized=mean+noise",
         },
@@ -93,18 +99,24 @@ def main(argv: list[str] | None = None) -> int:
 
     print(f"V2-04 MPC policy comparison — {ns.zones} zones, {ns.hours}h, MPC horizon {ns.horizon}h")
     print(f"objective: minimize ledger total_cost (assumptions {A.version})\n")
-    print(f"  {'policy':10s} {'short_u':>8s} {'over_u':>8s} {'moved':>7s} {'total_cost':>11s} {'regret':>9s} feas")
+    print(
+        f"  {'policy':10s} {'short_u':>8s} {'over_u':>8s} {'moved':>7s} {'total_cost':>11s} {'regret':>9s} feas"
+    )
     for p in POLICIES:
         b = by_policy[p]
-        print(f"  {p:10s} {b['shortage_units']:8.0f} {b['overflow_units']:8.0f} {b['moved_units']:7.0f} "
-              f"{b['total_cost']:11.1f} {b['regret_vs_oracle']:9.1f} {b['feasible']}")
+        print(
+            f"  {p:10s} {b['shortage_units']:8.0f} {b['overflow_units']:8.0f} {b['moved_units']:7.0f} "
+            f"{b['total_cost']:11.1f} {b['regret_vs_oracle']:9.1f} {b['feasible']}"
+        )
     print(f"\nranking (best->worst cost): {report['ranking_by_total_cost']}")
     if ns.timing:
         print(f"\n  {'policy':10s} {'wall(s)':>9s} {'ms/hour':>9s}")
         for p in POLICIES:
             print(f"  {p:10s} {timing[p]:9.3f} {1000 * timing[p] / ns.hours:9.2f}")
-        print(f"  MPC / single-period MILP compute ratio: {timing['mpc'] / timing['milp']:.2f}x "
-              f"(look-ahead is encoded in the target, not a larger joint solve)")
+        print(
+            f"  MPC / single-period MILP compute ratio: {timing['mpc'] / timing['milp']:.2f}x "
+            f"(look-ahead is encoded in the target, not a larger joint solve)"
+        )
     print(f"report -> {OUT_DIR}/policy_comparison.json")
     return 0
 

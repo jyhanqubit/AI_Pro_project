@@ -38,8 +38,8 @@ import numpy as np
 
 from ml.forecasting.predictive_lift import run_predictive_lift
 
-REL_THRESHOLD = 0.01   # min |relative WAPE change| to count as a non-trivial effect
-MIN_ACTIVE = 100       # min LLM-active zone-hours to render a verdict
+REL_THRESHOLD = 0.01  # min |relative WAPE change| to count as a non-trivial effect
+MIN_ACTIVE = 100  # min LLM-active zone-hours to render a verdict
 
 # decision labels
 MEANINGFUL_POSITIVE = "MEANINGFUL_POSITIVE"
@@ -104,8 +104,9 @@ def llm_feature_value(
         active_skill = _skill(_wape(y[m], pb[m]), _wape(y[m], pl[m]))
         err_base = np.abs(y[m] - pb[m]).tolist()
         err_llm = np.abs(y[m] - pl[m]).tolist()
-        lift = run_predictive_lift(err_base, err_llm, blk[m].tolist(),
-                                   coverage_ok=True, seed=seed, n_boot=n_boot)
+        lift = run_predictive_lift(
+            err_base, err_llm, blk[m].tolist(), coverage_ok=True, seed=seed, n_boot=n_boot
+        )
         mean_gain = lift["mean_gain"]
         ci = lift["ci_95"]
         significant = ci[0] > 0 or ci[1] < 0
@@ -128,9 +129,9 @@ def llm_feature_value(
         MEANINGFUL_POSITIVE: f"LLM features cut error {mag}% on active zone-hours (CI excludes 0).",
         MEANINGFUL_NEGATIVE: f"LLM features raised error {mag}% on active zone-hours (CI excludes 0).",
         NO_MEANINGFUL_EFFECT: "No meaningful accuracy change from the LLM features "
-                              "(effect below threshold or CI covers 0).",
+        "(effect below threshold or CI covers 0).",
         INSUFFICIENT_SUPPORT: f"Only {n_active} LLM-active zone-hours (< {min_active}); "
-                              "not enough support to decide.",
+        "not enough support to decide.",
     }[decision]
 
     return {
@@ -147,8 +148,8 @@ def llm_feature_value(
         "n_llm_active_rows": n_active,
         "thresholds": {"rel_threshold": rel_threshold, "min_active": min_active},
         "definition": "skill = (WAPE_without_LLM - WAPE_with_LLM)/WAPE_without_LLM on the LLM-active "
-                      "subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI "
-                      "on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / "
-                      "INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
+        "subset; decision = MEANINGFUL iff |skill| >= rel_threshold AND bootstrap CI "
+        "on paired abs-error gain excludes 0; else NO_MEANINGFUL_EFFECT / "
+        "INSUFFICIENT_SUPPORT. Positive skill = error reduced.",
         "interpretation": interp,
     }

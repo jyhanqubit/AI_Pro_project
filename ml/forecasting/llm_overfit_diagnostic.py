@@ -21,11 +21,15 @@ from datetime import UTC, datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-import numpy as np
 import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
-from ml.forecasting.borough_event_lift import _EVENT_COLS, _fit_eval, build_event_index, stream_borough_cells
+from ml.forecasting.borough_event_lift import (
+    _EVENT_COLS,
+    _fit_eval,
+    build_event_index,
+    stream_borough_cells,
+)
 from ml.forecasting.llm_permit_typed_value import TYPED_COLS, build_typed_index
 from ml.forecasting.metrics import wape
 from ml.forecasting.splits import holdout_by_time
@@ -57,7 +61,11 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         for c in TYPED_COLS:
             rec[c] = te[c] if te else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -66,27 +74,37 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
     dev, test = holdout_by_time(hours, test_start)
     y = df[target].to_numpy(dtype=float)
 
-    arms = {"A0_demand_calendar": b1, "A1_crude_count": b1 + list(_EVENT_COLS),
-            "A1_typed_buckets": b1 + list(TYPED_COLS)}
+    arms = {
+        "A0_demand_calendar": b1,
+        "A1_crude_count": b1 + list(_EVENT_COLS),
+        "A1_typed_buckets": b1 + list(TYPED_COLS),
+    }
     out = {}
     for name, cc in arms.items():
         x = df[cc].to_numpy(dtype=float)
         p_train = _fit_eval(x[dev], y[dev], x[dev], 0)
         p_test = _fit_eval(x[dev], y[dev], x[test], 0)
-        out[name] = {"n_features": len(cc),
-                     "train_wape": round(float(wape(y[dev], p_train)), 4),
-                     "test_wape": round(float(wape(y[test], p_test)), 4),
-                     "generalization_gap": round(float(wape(y[test], p_test) - wape(y[dev], p_train)), 4)}
+        out[name] = {
+            "n_features": len(cc),
+            "train_wape": round(float(wape(y[dev], p_train)), 4),
+            "test_wape": round(float(wape(y[test], p_test)), 4),
+            "generalization_gap": round(float(wape(y[test], p_test) - wape(y[dev], p_train)), 4),
+        }
 
     return {
         "run_id": f"run_v2-03overfit_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/overfit_diagnostic.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "target": target, "test_from": test_from, "n_train": int(len(dev)), "n_test": int(len(test)),
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "target": target,
+        "test_from": test_from,
+        "n_train": int(len(dev)),
+        "n_test": int(len(test)),
         "arms": out,
         "reading": "If train_wape falls as features are added (info helps fit) while test_wape for the "
-                   "richer arm rises above the simpler arm, the harm is OVERFITTING/estimation, not a "
-                   "loss of information — the info is present but not usably estimable from this data.",
+        "richer arm rises above the simpler arm, the harm is OVERFITTING/estimation, not a "
+        "loss of information — the info is present but not usably estimable from this data.",
     }
 
 
@@ -101,7 +119,9 @@ def main(argv=None) -> int:
     (OUT_DIR / "overfit_diagnostic.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
     print(f"{'arm':22s} {'#feat':>6s} {'TRAIN wape':>11s} {'TEST wape':>10s} {'gap':>8s}")
     for a, r in res["arms"].items():
-        print(f"  {a:20s} {r['n_features']:>6d} {r['train_wape']:>11.4f} {r['test_wape']:>10.4f} {r['generalization_gap']:>8.4f}")
+        print(
+            f"  {a:20s} {r['n_features']:>6d} {r['train_wape']:>11.4f} {r['test_wape']:>10.4f} {r['generalization_gap']:>8.4f}"
+        )
     print(f"report -> {OUT_DIR}/overfit_diagnostic.json")
     return 0
 

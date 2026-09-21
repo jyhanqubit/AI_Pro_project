@@ -47,16 +47,18 @@ def scan(now: datetime, reports: Path = REPORTS) -> list[dict]:
             continue
         fresh = _parse_dt(d.get("freshness"))
         age_h = round((now - fresh).total_seconds() / 3600, 1) if fresh else None
-        rows.append({
-            "artifact": str(path).replace("\\", "/"),
-            "run_id": d.get("run_id"),
-            "claim_status": d.get("claim_status"),
-            "mode": d.get("mode"),
-            "freshness": d.get("freshness"),
-            "age_hours": age_h,
-            "stale": (age_h is not None and age_h > STALE_DAYS * 24),
-            "has_run_id": bool(d.get("run_id")),
-        })
+        rows.append(
+            {
+                "artifact": str(path).replace("\\", "/"),
+                "run_id": d.get("run_id"),
+                "claim_status": d.get("claim_status"),
+                "mode": d.get("mode"),
+                "freshness": d.get("freshness"),
+                "age_hours": age_h,
+                "stale": (age_h is not None and age_h > STALE_DAYS * 24),
+                "has_run_id": bool(d.get("run_id")),
+            }
+        )
     return rows
 
 
@@ -67,7 +69,9 @@ def build(now: datetime) -> dict:
     return {
         "run_id": f"run_v2-08manifest_{now.strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/monitoring/run_manifest.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": now.isoformat(),
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": now.isoformat(),
         "generated_at": now.isoformat(),
         "n_artifacts": len(rows),
         "with_run_id": sum(r["has_run_id"] for r in rows),
@@ -77,8 +81,8 @@ def build(now: datetime) -> dict:
         "oldest_age_hours": max(ages) if ages else None,
         "newest_age_hours": min(ages) if ages else None,
         "drift_note": "live-traffic drift (serving vs training distribution) requires a live label "
-                      "stream — blocked_data here; freshness + delayed-label closure (delayed_labels.py) "
-                      "are the available monitoring signals.",
+        "stream — blocked_data here; freshness + delayed-label closure (delayed_labels.py) "
+        "are the available monitoring signals.",
         "artifacts": rows,
     }
 
@@ -88,8 +92,10 @@ def main(argv=None) -> int:
     report = build(now)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(f"V2-08 run manifest — {report['n_artifacts']} artifacts "
-          f"({report['with_run_id']} with run_id), stale={report['stale_count']}")
+    print(
+        f"V2-08 run manifest — {report['n_artifacts']} artifacts "
+        f"({report['with_run_id']} with run_id), stale={report['stale_count']}"
+    )
     for s, n in report["by_claim_status"].items():
         print(f"  {s:18s} {n}")
     print(f"report -> {OUT}")

@@ -132,28 +132,53 @@ def test_scored_pair_measured_requires_actual() -> None:
 def test_recommendation_feasibility_and_no_candidate() -> None:
     from contracts.v1.recommendation import ScoredStation
 
-    ok = ScoredStation(station_id="JC_GROVE", rank=1, distance_km=0.4, detour_km=0.1,
-                       feasible=True, final_policy_score=1.2)
+    ok = ScoredStation(
+        station_id="JC_GROVE",
+        rank=1,
+        distance_km=0.4,
+        detour_km=0.1,
+        feasible=True,
+        final_policy_score=1.2,
+    )
     RecommendationResult(
-        request_id="r1", mode="rent", cutoff=T0,
-        retriever_version="ret-v1", reranker_version="rr-v1",
-        stations=[ok], claim_state=ClaimState.SIMULATED,
+        request_id="r1",
+        mode="rent",
+        cutoff=T0,
+        retriever_version="ret-v1",
+        reranker_version="rr-v1",
+        stations=[ok],
+        claim_state=ClaimState.SIMULATED,
         operating_mode=OperatingModeV1.POLICY_SIMULATION,
     )
-    bad = ScoredStation(station_id="X", rank=1, distance_km=9.0, detour_km=9.0,
-                        feasible=False, final_policy_score=-1.0)
+    bad = ScoredStation(
+        station_id="X",
+        rank=1,
+        distance_km=9.0,
+        detour_km=9.0,
+        feasible=False,
+        final_policy_score=-1.0,
+    )
     with pytest.raises(ValidationError):  # infeasible must be removed, not surfaced
         RecommendationResult(
-            request_id="r2", mode="rent", cutoff=T0,
-            retriever_version="ret-v1", reranker_version="rr-v1",
-            stations=[bad], claim_state=ClaimState.SIMULATED,
+            request_id="r2",
+            mode="rent",
+            cutoff=T0,
+            retriever_version="ret-v1",
+            reranker_version="rr-v1",
+            stations=[bad],
+            claim_state=ClaimState.SIMULATED,
             operating_mode=OperatingModeV1.POLICY_SIMULATION,
         )
     with pytest.raises(ValidationError):  # no_feasible_candidate must return empty list
         RecommendationResult(
-            request_id="r3", mode="rent", cutoff=T0,
-            retriever_version="ret-v1", reranker_version="rr-v1",
-            stations=[ok], no_feasible_candidate=True, claim_state=ClaimState.SIMULATED,
+            request_id="r3",
+            mode="rent",
+            cutoff=T0,
+            retriever_version="ret-v1",
+            reranker_version="rr-v1",
+            stations=[ok],
+            no_feasible_candidate=True,
+            claim_state=ClaimState.SIMULATED,
             operating_mode=OperatingModeV1.POLICY_SIMULATION,
         )
 
@@ -166,24 +191,41 @@ def test_incentive_is_simulated_by_default() -> None:
 
 def test_experiment_contracts_roundtrip() -> None:
     exp = ExperimentDefinition(
-        experiment_id="x1", hypothesis="dynamic credit reduces shortage",
-        arms=["control", "dynamic_credit"], seed=42,
-        status="simulated_experiment", created_at=T0,
+        experiment_id="x1",
+        hypothesis="dynamic credit reduces shortage",
+        arms=["control", "dynamic_credit"],
+        seed=42,
+        status="simulated_experiment",
+        created_at=T0,
         mode=OperatingModeV1.EXPERIMENT_DRY_RUN,
     )
     assert exp.randomization_unit == "zone_cluster_x_time_block"
     ExposureLog(experiment_id="x1", unit_id="cl1:tb1", arm="control", assigned_at=T0)
-    o = OutcomeLog(experiment_id="x1", unit_id="cl1:tb1", arm="control",
-                   metric_name="shortage_minutes", metric_value=12.0, observed_at=T0)
+    o = OutcomeLog(
+        experiment_id="x1",
+        unit_id="cl1:tb1",
+        arm="control",
+        metric_name="shortage_minutes",
+        metric_value=12.0,
+        observed_at=T0,
+    )
     assert o.is_simulated is True
 
 
 def test_anomaly_synthetic_flag() -> None:
     a = AnomalyAlert(
-        anomaly_id="an1", detector="rolling_z@v1", anomaly_type="inventory",
-        station_id="JC_HOBOKEN", detected_at=T0, window_start=T0, window_end=T0,
-        score=4.2, severity=0.8, root_cause_status="inventory_dislocation",
-        is_synthetic_fault=True, claim_state=ClaimState.MEASURED,
+        anomaly_id="an1",
+        detector="rolling_z@v1",
+        anomaly_type="inventory",
+        station_id="JC_HOBOKEN",
+        detected_at=T0,
+        window_start=T0,
+        window_end=T0,
+        score=4.2,
+        severity=0.8,
+        root_cause_status="inventory_dislocation",
+        is_synthetic_fault=True,
+        claim_state=ClaimState.MEASURED,
         mode=OperatingModeV1.LIVE_SHADOW,
     )
     assert a.is_synthetic_fault is True
@@ -191,11 +233,19 @@ def test_anomaly_synthetic_flag() -> None:
 
 def test_recommendation_request_bounds() -> None:
     RecommendationRequest(
-        request_id="q1", mode="return", origin_lat=40.72, origin_lng=-74.04,
-        cutoff=T0, operating_mode=OperatingModeV1.DEMO_FIXTURE,
+        request_id="q1",
+        mode="return",
+        origin_lat=40.72,
+        origin_lng=-74.04,
+        cutoff=T0,
+        operating_mode=OperatingModeV1.DEMO_FIXTURE,
     )
     with pytest.raises(ValidationError):
         RecommendationRequest(
-            request_id="q2", mode="return", origin_lat=200.0, origin_lng=-74.04,
-            cutoff=T0, operating_mode=OperatingModeV1.DEMO_FIXTURE,
+            request_id="q2",
+            mode="return",
+            origin_lat=200.0,
+            origin_lng=-74.04,
+            cutoff=T0,
+            operating_mode=OperatingModeV1.DEMO_FIXTURE,
         )

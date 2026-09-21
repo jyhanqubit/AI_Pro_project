@@ -33,7 +33,12 @@ import numpy as np
 import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
-from ml.forecasting.borough_event_lift import _EVENT_COLS, _fit_eval, build_event_index, stream_borough_cells
+from ml.forecasting.borough_event_lift import (
+    _EVENT_COLS,
+    _fit_eval,
+    build_event_index,
+    stream_borough_cells,
+)
 from ml.forecasting.event_features_v2 import EventFeatureCfg, build_signed_demand_index
 from ml.forecasting.llm_feature_value import llm_feature_value
 from ml.forecasting.metrics import mae, wape
@@ -66,9 +71,12 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
     articles = {a.article_id: a for a in NewsFixtureCollector(Path(news_path)).collect().records}
     all_events = _events(Path(signed_events))
     # per-channel signed signal indices
-    chan_idx = {ch: build_signed_demand_index([e for e in all_events if e.get("event_type") in types],
-                                              articles, EventFeatureCfg())[0]
-                for ch, types in CHANNELS.items()}
+    chan_idx = {
+        ch: build_signed_demand_index(
+            [e for e in all_events if e.get("event_type") in types], articles, EventFeatureCfg()
+        )[0]
+        for ch, types in CHANNELS.items()
+    }
 
     b1_cols = sorted({k for r in rows for k in r.features})
     recs = []
@@ -84,7 +92,11 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
             cell = chan_idx[ch].get((r.zone_id, hk))
             rec[f"sig_{ch}"] = float(cell["news_demand_signal"]) if cell else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -95,7 +107,9 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
     y = df[target].to_numpy(dtype=float)
     base_cols = b1_cols + list(_EVENT_COLS)
     x = df[base_cols].to_numpy(dtype=float)
-    pred_dev = _fit_eval(x[dev_pos], y[dev_pos], x[dev_pos], 0)    # in-sample dev preds (to calibrate)
+    pred_dev = _fit_eval(
+        x[dev_pos], y[dev_pos], x[dev_pos], 0
+    )  # in-sample dev preds (to calibrate)
     pred_test = _fit_eval(x[dev_pos], y[dev_pos], x[test_pos], 0)  # out-of-sample test preds
     y_dev, y_test = y[dev_pos], y[test_pos]
 
@@ -116,26 +130,39 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
     blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test_pos]]
     active = np.abs(S_test).sum(axis=1) > 0
 
-    arms = {"A1_base": {"wape": round(float(wape(y_test, pred_test)), 4), "mae": round(float(mae(y_test, pred_test)), 3)},
-            "A1_postprocessed": {"wape": round(float(wape(y_test, pred_test_corr)), 4),
-                                 "mae": round(float(mae(y_test, pred_test_corr)), 3)}}
+    arms = {
+        "A1_base": {
+            "wape": round(float(wape(y_test, pred_test)), 4),
+            "mae": round(float(mae(y_test, pred_test)), 3),
+        },
+        "A1_postprocessed": {
+            "wape": round(float(wape(y_test, pred_test_corr)), 4),
+            "mae": round(float(mae(y_test, pred_test_corr)), 3),
+        },
+    }
     lfv = llm_feature_value(y_test, pred_test, pred_test_corr, active, blocks)
 
     return {
         "run_id": f"run_v2-03postproc_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/postprocess_contribution.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
-        "n_train_rows": int(len(dev_pos)), "n_test_rows": int(len(test_pos)),
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
+        "n_train_rows": int(len(dev_pos)),
+        "n_test_rows": int(len(test_pos)),
         "method": "post-processing: pred_corrected = pred_base + sum_channel alpha_channel * signal_channel; "
-                  "alpha calibrated on dev residuals (in-sample, conservative), applied out-of-sample to test",
+        "alpha calibrated on dev residuals (in-sample, conservative), applied out-of-sample to test",
         "calibrated_factors": factors,
-        "dev_active_cells": int(dev_active.sum()), "test_active_cells": int(active.sum()),
+        "dev_active_cells": int(dev_active.sum()),
+        "test_active_cells": int(active.sum()),
         "arms": arms,
         "postprocess_value_vs_base": lfv,
         "calibration_caveat": "alpha is fit on in-sample dev residuals so it is biased toward 0 "
-                              "(conservative); a nonzero alpha that still helps test is real value, "
-                              "alpha~0 is consistent with lag-redundancy.",
+        "(conservative); a nonzero alpha that still helps test is real value, "
+        "alpha~0 is consistent with lag-redundancy.",
     }
 
 
@@ -144,23 +171,31 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default="data/raw/nyc")
     ap.add_argument("--events", default="data/fixtures/nyc_permitted_events_filtered.jsonl.gz")
     ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl")
-    ap.add_argument("--signed-events", default="data/fixtures/news_live/claude_events_signed_2026h1.jsonl")
+    ap.add_argument(
+        "--signed-events", default="data/fixtures/news_live/claude_events_signed_2026h1.jsonl"
+    )
     ap.add_argument("--test-from", default="2026-05-01")
     ns = ap.parse_args(argv)
     res = run(ns.data_dir, ns.events, ns.news, ns.signed_events, ns.test_from)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "postprocess_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    (OUT_DIR / "postprocess_contribution.json").write_text(
+        json.dumps(res, indent=2), encoding="utf-8"
+    )
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']} "
-          f"dev_active={res['dev_active_cells']} test_active={res['test_active_cells']}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']} "
+        f"dev_active={res['dev_active_cells']} test_active={res['test_active_cells']}"
+    )
     print("\nCALIBRATED per-mechanism post-processing factors (fit on train residuals):")
     for ch, a in res["calibrated_factors"].items():
         print(f"  alpha[{ch:8s}] = {a:+.3f}")
     for a, s in res["arms"].items():
         print(f"  {a:18s} WAPE={s['wape']:.4f}")
     lfv = res["postprocess_value_vs_base"]
-    print(f"POST-PROCESS value vs base: {lfv['decision']}  skill={lfv['llm_active_skill_pct']}%  "
-          f"CI={lfv['active_error_gain_ci95']} (n={lfv['n_llm_active_rows']})")
+    print(
+        f"POST-PROCESS value vs base: {lfv['decision']}  skill={lfv['llm_active_skill_pct']}%  "
+        f"CI={lfv['active_error_gain_ci95']} (n={lfv['n_llm_active_rows']})"
+    )
     print(f"report -> {OUT_DIR}/postprocess_contribution.json")
     return 0
 

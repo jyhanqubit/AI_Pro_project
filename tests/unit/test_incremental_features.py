@@ -61,8 +61,12 @@ def test_incremental_equals_full_rebuild_same_zone(demo) -> None:
     all_events = events + [twin]
     base_snaps = build_graph_features(events, articles, forecast_cutoff=CUTOFF, created_at=STAMP)
     incremental = refresh_incremental(
-        base_snaps, all_events, articles, forecast_cutoff=CUTOFF,
-        new_events=[twin], created_at=STAMP,
+        base_snaps,
+        all_events,
+        articles,
+        forecast_cutoff=CUTOFF,
+        new_events=[twin],
+        created_at=STAMP,
     )
     full = build_graph_features(all_events, articles, forecast_cutoff=CUTOFF, created_at=STAMP)
     _assert_equivalent(incremental, full)

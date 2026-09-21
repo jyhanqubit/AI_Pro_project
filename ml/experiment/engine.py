@@ -142,13 +142,24 @@ def run_experiment(
             covariate = run_policy(_P0, unit_stations, pricing_cfg).fulfilled_demand_rate
             unit_id = f"{c}:tb{t}"
             exposure.append(
-                ExposureLog(experiment_id=experiment_id, unit_id=unit_id, arm=arm,
-                            assigned_at=t0 + timedelta(hours=t), propensity=0.5)
+                ExposureLog(
+                    experiment_id=experiment_id,
+                    unit_id=unit_id,
+                    arm=arm,
+                    assigned_at=t0 + timedelta(hours=t),
+                    propensity=0.5,
+                )
             )
             outcomes.append(
-                OutcomeLog(experiment_id=experiment_id, unit_id=unit_id, arm=arm,
-                           metric_name="fulfilled_demand_rate", metric_value=outcome,
-                           observed_at=t0 + timedelta(hours=t), is_simulated=True)
+                OutcomeLog(
+                    experiment_id=experiment_id,
+                    unit_id=unit_id,
+                    arm=arm,
+                    metric_name="fulfilled_demand_rate",
+                    metric_value=outcome,
+                    observed_at=t0 + timedelta(hours=t),
+                    is_simulated=True,
+                )
             )
             raw[c][arm].append(outcome)
             cov[c][arm].append(covariate)
@@ -173,8 +184,7 @@ def run_experiment(
     adj: dict[str, dict[str, list[float]]] = {
         c: {
             arm: [
-                o - theta * (cv - mean_cov)
-                for o, cv in zip(raw[c][arm], cov[c][arm], strict=True)
+                o - theta * (cv - mean_cov) for o, cv in zip(raw[c][arm], cov[c][arm], strict=True)
             ]
             for arm in arms
         }
@@ -186,10 +196,19 @@ def run_experiment(
     cuped_ci = _cluster_bootstrap_ci(adj, cfg, control, treat)
 
     return ExperimentResult(
-        experiment_id=experiment_id, hypothesis=hypothesis, status=status, arms=arms,
-        n_units=len(outcomes), srm_ok=srm_ok, assignment_shares=shares,
-        itt_effect=itt, itt_ci=itt_ci, cuped_itt_effect=cuped_itt, cuped_ci=cuped_ci,
-        exposure_logs=exposure, outcome_logs=outcomes,
+        experiment_id=experiment_id,
+        hypothesis=hypothesis,
+        status=status,
+        arms=arms,
+        n_units=len(outcomes),
+        srm_ok=srm_ok,
+        assignment_shares=shares,
+        itt_effect=itt,
+        itt_ci=itt_ci,
+        cuped_itt_effect=cuped_itt,
+        cuped_ci=cuped_ci,
+        exposure_logs=exposure,
+        outcome_logs=outcomes,
     )
 
 

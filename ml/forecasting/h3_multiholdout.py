@@ -178,7 +178,9 @@ def evaluate_windows(
     for i, (start, end) in enumerate(windows):
         train_pos, test_pos = bounded_holdout(hours, start, end)
         if train_pos.size == 0 or test_pos.size == 0:
-            out.append({"window_id": i, "skipped": "empty train/test", "test_start": start.isoformat()})
+            out.append(
+                {"window_id": i, "skipped": "empty train/test", "test_start": start.isoformat()}
+            )
             continue
         # Leakage guard: the latest training hour must be strictly before the test window.
         assert max(hours[p] for p in train_pos) < start, "train/test overlap — leakage!"
@@ -270,7 +272,9 @@ def _clean(v: Any) -> Any:
 
 def _run_id(promoted: dict[str, Any], stamp: datetime) -> str:
     h = hashlib.sha1(
-        json.dumps({"p": promoted["algorithm"], "params": promoted["params"]}, sort_keys=True).encode()
+        json.dumps(
+            {"p": promoted["algorithm"], "params": promoted["params"]}, sort_keys=True
+        ).encode()
     ).hexdigest()[:8]
     return f"run_v2-01_{stamp.strftime('%Y%m%dT%H%M%SZ')}_{h}"
 
@@ -278,12 +282,22 @@ def _run_id(promoted: dict[str, Any], stamp: datetime) -> str:
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="ml.forecasting.h3_multiholdout")
     ap.add_argument("--data-dir", default="data/raw/citibike", help="dir of monthly trip archives")
-    ap.add_argument("--target", default=PRIMARY_TARGET, choices=["departures", "arrivals", "net_flow"])
-    ap.add_argument("--windows", type=int, default=3, help="number of rolling monthly holdout windows (>=3)")
-    ap.add_argument("--algos", default=",".join(DEFAULT_POOL), help="promotion pool: comma list or 'all'")
+    ap.add_argument(
+        "--target", default=PRIMARY_TARGET, choices=["departures", "arrivals", "net_flow"]
+    )
+    ap.add_argument(
+        "--windows", type=int, default=3, help="number of rolling monthly holdout windows (>=3)"
+    )
+    ap.add_argument(
+        "--algos", default=",".join(DEFAULT_POOL), help="promotion pool: comma list or 'all'"
+    )
     ns = ap.parse_args(argv)
 
-    pool = algorithm_names() if ns.algos == "all" else [a.strip() for a in ns.algos.split(",") if a.strip()]
+    pool = (
+        algorithm_names()
+        if ns.algos == "all"
+        else [a.strip() for a in ns.algos.split(",") if a.strip()]
+    )
     stamp = datetime.now(UTC)
 
     print(f"V2-01 H3 multi-holdout — target={ns.target}, windows={ns.windows}, pool={pool}")
@@ -291,15 +305,21 @@ def main(argv: list[str] | None = None) -> None:
     df = usable_frame(panel)
     if df.empty:
         raise SystemExit("no usable rows (need a real multi-month trip backfill)")
-    print(f"usable rows={len(df)}  H3 zones={df['zone_id'].nunique()}  hours={df['hour_start'].nunique()}")
+    print(
+        f"usable rows={len(df)}  H3 zones={df['zone_id'].nunique()}  hours={df['hour_start'].nunique()}"
+    )
 
     windows = build_monthly_windows(df["hour_start"], ns.windows)
     if len(windows) < 3:
-        raise SystemExit(f"only {len(windows)} monthly windows available; need >= 3 (add more months)")
+        raise SystemExit(
+            f"only {len(windows)} monthly windows available; need >= 3 (add more months)"
+        )
     print("windows:", [(s.date().isoformat(), e.date().isoformat()) for s, e in windows])
 
     promoted = promote_model(df, panel.b1_cols, ns.target, windows[0][0], pool)
-    print(f"promoted: {promoted['algorithm']} {promoted['params']} (CV WAPE={promoted['selection_cv_wape']:.4f})")
+    print(
+        f"promoted: {promoted['algorithm']} {promoted['params']} (CV WAPE={promoted['selection_cv_wape']:.4f})"
+    )
 
     per_window = evaluate_windows(df, panel.b1_cols, ns.target, promoted, windows)
     for w in per_window:
@@ -321,7 +341,10 @@ def main(argv: list[str] | None = None) -> None:
     try:
         import joblib
 
-        joblib.dump({"estimator": final_est, "features": list(panel.b1_cols), "target": ns.target}, model_path)
+        joblib.dump(
+            {"estimator": final_est, "features": list(panel.b1_cols), "target": ns.target},
+            model_path,
+        )
         model_saved = str(model_path)
     except Exception as exc:  # noqa: BLE001 — report, don't hide
         model_saved = f"unsaved ({exc!r})"

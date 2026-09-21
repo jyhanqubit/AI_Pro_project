@@ -40,8 +40,14 @@ def _mad(xs: list[float], med: float) -> float:
 
 
 def _alert(
-    detector: str, atype: AnomalyType, obs: StationObs, score: float, severity: float,
-    root: RootCauseStatus, window_start: datetime, window_end: datetime,
+    detector: str,
+    atype: AnomalyType,
+    obs: StationObs,
+    score: float,
+    severity: float,
+    root: RootCauseStatus,
+    window_start: datetime,
+    window_end: datetime,
     mode: OperatingModeV1,
 ) -> AnomalyAlert:
     return AnomalyAlert(
@@ -67,13 +73,33 @@ def data_quality(obs: list[StationObs], cfg: AnomalyConfig, mode) -> list[Anomal
     for o in obs:
         age_min = (o.ts - o.last_reported).total_seconds() / 60.0
         if age_min > cfg.freshness_max_minutes:
-            out.append(_alert("freshness_rule", AnomalyType.DATA_QUALITY, o, age_min,
-                              min(1.0, age_min / (cfg.freshness_max_minutes * 4)),
-                              RootCauseStatus.LIKELY_DATA_QUALITY, o.last_reported, o.ts, mode))
+            out.append(
+                _alert(
+                    "freshness_rule",
+                    AnomalyType.DATA_QUALITY,
+                    o,
+                    age_min,
+                    min(1.0, age_min / (cfg.freshness_max_minutes * 4)),
+                    RootCauseStatus.LIKELY_DATA_QUALITY,
+                    o.last_reported,
+                    o.ts,
+                    mode,
+                )
+            )
         if o.bikes < 0 or o.docks < 0 or o.bikes > o.capacity or (o.bikes + o.docks) > o.capacity:
-            out.append(_alert("capacity_rule", AnomalyType.DATA_QUALITY, o,
-                              float(o.bikes + o.docks - o.capacity), 0.9,
-                              RootCauseStatus.LIKELY_DATA_QUALITY, o.ts, o.ts, mode))
+            out.append(
+                _alert(
+                    "capacity_rule",
+                    AnomalyType.DATA_QUALITY,
+                    o,
+                    float(o.bikes + o.docks - o.capacity),
+                    0.9,
+                    RootCauseStatus.LIKELY_DATA_QUALITY,
+                    o.ts,
+                    o.ts,
+                    mode,
+                )
+            )
     return out
 
 
@@ -88,10 +114,19 @@ def inventory(history: dict[str, list[StationObs]], cfg: AnomalyConfig, mode) ->
             z = (series[i].bikes - med) / (1.4826 * _mad(window, med))
             if abs(z) >= cfg.depletion_z:
                 o = series[i]
-                out.append(_alert("rolling_zscore", AnomalyType.INVENTORY, o, z,
-                                  min(1.0, abs(z) / (cfg.depletion_z * 2)),
-                                  RootCauseStatus.INVENTORY_DISLOCATION,
-                                  series[max(0, i - cfg.rolling_window)].ts, o.ts, mode))
+                out.append(
+                    _alert(
+                        "rolling_zscore",
+                        AnomalyType.INVENTORY,
+                        o,
+                        z,
+                        min(1.0, abs(z) / (cfg.depletion_z * 2)),
+                        RootCauseStatus.INVENTORY_DISLOCATION,
+                        series[max(0, i - cfg.rolling_window)].ts,
+                        o.ts,
+                        mode,
+                    )
+                )
     return out
 
 
@@ -103,9 +138,19 @@ def forecast_residual(obs: list[StationObs], cfg: AnomalyConfig, mode) -> list[A
         scale = max(cfg.residual_scale_floor, abs(o.forecast))
         ratio = abs(o.actual - o.forecast) / scale
         if ratio >= cfg.residual_sigma:
-            out.append(_alert("residual_rule", AnomalyType.FORECAST_RESIDUAL, o, ratio,
-                              min(1.0, ratio / (cfg.residual_sigma * 2)),
-                              RootCauseStatus.UNEXPLAINED, o.ts, o.ts, mode))
+            out.append(
+                _alert(
+                    "residual_rule",
+                    AnomalyType.FORECAST_RESIDUAL,
+                    o,
+                    ratio,
+                    min(1.0, ratio / (cfg.residual_sigma * 2)),
+                    RootCauseStatus.UNEXPLAINED,
+                    o.ts,
+                    o.ts,
+                    mode,
+                )
+            )
     return out
 
 
@@ -127,8 +172,19 @@ def proxy_demand(obs: list[StationObs], cfg: AnomalyConfig, mode) -> list[Anomal
     out: list[AnomalyAlert] = []
     for o, s, f in zip(obs, scores, flags, strict=True):
         if f == -1:
-            out.append(_alert("isolation_forest", AnomalyType.PROXY_DEMAND, o, float(s),
-                              min(1.0, float(s)), RootCauseStatus.UNEXPLAINED, o.ts, o.ts, mode))
+            out.append(
+                _alert(
+                    "isolation_forest",
+                    AnomalyType.PROXY_DEMAND,
+                    o,
+                    float(s),
+                    min(1.0, float(s)),
+                    RootCauseStatus.UNEXPLAINED,
+                    o.ts,
+                    o.ts,
+                    mode,
+                )
+            )
     return out
 
 

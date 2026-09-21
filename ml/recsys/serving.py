@@ -30,14 +30,27 @@ from .tokenize import EventProvider, RetrieverTokenizer
 
 
 def query_from_request(
-    mode: RecommendationMode, lat: float, lng: float, cutoff: datetime, is_member: bool = True,
-    origin_lat: float | None = None, origin_lng: float | None = None,
+    mode: RecommendationMode,
+    lat: float,
+    lng: float,
+    cutoff: datetime,
+    is_member: bool = True,
+    origin_lat: float | None = None,
+    origin_lng: float | None = None,
 ) -> RecSample:
     """A label-free query for serving (chosen_station_id is unused by the query tower)."""
     return RecSample(
-        sample_id="__serve__", mode=mode, cutoff=cutoff, query_lat=lat, query_lng=lng,
-        hour=cutoff.hour, dow=cutoff.weekday(), is_member=is_member,
-        chosen_station_id="__query__", trip_origin_lat=origin_lat, trip_origin_lng=origin_lng,
+        sample_id="__serve__",
+        mode=mode,
+        cutoff=cutoff,
+        query_lat=lat,
+        query_lng=lng,
+        hour=cutoff.hour,
+        dow=cutoff.weekday(),
+        is_member=is_member,
+        chosen_station_id="__query__",
+        trip_origin_lat=origin_lat,
+        trip_origin_lng=origin_lng,
     )
 
 
@@ -109,13 +122,26 @@ class RecommendationEngine:
                 )
             if _feasible(st, query.mode):
                 survivors.append(
-                    Candidate(sid, round(dist, 4), round(detour, 4), True,
-                              st.inventory_known if st else False, sid == query.chosen_station_id)
+                    Candidate(
+                        sid,
+                        round(dist, 4),
+                        round(detour, 4),
+                        True,
+                        st.inventory_known if st else False,
+                        sid == query.chosen_station_id,
+                    )
                 )
         if not survivors:
             return apply_policy(
-                request_id, query.mode, query.cutoff, [], self.retriever.cfg.version,
-                self.reranker.cfg.version, self.pcfg, operating_mode, claim_state,
+                request_id,
+                query.mode,
+                query.cutoff,
+                [],
+                self.retriever.cfg.version,
+                self.reranker.cfg.version,
+                self.pcfg,
+                operating_mode,
+                claim_state,
             ), failures
 
         # 4. Cross-attention rerank of the survivors.
@@ -129,8 +155,10 @@ class RecommendationEngine:
         # 5. Policy.
         reranked = [
             RerankedCandidate(
-                station_id=c.station_id, mode=query.mode,
-                distance_km=c.distance_km, detour_km=c.detour_km,
+                station_id=c.station_id,
+                mode=query.mode,
+                distance_km=c.distance_km,
+                detour_km=c.detour_km,
                 retrieval_score=retrieval_score.get(c.station_id, 0.0),
                 rerank_score=float(logits[i]),
                 success_component=float(probs[i]),
@@ -140,8 +168,15 @@ class RecommendationEngine:
             for i, c in enumerate(survivors)
         ]
         result = apply_policy(
-            request_id, query.mode, query.cutoff, reranked, self.retriever.cfg.version,
-            self.reranker.cfg.version, self.pcfg, operating_mode, claim_state,
+            request_id,
+            query.mode,
+            query.cutoff,
+            reranked,
+            self.retriever.cfg.version,
+            self.reranker.cfg.version,
+            self.pcfg,
+            operating_mode,
+            claim_state,
         )
         return result, failures
 

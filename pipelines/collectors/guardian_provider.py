@@ -111,9 +111,7 @@ class GuardianNewsProvider:
             resp = self._fetch_page(page)
             results = resp.get("results", [])
             out.extend(
-                self._to_payload(a)
-                for a in results
-                if a.get("webUrl") and a.get("webTitle")
+                self._to_payload(a) for a in results if a.get("webUrl") and a.get("webTitle")
             )
             total_pages = int(resp.get("pages", page) or page)
             if page >= total_pages or not results:

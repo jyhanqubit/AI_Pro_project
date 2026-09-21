@@ -177,10 +177,14 @@ def evaluate_retriever(
 
     return RetrievalReport(
         n=n,
-        recall_at_5=r5 / n, recall_at_10=r10 / n, recall_at_20=r20 / n,
-        mrr_at_20=mrr / n, ndcg_at_20=ndcg / n,
+        recall_at_5=r5 / n,
+        recall_at_10=r10 / n,
+        recall_at_20=r20 / n,
+        mrr_at_20=mrr / n,
+        ndcg_at_20=ndcg / n,
         cold_start_n=cold_n,
         cold_start_recall_at_20=(cold_r20 / cold_n) if cold_n else 0.0,
-        embed_ms_per_query=embed_ms / n, search_ms_per_query=search_ms / n,
+        embed_ms_per_query=embed_ms / n,
+        search_ms_per_query=search_ms / n,
         event_status="insufficient_event_overlap" if events is None else "events_present",
     )

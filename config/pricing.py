@@ -53,24 +53,36 @@ class PolicySpec:
 POLICIES: tuple[PolicySpec, ...] = (
     PolicySpec("P0", "No action", description="아무 조치도 하지 않는 기준선."),
     PolicySpec(
-        "P1", "Truck only", truck=True,
+        "P1",
+        "Truck only",
+        truck=True,
         description="트럭으로 자전거를 재배치. 인센티브·추천 없음.",
     ),
     PolicySpec(
-        "P2", "Static credit", credit="static",
+        "P2",
+        "Static credit",
+        credit="static",
         description="잉여 스테이션에 고정 크레딧을 지급해 라이더를 유도.",
     ),
     PolicySpec(
-        "P3", "Event-aware dynamic credit", credit="dynamic",
+        "P3",
+        "Event-aware dynamic credit",
+        credit="dynamic",
         description="이벤트·불균형 크기에 맞춰 크레딧 액수를 조절해 지급.",
     ),
     PolicySpec(
-        "P4", "Recommendation + dynamic credit", credit="dynamic", recommend=True,
+        "P4",
+        "Recommendation + dynamic credit",
+        credit="dynamic",
+        recommend=True,
         description="앱 추천으로 라이더를 여유 스테이션으로 유도 + 동적 크레딧.",
     ),
     PolicySpec(
-        "P5", "Hybrid truck + recommendation + dynamic credit",
-        truck=True, credit="dynamic", recommend=True,
+        "P5",
+        "Hybrid truck + recommendation + dynamic credit",
+        truck=True,
+        credit="dynamic",
+        recommend=True,
         description="트럭 재배치 + 앱 추천 + 동적 크레딧을 함께 적용.",
     ),
 )

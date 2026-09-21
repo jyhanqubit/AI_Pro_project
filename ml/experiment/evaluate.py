@@ -59,8 +59,10 @@ def main() -> int:
     print(f"{'experiment':22s} {'ITT':>8s}  {'95% CI':>18s}  {'CUPED':>8s}  SRM")
     for r in results:
         ci = f"[{r.itt_ci[0]:+.3f}, {r.itt_ci[1]:+.3f}]"
-        print(f"{r.experiment_id:22s} {r.itt_effect:+8.4f}  {ci:>18s}  "
-              f"{r.cuped_itt_effect:+8.4f}  {'ok' if r.srm_ok else 'FAIL'}")
+        print(
+            f"{r.experiment_id:22s} {r.itt_effect:+8.4f}  {ci:>18s}  "
+            f"{r.cuped_itt_effect:+8.4f}  {'ok' if r.srm_ok else 'FAIL'}"
+        )
     print(f"wrote {_OUT.relative_to(_ROOT)}  (SIMULATED — not a causal lift)")
     return 0
 

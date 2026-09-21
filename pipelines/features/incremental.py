@@ -90,8 +90,12 @@ def refresh_incremental(
     affected = affected_zones(new_events, base_by_zone.keys(), cfg, forecast_cutoff=forecast_cutoff)
 
     recomputed = build_graph_features(
-        all_events, all_articles, forecast_cutoff=forecast_cutoff,
-        zones=sorted(affected), config=cfg, created_at=created_at,
+        all_events,
+        all_articles,
+        forecast_cutoff=forecast_cutoff,
+        zones=sorted(affected),
+        config=cfg,
+        created_at=created_at,
     )
     result = {z: s for z, s in base_by_zone.items() if z not in affected}
     for s in recomputed:

@@ -70,7 +70,9 @@ def _commute_shape(hour_of_day: int, kind: str) -> float:
     return am - pm  # commercial: opposite
 
 
-def demand_series(zones: list[ZoneSpec], hours: int, seed: int = 42) -> tuple[np.ndarray, np.ndarray]:
+def demand_series(
+    zones: list[ZoneSpec], hours: int, seed: int = 42
+) -> tuple[np.ndarray, np.ndarray]:
     """Return (forecast_net, realized_net) arrays of shape (hours, n_zones).
 
     Forecast is the deterministic commute mean; realized adds seeded Gaussian noise (the demand
@@ -88,7 +90,9 @@ def demand_series(zones: list[ZoneSpec], hours: int, seed: int = 42) -> tuple[np
     return fc, realized
 
 
-def _target_from_forecast(bikes: np.ndarray, fc_window: np.ndarray, capacity: np.ndarray) -> list[int]:
+def _target_from_forecast(
+    bikes: np.ndarray, fc_window: np.ndarray, capacity: np.ndarray
+) -> list[int]:
     """Target inventory to enter the window: cover expected outflow, leave room for inflow.
 
     ``fc_window`` is (h, n) forecast net flow over the look-ahead. Cumulative net outflow raises
@@ -127,9 +131,17 @@ class PolicyResult:
     infeasible_periods: int
 
 
-def simulate(policy: str, zones: list[ZoneSpec], fc: np.ndarray, realized: np.ndarray,
-             A: LedgerAssumptions, *, horizon: int = 6, vehicle_capacity: int = 18,
-             margin_baseline: float = 0.0) -> PolicyResult:
+def simulate(
+    policy: str,
+    zones: list[ZoneSpec],
+    fc: np.ndarray,
+    realized: np.ndarray,
+    A: LedgerAssumptions,
+    *,
+    horizon: int = 6,
+    vehicle_capacity: int = 18,
+    margin_baseline: float = 0.0,
+) -> PolicyResult:
     """Run one policy over the whole series and tally the ledger. ``net`` = −total_cost (+const)."""
     hours, z = realized.shape
     capacity = np.array([zs.capacity for zs in zones], dtype=float)
@@ -149,21 +161,23 @@ def simulate(policy: str, zones: list[ZoneSpec], fc: np.ndarray, realized: np.nd
             pass
         else:
             if policy == "oracle":
-                window = realized[t:t + horizon]  # perfect foresight (upper bound)
+                window = realized[t : t + horizon]  # perfect foresight (upper bound)
                 h_solver = "milp"
             elif policy == "mpc":
-                window = fc[t:t + horizon]
+                window = fc[t : t + horizon]
                 h_solver = "milp"
             elif policy == "milp":
-                window = fc[t:t + 1]
+                window = fc[t : t + 1]
                 h_solver = "milp"
             elif policy == "greedy":
-                window = fc[t:t + 1]
+                window = fc[t : t + 1]
                 h_solver = "greedy"
             else:
                 raise ValueError(f"unknown policy {policy}")
             target = _target_from_forecast(bikes, window, capacity)
-            problem, plan = _solve_period(bikes, capacity, target, zones, costs, vehicle_capacity, h_solver)
+            problem, plan = _solve_period(
+                bikes, capacity, target, zones, costs, vehicle_capacity, h_solver
+            )
             from optimization.classical.feasibility import check_feasibility
 
             if not check_feasibility(problem, plan).feasible:
@@ -196,7 +210,15 @@ def simulate(policy: str, zones: list[ZoneSpec], fc: np.ndarray, realized: np.nd
     total_cost = shortage_cost + overflow_cost + relocation_cost
     net = margin_baseline - total_cost
     return PolicyResult(
-        policy=policy, shortage_units=tot_short, overflow_units=tot_over, moved_units=tot_moved,
-        shortage_cost=shortage_cost, overflow_cost=overflow_cost, relocation_cost=relocation_cost,
-        total_cost=total_cost, net=net, feasible=infeasible == 0, infeasible_periods=infeasible,
+        policy=policy,
+        shortage_units=tot_short,
+        overflow_units=tot_over,
+        moved_units=tot_moved,
+        shortage_cost=shortage_cost,
+        overflow_cost=overflow_cost,
+        relocation_cost=relocation_cost,
+        total_cost=total_cost,
+        net=net,
+        feasible=infeasible == 0,
+        infeasible_periods=infeasible,
     )

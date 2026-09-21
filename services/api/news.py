@@ -37,8 +37,11 @@ def _store():
         a = json.loads(line)
         recs.append(
             NewsRecord(
-                article_id=a["article_id"], title=a["title"], source=a.get("source", ""),
-                published_at=a.get("published_at", ""), url_hash=a.get("url_hash", ""),
+                article_id=a["article_id"],
+                title=a["title"],
+                source=a.get("source", ""),
+                published_at=a.get("published_at", ""),
+                url_hash=a.get("url_hash", ""),
             )
         )
     store.add(recs)
@@ -54,8 +57,11 @@ def search(query: str, k: int = 5) -> dict:
         "embedder": "lexical-charhash-256 (offline, deterministic)",
         "results": [
             {
-                "article_id": r.article_id, "title": r.title, "source": r.source,
-                "published_at": r.published_at, "score": round(score, 4),
+                "article_id": r.article_id,
+                "title": r.title,
+                "source": r.source,
+                "published_at": r.published_at,
+                "score": round(score, 4),
             }
             for r, score in hits
         ],
@@ -73,8 +79,10 @@ def clusters(threshold: float = 0.3) -> dict:
         "n_clusters": len(cl),
         "clusters": [
             {
-                "cluster_id": c.cluster_id, "size": c.size,
-                "representative_title": c.representative_title, "article_ids": c.article_ids,
+                "cluster_id": c.cluster_id,
+                "size": c.size,
+                "representative_title": c.representative_title,
+                "article_ids": c.article_ids,
             }
             for c in cl
         ],

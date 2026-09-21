@@ -15,6 +15,13 @@ from ml.copilot.copilot import answer, route
 from ml.copilot.tools import REGISTRY, ToolUnavailable
 
 
+def _out(module: str) -> Path:
+    """The runner's output directory (redirected to the session sandbox by tests/conftest.py)."""
+    import importlib
+
+    return Path(importlib.import_module(module).OUT_DIR)
+
+
 def test_router_picks_specific_metric_over_generic_model():
     # "WAPE of the promoted model" mentions both -> the specific metric (WAPE) must win.
     assert route("What is the WAPE of the promoted model?") == "forecast_wape"
@@ -65,7 +72,7 @@ def test_benchmark_hard_gates_pass():
 
     rc = main([])
     assert rc == 0  # returns 0 only when ungrounded_numeric == 0 and hallucinated == 0
-    d = json.loads(Path("reports/v2/copilot/correctness_benchmark.json").read_text())
+    d = json.loads((_out("ml.copilot.benchmark") / "correctness_benchmark.json").read_text())
     assert d["hard_gates_pass"] is True
     assert d["ungrounded_numeric_answers"] == 0
     assert d["hallucinated_answers"] == 0
@@ -76,7 +83,7 @@ def test_router_comparison_llm_beats_keyword_on_decoys():
     from ml.copilot.benchmark import main
 
     main([])
-    d = json.loads(Path("reports/v2/copilot/correctness_benchmark.json").read_text())
+    d = json.loads((_out("ml.copilot.benchmark") / "correctness_benchmark.json").read_text())
     cmp = d["router_comparison"]
     # Grounding is structural -> both routers never emit an ungrounded number.
     assert cmp["keyword"]["ungrounded_numeric_answers"] == 0
@@ -93,14 +100,13 @@ def test_router_comparison_llm_beats_keyword_on_decoys():
 def test_graphrag_benchmark_relevance_gate():
     # The GraphRAG (event-graph) half: grounding + relevance beats grounding-only and no-retrieval.
     import json
-    from pathlib import Path
 
     from ml.copilot.graphrag_scale import GRAPH, main
 
     if not GRAPH.exists():
         pytest.skip("event graph snapshot missing — run `make seed-graph` first")
     assert main([]) == 0  # 0 only when flat is a genuine middle (0 < flat_correct < graph_correct)
-    d = json.loads(Path("reports/v2/copilot/graphrag_benchmark.json").read_text())
+    d = json.loads((_out("ml.copilot.graphrag_scale") / "graphrag_benchmark.json").read_text())
     a = d["answerers"]
     # No-retrieval invents; the flat baseline and GraphRAG do not hallucinate.
     assert a["no_retrieval_floor"]["hallucinated_answers"] > 0
@@ -118,14 +124,15 @@ def test_neutral_retrieval_graph_gives_no_lift_on_text_lookup():
     # method-independent gold, the graph must NOT beat plain text retrieval. If it did, the
     # comparison would be rigged the other way. Honest expectation: graph <= flat (no lift).
     import json
-    from pathlib import Path
 
     from ml.copilot.neutral_retrieval import GRAPH, main
 
     if not GRAPH.exists():
         pytest.skip("event graph snapshot missing — run `make seed-graph` first")
     assert main([]) == 0
-    d = json.loads(Path("reports/v2/copilot/neutral_retrieval_benchmark.json").read_text())
+    d = json.loads(
+        (_out("ml.copilot.neutral_retrieval") / "neutral_retrieval_benchmark.json").read_text()
+    )
     flat = d["results"]["flat_text"]
     graph = d["results"]["graph_boosted"]
     # Plain text retrieval is genuinely competitive on a text task (not a strawman floor).
@@ -140,7 +147,6 @@ def test_ragas_retrieval_confirms_no_graph_lift():
     # Cross-check the finding with the REAL ragas package (non-LLM retrieval metrics). Skips cleanly
     # where ragas/rapidfuzz aren't installed (heavy optional dep) — same pattern as the recsys tests.
     import json
-    from pathlib import Path
 
     # NB: `import ragas` at top level is broken in this env (langchain drift); ragas_retrieval.main
     # shims the unused module and degrades to blocked_external if the package is truly absent, so we
@@ -151,7 +157,9 @@ def test_ragas_retrieval_confirms_no_graph_lift():
     if not NGRAPH.exists():
         pytest.skip("event graph snapshot missing — run `make seed-graph` first")
     assert main([]) == 0
-    d = json.loads(Path("reports/v2/copilot/ragas_retrieval_benchmark.json").read_text())
+    d = json.loads(
+        (_out("ml.copilot.ragas_retrieval") / "ragas_retrieval_benchmark.json").read_text()
+    )
     if d["claim_status"] == "blocked_external":
         pytest.skip(f"ragas not importable: {d.get('reason')}")
     flat = d["results"]["flat_text"]
@@ -166,12 +174,13 @@ def test_ragas_retrieval_confirms_no_graph_lift():
 def test_ragas_generation_judged_in_session_with_drift_guard():
     # Generation-side RAGAS (faithfulness/answer_relevancy) judged in-session, verdicts committed.
     import json
-    from pathlib import Path
 
     from ml.copilot.ragas_generation import main
 
     assert main([]) == 0  # main() raises SystemExit if any judged answer drifts from live Copilot
-    d = json.loads(Path("reports/v2/copilot/ragas_generation_benchmark.json").read_text())
+    d = json.loads(
+        (_out("ml.copilot.ragas_generation") / "ragas_generation_benchmark.json").read_text()
+    )
     assert d["judge"] == "claude-opus-4-8-insession"
     assert d["n_answered"] == 10
     # Faithfulness is high by design (typed-tool grounding); relevancy strong. Values must be real.

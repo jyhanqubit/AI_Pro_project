@@ -7,6 +7,8 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
+pytest.importorskip("torch")  # [recsys] extra; skip, never error, without it
 import torch
 
 from config.recsys import RetrieverConfig
@@ -34,8 +36,14 @@ CUTOFF = datetime(2026, 6, 30, 14, 0, tzinfo=TZ)
 
 def _cfg() -> RetrieverConfig:
     return RetrieverConfig(
-        d_model=32, embedding_dim=32, nhead=4, num_layers=1, dim_feedforward=64,
-        dropout=0.0, retrieval_top_k=10, seed=0,
+        d_model=32,
+        embedding_dim=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.0,
+        retrieval_top_k=10,
+        seed=0,
     )
 
 
@@ -63,15 +71,26 @@ def test_reranker_forward_and_losses() -> None:
 
 def _cand(sid: str, detour: float, fresh: bool, op: float, rerank: float, prob: float):
     return RerankedCandidate(
-        station_id=sid, mode=RecommendationMode.RENT, distance_km=0.3, detour_km=detour,
-        retrieval_score=1.0, rerank_score=rerank, success_component=prob,
-        operational_component=op, inventory_fresh=fresh,
+        station_id=sid,
+        mode=RecommendationMode.RENT,
+        distance_km=0.3,
+        detour_km=detour,
+        retrieval_score=1.0,
+        rerank_score=rerank,
+        success_component=prob,
+        operational_component=op,
+        inventory_fresh=fresh,
     )
 
 
 def test_policy_no_feasible_candidate() -> None:
     res = apply_policy(
-        "r1", RecommendationMode.RENT, CUTOFF, [], "ret", "rr",
+        "r1",
+        RecommendationMode.RENT,
+        CUTOFF,
+        [],
+        "ret",
+        "rr",
     )
     assert res.no_feasible_candidate is True
     assert res.stations == []
@@ -83,14 +102,21 @@ def test_policy_ranks_and_keeps_components_and_reason_codes() -> None:
         _cand("B", detour=1.0, fresh=False, op=0.0, rerank=0.5, prob=0.2),
         _cand("C", detour=0.05, fresh=True, op=0.6, rerank=1.0, prob=0.1),
     ]
-    res = apply_policy("r1", RecommendationMode.RENT, CUTOFF, feasible, "ret-v1", "rr-v1",
-                       PolicyConfig(top_k=3))
+    res = apply_policy(
+        "r1", RecommendationMode.RENT, CUTOFF, feasible, "ret-v1", "rr-v1", PolicyConfig(top_k=3)
+    )
     assert not res.no_feasible_candidate
     assert [s.rank for s in res.stations] == [1, 2, 3]
     top = res.stations[0]
     # Components are kept separate (audit).
-    for attr in ("retrieval_score", "rerank_score", "success_component",
-                 "operational_component", "detour_component", "final_policy_score"):
+    for attr in (
+        "retrieval_score",
+        "rerank_score",
+        "success_component",
+        "operational_component",
+        "detour_component",
+        "final_policy_score",
+    ):
         assert getattr(top, attr) is not None
     assert top.station_id == "A"  # highest final policy score
     assert ReasonCode.HIGH_SUCCESS_PROBABILITY in top.reason_codes

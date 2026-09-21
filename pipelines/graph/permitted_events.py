@@ -117,9 +117,7 @@ def load_permitted_as_events(
         )
 
         # Deterministic id from the source permit id + our prompt version (stable across re-runs).
-        event_id = "pevt_" + hashlib.sha256(
-            f"{src_id}|{_PROMPT_VERSION}".encode()
-        ).hexdigest()[:16]
+        event_id = "pevt_" + hashlib.sha256(f"{src_id}|{_PROMPT_VERSION}".encode()).hexdigest()[:16]
         article_id = "pdoc_" + hashlib.sha256(src_id.encode()).hexdigest()[:16]
 
         # The synthetic "article" is the official permit record; its text grounds the evidence span.

@@ -32,11 +32,10 @@ import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
 from contracts.v2.ledger import LedgerAssumptions
-from ml.forecasting.baselines import seasonal_naive_predict
 from ml.forecasting.dataset import Panel, load_real_panel
 from ml.forecasting.experiment import _EVENT_SIGNAL_COLS, usable_frame
 from ml.forecasting.h3_multiholdout import _fit_promoted, bounded_holdout, build_monthly_windows
-from ml.forecasting.metrics import mae, wape
+from ml.forecasting.metrics import wape
 from optimization.ledger import account
 from optimization.ledger_run import load_assumptions
 
@@ -52,11 +51,14 @@ def _event_mask(df: pd.DataFrame) -> np.ndarray:
     cols = [c for c in _EVENT_SIGNAL_COLS if c in df.columns]
     if not cols:
         return np.zeros(len(df), dtype=bool)
-    return (df[cols].abs().sum(axis=1).to_numpy() > 0)
+    return df[cols].abs().sum(axis=1).to_numpy() > 0
 
 
 def _arm_predictions(
-    df: pd.DataFrame, panel: Panel, target: str, promoted: dict[str, Any],
+    df: pd.DataFrame,
+    panel: Panel,
+    target: str,
+    promoted: dict[str, Any],
     windows: list[tuple[datetime, datetime]],
 ) -> dict[str, Any]:
     """Refit the promoted model per arm per window; return pooled test arrays + per-window WAPE."""
@@ -73,8 +75,11 @@ def _arm_predictions(
             continue
         assert max(hours[p] for p in train_pos) < start, "leakage!"
         y_tr, y_te = y[train_pos], y[test_pos]
-        scale = mae(y_tr, seasonal_naive_predict(df.iloc[train_pos], target))
-        win: dict[str, Any] = {"window_id": i, "test_start": start.isoformat(), "n_test": int(test_pos.size)}
+        win: dict[str, Any] = {
+            "window_id": i,
+            "test_start": start.isoformat(),
+            "n_test": int(test_pos.size),
+        }
         for arm, level in ARMS.items():
             cols = panel.ablation_cols(level)
             x = df[cols].to_numpy(dtype=float)
@@ -84,7 +89,11 @@ def _arm_predictions(
             win[arm] = {"wape": wape(y_te, pred), "n_features": len(cols)}
             if arm == list(ARMS)[0]:
                 pooled["y_true"].append(y_te)
-                days = pd.to_datetime(pd.Series([hours[p] for p in test_pos])).dt.strftime("%Y-%m-%d").to_numpy()
+                days = (
+                    pd.to_datetime(pd.Series([hours[p] for p in test_pos]))
+                    .dt.strftime("%Y-%m-%d")
+                    .to_numpy()
+                )
                 pooled["day"].append(days)
                 pooled["event"].append(ev_mask_all[test_pos])
             pooled["preds"][arm].append(pred)
@@ -92,12 +101,20 @@ def _arm_predictions(
     for k in ("y_true", "day", "event"):
         pooled[k] = np.concatenate(pooled[k]) if pooled[k] else np.array([])
     for a in ARMS:
-        pooled["preds"][a] = np.concatenate(pooled["preds"][a]) if pooled["preds"][a] else np.array([])
+        pooled["preds"][a] = (
+            np.concatenate(pooled["preds"][a]) if pooled["preds"][a] else np.array([])
+        )
     return {"per_window": per_window, "pooled": pooled}
 
 
 def _bootstrap_wape_delta(
-    y: np.ndarray, pa: np.ndarray, pb: np.ndarray, days: np.ndarray, *, n: int = 2000, seed: int = 42
+    y: np.ndarray,
+    pa: np.ndarray,
+    pb: np.ndarray,
+    days: np.ndarray,
+    *,
+    n: int = 2000,
+    seed: int = 42,
 ) -> dict[str, float]:
     """Block-bootstrap CI for WAPE(b) − WAPE(a) resampling whole test days (lower WAPE = better)."""
     rng = np.random.default_rng(seed)
@@ -148,8 +165,14 @@ def _llm_cost(news_path: Path | None) -> dict[str, Any]:
     }
 
 
-def run_ablation(panel: Panel, promoted: dict[str, Any], target: str, news_path: Path | None,
-                 A: LedgerAssumptions, stamp: datetime) -> dict[str, Any]:
+def run_ablation(
+    panel: Panel,
+    promoted: dict[str, Any],
+    target: str,
+    news_path: Path | None,
+    A: LedgerAssumptions,
+    stamp: datetime,
+) -> dict[str, Any]:
     df = usable_frame(panel)
     windows = build_monthly_windows(df["hour_start"], 3)
     res = _arm_predictions(df, panel, target, promoted, windows)
@@ -164,21 +187,31 @@ def run_ablation(panel: Panel, promoted: dict[str, Any], target: str, news_path:
         arms_summary[a] = {
             "wape": float(wape(y, p)),
             "event_window_wape": float(wape(y[ev], p[ev])) if ev.any() else None,
-            "net_profit_simulated": account(np.rint(p), y, baseline_stock=np.rint(p), assumptions=A).net,
+            "net_profit_simulated": account(
+                np.rint(p), y, baseline_stock=np.rint(p), assumptions=A
+            ).net,
         }
 
     # Incremental lift with block-bootstrap CI (WAPE delta; negative = improvement).
     lift = {
-        "rule_over_none_A1_minus_A0": _bootstrap_wape_delta(y, preds["A0_no_event"], preds["A1_rule_event"], days),
-        "llm_over_rule_A2_minus_A1": _bootstrap_wape_delta(y, preds["A1_rule_event"], preds["A2_llm_event"], days),
-        "llm_over_none_A2_minus_A0": _bootstrap_wape_delta(y, preds["A0_no_event"], preds["A2_llm_event"], days),
+        "rule_over_none_A1_minus_A0": _bootstrap_wape_delta(
+            y, preds["A0_no_event"], preds["A1_rule_event"], days
+        ),
+        "llm_over_rule_A2_minus_A1": _bootstrap_wape_delta(
+            y, preds["A1_rule_event"], preds["A2_llm_event"], days
+        ),
+        "llm_over_none_A2_minus_A0": _bootstrap_wape_delta(
+            y, preds["A0_no_event"], preds["A2_llm_event"], days
+        ),
     }
     for k in lift:
         lift[k]["verdict"] = _verdict(lift[k])
 
     cost = _llm_cost(news_path)
     profit_lift_llm_over_rule = round(
-        arms_summary["A2_llm_event"]["net_profit_simulated"] - arms_summary["A1_rule_event"]["net_profit_simulated"], 2
+        arms_summary["A2_llm_event"]["net_profit_simulated"]
+        - arms_summary["A1_rule_event"]["net_profit_simulated"],
+        2,
     )
     net_llm_value = round(profit_lift_llm_over_rule - cost["estimated_real_usd"], 2)
 
@@ -202,7 +235,10 @@ def run_ablation(panel: Panel, promoted: dict[str, Any], target: str, news_path:
         "freshness": stamp.isoformat(),
         "target": target,
         "grain": "h3_zone_x_local_hour",
-        "promoted_model": {"algorithm": promoted.get("algorithm"), "run_id": promoted.get("run_id")},
+        "promoted_model": {
+            "algorithm": promoted.get("algorithm"),
+            "run_id": promoted.get("run_id"),
+        },
         "arms": arms_summary,
         "n_decisions": int(y.size),
         "event_window_rows": int(ev.sum()),
@@ -232,8 +268,11 @@ def run_ablation(panel: Panel, promoted: dict[str, Any], target: str, news_path:
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="ml.forecasting.llm_value")
     ap.add_argument("--data-dir", default="data/raw/citibike_2026")
-    ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl",
-                    help="ArticleRecord JSONL news backfill overlapping the trip window")
+    ap.add_argument(
+        "--news",
+        default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl",
+        help="ArticleRecord JSONL news backfill overlapping the trip window",
+    )
     ap.add_argument("--provider", choices=("mock", "anthropic"), default="mock")
     ns = ap.parse_args(argv)
     stamp = datetime.now(UTC)
@@ -246,25 +285,40 @@ def main(argv: list[str] | None = None) -> None:
 
     news_path = Path(ns.news)
     print(f"V2-03 LLM value ablation — arms={list(ARMS)}  news={news_path}  provider={ns.provider}")
-    panel = load_real_panel(Path(ns.data_dir), news_source=news_path if news_path.exists() else None,
-                            provider=ns.provider)
-    report = run_ablation(panel, promoted, target, news_path if news_path.exists() else None, A, stamp)
+    panel = load_real_panel(
+        Path(ns.data_dir),
+        news_source=news_path if news_path.exists() else None,
+        provider=ns.provider,
+    )
+    report = run_ablation(
+        panel, promoted, target, news_path if news_path.exists() else None, A, stamp
+    )
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "incremental_value.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
-    print(f"\ndecisions={report['n_decisions']}  event rows={report['event_window_rows']} "
-          f"(coverage {report['event_coverage_fraction']*100:.3f}%)  claim_status={report['claim_status']}")
+    print(
+        f"\ndecisions={report['n_decisions']}  event rows={report['event_window_rows']} "
+        f"(coverage {report['event_coverage_fraction'] * 100:.3f}%)  claim_status={report['claim_status']}"
+    )
     for a, s in report["arms"].items():
         ew = s["event_window_wape"]
-        print(f"  {a:16s} WAPE={s['wape']:.4f}  event_wape={('%.4f'%ew) if ew is not None else 'n/a'}  "
-              f"net(sim)={s['net_profit_simulated']:.0f}")
+        print(
+            f"  {a:16s} WAPE={s['wape']:.4f}  event_wape={f'{ew:.4f}' if ew is not None else 'n/a'}  "
+            f"net(sim)={s['net_profit_simulated']:.0f}"
+        )
     for k, v in report["incremental_lift_wape"].items():
-        print(f"  {k}: dWAPE={v['delta_wape']:+.4f} CI[{v['ci_lo']:+.4f},{v['ci_hi']:+.4f}] -> {v['verdict']}")
-    print(f"LLM cost: actual ${report['llm_cost']['actual_usd']} (mock); est real "
-          f"${report['llm_cost']['estimated_real_usd']} ({report['llm_cost']['n_articles']} articles)")
-    print(f"profit lift A2 vs A1 (sim): {report['profit_lift_llm_over_rule_simulated']}  "
-          f"net LLM value (sim): {report['net_llm_value_simulated']}")
+        print(
+            f"  {k}: dWAPE={v['delta_wape']:+.4f} CI[{v['ci_lo']:+.4f},{v['ci_hi']:+.4f}] -> {v['verdict']}"
+        )
+    print(
+        f"LLM cost: actual ${report['llm_cost']['actual_usd']} (mock); est real "
+        f"${report['llm_cost']['estimated_real_usd']} ({report['llm_cost']['n_articles']} articles)"
+    )
+    print(
+        f"profit lift A2 vs A1 (sim): {report['profit_lift_llm_over_rule_simulated']}  "
+        f"net LLM value (sim): {report['net_llm_value_simulated']}"
+    )
     print(f"HEADLINE: {report['headline_verdict']}")
     print(f"report: {OUT_DIR}/incremental_value.json")
 

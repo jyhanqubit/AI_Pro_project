@@ -49,14 +49,26 @@ OUT_DIR = Path("reports/v2/llm_value")
 
 # LLM factual categorization of the 20 permit event types into demand-relevant buckets (NO sign).
 _BUCKET = {
-    "Parade": "surge", "Athletic Race / Tour": "surge", "Street Festival": "surge",
+    "Parade": "surge",
+    "Athletic Race / Tour": "surge",
+    "Street Festival": "surge",
     "Single Block Festival": "surge",
-    "Block Party": "gather", "Street Event": "gather", "Plaza Partner Event": "gather",
-    "Plaza Event": "gather", "Open Culture": "gather", "Open Street Partner Event": "openstreet",
-    "Farmers Market": "market", "Sidewalk Sale": "market", "Health Fair": "market",
+    "Block Party": "gather",
+    "Street Event": "gather",
+    "Plaza Partner Event": "gather",
+    "Plaza Event": "gather",
+    "Open Culture": "gather",
+    "Open Street Partner Event": "openstreet",
+    "Farmers Market": "market",
+    "Sidewalk Sale": "market",
+    "Health Fair": "market",
     "Production Event": "production",
-    "Religious Event": "civic", "Stationary Demonstration": "civic", "Press Conference": "civic",
-    "Clean-Up": "civic", "Miscellaneous": "civic", "Stickball": "civic",
+    "Religious Event": "civic",
+    "Stationary Demonstration": "civic",
+    "Press Conference": "civic",
+    "Clean-Up": "civic",
+    "Miscellaneous": "civic",
+    "Stickball": "civic",
 }
 BUCKETS = ("surge", "gather", "openstreet", "market", "production", "civic")
 TYPED_COLS = tuple(f"ev_{b}" for b in BUCKETS) + ("ev_closure", "ev_upcoming6h")
@@ -88,7 +100,9 @@ def build_typed_index(events_path: Path):
                     cell["ev_closure"] += 1
                 h += timedelta(hours=1)
             for back in range(1, 7):
-                idx[(b, (start - timedelta(hours=back)).strftime("%Y-%m-%d %H"))]["ev_upcoming6h"] += 1
+                idx[(b, (start - timedelta(hours=back)).strftime("%Y-%m-%d %H"))][
+                    "ev_upcoming6h"
+                ] += 1
     return idx
 
 
@@ -115,7 +129,11 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         for c in TYPED_COLS:
             rec[c] = te[c] if te else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -129,31 +147,47 @@ def run(data_dir, events_path, test_from, target=PRIMARY_TARGET):
         "A1_crude_counts": b1 + list(_EVENT_COLS),
         "A1_typed_buckets": b1 + list(TYPED_COLS),
     }
-    preds = {a: _fit_eval(df[cc].to_numpy(dtype=float)[dev], y[dev], df[cc].to_numpy(dtype=float)[test], 0)
-             for a, cc in cols.items()}
+    preds = {
+        a: _fit_eval(
+            df[cc].to_numpy(dtype=float)[dev], y[dev], df[cc].to_numpy(dtype=float)[test], 0
+        )
+        for a, cc in cols.items()
+    }
     y_test = y[test]
     blocks = [h.date().toordinal() for h in np.array(hours, dtype=object)[test]]
     active = df.loc[test, list(_EVENT_COLS)].abs().sum(axis=1).to_numpy() > 0
 
-    arms = {a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
-            for a, p in preds.items()}
-    typed_vs_crude = llm_feature_value(y_test, preds["A1_crude_counts"], preds["A1_typed_buckets"], active, blocks)
-    typed_vs_a0 = llm_feature_value(y_test, preds["A0_demand_calendar"], preds["A1_typed_buckets"], active, blocks)
+    arms = {
+        a: {"wape": round(float(wape(y_test, p)), 4), "mae": round(float(mae(y_test, p)), 3)}
+        for a, p in preds.items()
+    }
+    typed_vs_crude = llm_feature_value(
+        y_test, preds["A1_crude_counts"], preds["A1_typed_buckets"], active, blocks
+    )
+    typed_vs_a0 = llm_feature_value(
+        y_test, preds["A0_demand_calendar"], preds["A1_typed_buckets"], active, blocks
+    )
 
     return {
         "run_id": f"run_v2-03permittyped_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/permit_typed_contribution.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
         "buckets": list(BUCKETS),
         "llm_role": "factual categorization of permit event_type into demand-relevant buckets (NO "
-                    "demand sign imposed); the model learns each bucket's response from data",
-        "n_train_rows": int(len(dev)), "n_test_rows": int(len(test)), "test_active_cells": int(active.sum()),
+        "demand sign imposed); the model learns each bucket's response from data",
+        "n_train_rows": int(len(dev)),
+        "n_test_rows": int(len(test)),
+        "test_active_cells": int(active.sum()),
         "arms": arms,
         "typed_vs_A0": typed_vs_a0,
         "typed_vs_crude": typed_vs_crude,
         "note": "typed disaggregation vs the aggregate count: does letting the model learn per-type "
-                "responses (LLM structures the type facts) beat lumping all permits into one count?",
+        "responses (LLM structures the type facts) beat lumping all permits into one count?",
     }
 
 
@@ -165,14 +199,20 @@ def main(argv=None) -> int:
     ns = ap.parse_args(argv)
     res = run(ns.data_dir, ns.events, ns.test_from)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    (OUT_DIR / "permit_typed_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
+    (OUT_DIR / "permit_typed_contribution.json").write_text(
+        json.dumps(res, indent=2), encoding="utf-8"
+    )
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']} active={res['test_active_cells']}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']} active={res['test_active_cells']}"
+    )
     for a, s in res["arms"].items():
         print(f"  {a:20s} WAPE={s['wape']:.4f}")
     for key, lbl in (("typed_vs_A0", "typed vs A0"), ("typed_vs_crude", "typed vs crude count")):
         m = res[key]
-        print(f"  {lbl:22s}: {m['decision']}  skill={m['llm_active_skill_pct']}%  CI={m['active_error_gain_ci95']}")
+        print(
+            f"  {lbl:22s}: {m['decision']}  skill={m['llm_active_skill_pct']}%  CI={m['active_error_gain_ci95']}"
+        )
     print(f"report -> {OUT_DIR}/permit_typed_contribution.json")
     return 0
 

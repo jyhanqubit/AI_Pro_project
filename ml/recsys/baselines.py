@@ -27,8 +27,10 @@ def _headroom(master: StationMaster, sid: str, mode: RecommendationMode) -> floa
     st = master.get(sid)
     if st is None or not st.inventory_known:
         return 0.0
-    return float(st.bikes_available or 0) if mode == RecommendationMode.RENT else float(
-        st.docks_available or 0
+    return (
+        float(st.bikes_available or 0)
+        if mode == RecommendationMode.RENT
+        else float(st.docks_available or 0)
     )
 
 
@@ -56,7 +58,9 @@ def b1_distance_capacity(
 
 
 def b2_distance_risk_benefit(
-    sample: RecSample, cands: list[Candidate], master: StationMaster,
+    sample: RecSample,
+    cands: list[Candidate],
+    master: StationMaster,
     risk_fn: Callable[[str], float] | None = None,
 ) -> list[str]:
     """B1 + an inventory-risk proxy (or an injected forecast-risk fn). Heuristic, not a model."""
@@ -66,8 +70,10 @@ def b2_distance_risk_benefit(
         st = master.get(sid)
         if st is None or not st.inventory_known or st.capacity in (None, 0):
             return 0.0
-        have = (st.bikes_available or 0) if sample.mode == RecommendationMode.RENT else (
-            st.docks_available or 0
+        have = (
+            (st.bikes_available or 0)
+            if sample.mode == RecommendationMode.RENT
+            else (st.docks_available or 0)
         )
         return 1.0 - min(1.0, have / float(st.capacity or 1))
 

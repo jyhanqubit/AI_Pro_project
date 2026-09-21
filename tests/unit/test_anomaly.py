@@ -32,7 +32,8 @@ def test_sudden_depletion_is_explained_by_event() -> None:
     obs, events = build_demo_scenario()
     alerts = attribute_root_cause(detect_all(obs), events)
     cityhall = next(
-        a for a in alerts
+        a
+        for a in alerts
         if a.station_id == "JC_CITYHALL" and a.anomaly_type == AnomalyType.INVENTORY
     )
     assert cityhall.root_cause_status == RootCauseStatus.EXPLAINED_BY_EVENT

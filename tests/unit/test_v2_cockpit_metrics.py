@@ -10,8 +10,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
-
 from contracts.enums import OperatingMode
 from services.api.v2_metrics import cockpit_metrics
 
@@ -36,13 +34,14 @@ def test_every_metric_resolves_to_its_artifact_no_hardcoding():
             continue  # a genuinely missing artifact surfaces blocked, value None — allowed
         aid = env["artifact_id"]
         assert aid, f"{m['key']}: measured/simulated metric must cite an artifact_id"
-        assert Path(aid.split('#', 1)[0]).exists(), f"{m['key']}: artifact file missing ({aid})"
+        assert Path(aid.split("#", 1)[0]).exists(), f"{m['key']}: artifact file missing ({aid})"
         stored = _resolve(aid)
         val = env["value"]
         # numbers must match the artifact within rounding; strings/exact must equal
         if isinstance(val, (int, float)) and isinstance(stored, (int, float)):
-            assert abs(float(val) - float(stored)) <= 0.5 + abs(float(stored)) * 1e-3, \
+            assert abs(float(val) - float(stored)) <= 0.5 + abs(float(stored)) * 1e-3, (
                 f"{m['key']}: envelope value {val} != artifact value {stored}"
+            )
         elif m["key"] == "best_policy":
             assert isinstance(stored, list) and val in stored  # ranking list; value is a member
         else:

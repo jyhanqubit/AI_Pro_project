@@ -27,7 +27,12 @@ import numpy as np
 import pandas as pd
 
 from config.forecasting import PRIMARY_TARGET
-from ml.forecasting.borough_event_lift import _EVENT_COLS, _fit_eval, build_event_index, stream_borough_cells
+from ml.forecasting.borough_event_lift import (
+    _EVENT_COLS,
+    _fit_eval,
+    build_event_index,
+    stream_borough_cells,
+)
 from ml.forecasting.event_features_v2 import SIGNED_COLS, EventFeatureCfg, build_signed_demand_index
 from ml.forecasting.llm_feature_value import llm_feature_value
 from ml.forecasting.metrics import wape
@@ -44,11 +49,11 @@ _LAG_RE = re.compile(r"lag_(\d+)$")
 def usable_at_horizon(col: str, h: int) -> bool:
     """A feature knowable when forecasting h hours ahead (references only hours <= target-h)."""
     if "roll" in col or "momentum" in col or "mom_" in col:
-        return h == 1                       # rolling/momentum use the most recent hour(s)
+        return h == 1  # rolling/momentum use the most recent hour(s)
     m = _LAG_RE.search(col)
     if m:
-        return int(m.group(1)) >= h         # lag_k known iff k >= h
-    return True                             # calendar/static features are always known
+        return int(m.group(1)) >= h  # lag_k known iff k >= h
+    return True  # calendar/static features are always known
 
 
 def _events(path: Path) -> list[dict]:
@@ -63,7 +68,9 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
     rows = build_demand_features(stream_borough_cells(paths))
     permitted = build_event_index(Path(events_path))
     articles = {a.article_id: a for a in NewsFixtureCollector(Path(news_path)).collect().records}
-    sig_idx, _ = build_signed_demand_index(_events(Path(signed_events)), articles, EventFeatureCfg())
+    sig_idx, _ = build_signed_demand_index(
+        _events(Path(signed_events)), articles, EventFeatureCfg()
+    )
 
     b1_cols = sorted({k for r in rows for k in r.features})
     recs = []
@@ -78,7 +85,11 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
         se = sig_idx.get((r.zone_id, hk))
         rec["news_demand_signal"] = float(se["news_demand_signal"]) if se else 0.0
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -104,32 +115,46 @@ def run(data_dir, events_path, news_path, signed_events, test_from, target=PRIMA
         p2 = fit(base + list(_EVENT_COLS) + list(SIGNED_COLS))
         permit_lfv = llm_feature_value(y_test, p0, p1, permit_active, blocks)
         news_lfv = llm_feature_value(y_test, p1, p2, news_active, blocks)
-        by_h.append({
-            "horizon_h": h, "n_base_features": len(base),
-            "wape": {"A0": round(float(wape(y_test, p0)), 4),
-                     "A1_permit": round(float(wape(y_test, p1)), 4),
-                     "A2_news": round(float(wape(y_test, p2)), 4)},
-            "permit_value_A1_minus_A0": {"decision": permit_lfv["decision"],
-                                         "skill_pct": permit_lfv["llm_active_skill_pct"],
-                                         "ci95": permit_lfv["active_error_gain_ci95"]},
-            "news_value_A2_minus_A1": {"decision": news_lfv["decision"],
-                                       "skill_pct": news_lfv["llm_active_skill_pct"],
-                                       "ci95": news_lfv["active_error_gain_ci95"]},
-        })
+        by_h.append(
+            {
+                "horizon_h": h,
+                "n_base_features": len(base),
+                "wape": {
+                    "A0": round(float(wape(y_test, p0)), 4),
+                    "A1_permit": round(float(wape(y_test, p1)), 4),
+                    "A2_news": round(float(wape(y_test, p2)), 4),
+                },
+                "permit_value_A1_minus_A0": {
+                    "decision": permit_lfv["decision"],
+                    "skill_pct": permit_lfv["llm_active_skill_pct"],
+                    "ci95": permit_lfv["active_error_gain_ci95"],
+                },
+                "news_value_A2_minus_A1": {
+                    "decision": news_lfv["decision"],
+                    "skill_pct": news_lfv["llm_active_skill_pct"],
+                    "ci95": news_lfv["active_error_gain_ci95"],
+                },
+            }
+        )
 
     return {
         "run_id": f"run_v2-03horizon_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/horizon_contribution.json",
-        "mode": "historical_replay", "claim_status": "measured", "freshness": datetime.now(UTC).isoformat(),
-        "grain": "borough-hour", "target": target, "test_from": test_from,
-        "n_train_rows": int(len(dev_pos)), "n_test_rows": int(len(test_pos)),
+        "mode": "historical_replay",
+        "claim_status": "measured",
+        "freshness": datetime.now(UTC).isoformat(),
+        "grain": "borough-hour",
+        "target": target,
+        "test_from": test_from,
+        "n_train_rows": int(len(dev_pos)),
+        "n_test_rows": int(len(test_pos)),
         "test_rows_permit_active": int(permit_active.sum()),
         "test_rows_news_active": int(news_active.sum()),
         "by_horizon": by_h,
         "note": "At horizon h only features referencing hours <= target-h are usable (lag_k with "
-                "k>=h; no rolling/momentum for h>1). Tests whether the event/news layer's value grows "
-                "as recent-demand autoregression becomes unavailable — the operational forecasting "
-                "regime rebalancing needs.",
+        "k>=h; no rolling/momentum for h>1). Tests whether the event/news layer's value grows "
+        "as recent-demand autoregression becomes unavailable — the operational forecasting "
+        "regime rebalancing needs.",
     }
 
 
@@ -138,22 +163,32 @@ def main(argv=None) -> int:
     ap.add_argument("--data-dir", default="data/raw/nyc")
     ap.add_argument("--events", default="data/fixtures/nyc_permitted_events_filtered.jsonl.gz")
     ap.add_argument("--news", default="data/fixtures/news_live/news_gdelt_nyc_2026h1.jsonl")
-    ap.add_argument("--signed-events", default="data/fixtures/news_live/claude_events_signed_2026h1.jsonl")
+    ap.add_argument(
+        "--signed-events", default="data/fixtures/news_live/claude_events_signed_2026h1.jsonl"
+    )
     ap.add_argument("--test-from", default="2026-05-01")
     ns = ap.parse_args(argv)
     res = run(ns.data_dir, ns.events, ns.news, ns.signed_events, ns.test_from)
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     (OUT_DIR / "horizon_contribution.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 
-    print(f"train={res['n_train_rows']} test={res['n_test_rows']} "
-          f"permit_active={res['test_rows_permit_active']} news_active={res['test_rows_news_active']}")
-    print(f"\n{'horizon':>7s} {'#feat':>6s} {'WAPE_A0':>8s} {'WAPE_A1':>8s} {'WAPE_A2':>8s}  "
-          f"{'permit A1-A0':>26s}  {'news A2-A1':>26s}")
+    print(
+        f"train={res['n_train_rows']} test={res['n_test_rows']} "
+        f"permit_active={res['test_rows_permit_active']} news_active={res['test_rows_news_active']}"
+    )
+    print(
+        f"\n{'horizon':>7s} {'#feat':>6s} {'WAPE_A0':>8s} {'WAPE_A1':>8s} {'WAPE_A2':>8s}  "
+        f"{'permit A1-A0':>26s}  {'news A2-A1':>26s}"
+    )
     for r in res["by_horizon"]:
-        w = r["wape"]; p = r["permit_value_A1_minus_A0"]; n = r["news_value_A2_minus_A1"]
-        print(f"{r['horizon_h']:>6d}h {r['n_base_features']:>6d} {w['A0']:>8.4f} {w['A1_permit']:>8.4f} "
-              f"{w['A2_news']:>8.4f}  {p['decision'][:14]:>14s} {str(p['skill_pct'])+'%':>11s}  "
-              f"{n['decision'][:14]:>14s} {str(n['skill_pct'])+'%':>11s}")
+        w = r["wape"]
+        p = r["permit_value_A1_minus_A0"]
+        n = r["news_value_A2_minus_A1"]
+        print(
+            f"{r['horizon_h']:>6d}h {r['n_base_features']:>6d} {w['A0']:>8.4f} {w['A1_permit']:>8.4f} "
+            f"{w['A2_news']:>8.4f}  {p['decision'][:14]:>14s} {str(p['skill_pct']) + '%':>11s}  "
+            f"{n['decision'][:14]:>14s} {str(n['skill_pct']) + '%':>11s}"
+        )
     print(f"report -> {OUT_DIR}/horizon_contribution.json")
     return 0
 

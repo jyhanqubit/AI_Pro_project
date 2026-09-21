@@ -56,7 +56,7 @@ def _synth_events(hours_sorted, boroughs, every_h: int, seed: int):
     t0, t1 = hours_sorted[0], hours_sorted[-1]
     events = {}
     for bi, b in enumerate(boroughs):
-        t = t0 + timedelta(hours=(bi * 7) % every_h)   # stagger boroughs
+        t = t0 + timedelta(hours=(bi * 7) % every_h)  # stagger boroughs
         while t <= t1:
             surge = ((bi + int((t - t0).total_seconds() // 3600)) % 2) == 0
             factor = float(rng.uniform(1.3, 1.7) if surge else rng.uniform(0.5, 0.8))
@@ -83,9 +83,18 @@ def _inject(cells, ev):
         arr = int(round(c.arrivals * fac))
         mem = min(int(round(c.departures_member * fac)), dep)
         cas = min(int(round(c.departures_casual * fac)), max(dep - mem, 0))
-        out.append(DemandCell(zone_id=c.zone_id, hour_start=c.hour_start, departures=dep,
-                              arrivals=arr, net_flow=arr - dep, departures_member=mem,
-                              departures_casual=cas, mode=c.mode))
+        out.append(
+            DemandCell(
+                zone_id=c.zone_id,
+                hour_start=c.hour_start,
+                departures=dep,
+                arrivals=arr,
+                net_flow=arr - dep,
+                departures_member=mem,
+                departures_casual=cas,
+                mode=c.mode,
+            )
+        )
     return out
 
 
@@ -99,7 +108,11 @@ def _one(cells, ev, test_start, target):
             rec[k] = r.features.get(k)
         rec["ev_signal"] = ev.get((r.zone_id, r.hour_start.strftime("%Y-%m-%d %H")), (1.0, 0.0))[1]
         recs.append(rec)
-    df = pd.DataFrame.from_records(recs).sort_values(["hour_start", "borough"]).reset_index(drop=True)
+    df = (
+        pd.DataFrame.from_records(recs)
+        .sort_values(["hour_start", "borough"])
+        .reset_index(drop=True)
+    )
     for c in ("dep_lag_1", "dep_lag_24", "dep_lag_168", "dep_roll_mean_24"):
         if c in df.columns:
             df = df[df[c].notna()]
@@ -131,13 +144,19 @@ def _one(cells, ev, test_start, target):
         "n_event_cells_total": int(sum(1 for v in ev.values() if v[0] != 1.0)),
         "test_active_cells": int(active.sum()),
         "alpha_postcorrection": round(alpha, 4),
-        "wape": {"base": round(float(wape(y_test, p_base)), 4),
-                 "plus_feature": round(float(wape(y_test, p_feat)), 4),
-                 "plus_postcorrection": round(float(wape(y_test, p_post)), 4)},
-        "feature_value_vs_base": {k: llm_feature_value(y_test, p_base, p_feat, active, blocks)[k]
-                                  for k in ("decision", "llm_active_skill_pct", "active_error_gain_ci95")},
-        "postcorrection_value_vs_base": {k: llm_feature_value(y_test, p_base, p_post, active, blocks)[k]
-                                         for k in ("decision", "llm_active_skill_pct", "active_error_gain_ci95")},
+        "wape": {
+            "base": round(float(wape(y_test, p_base)), 4),
+            "plus_feature": round(float(wape(y_test, p_feat)), 4),
+            "plus_postcorrection": round(float(wape(y_test, p_post)), 4),
+        },
+        "feature_value_vs_base": {
+            k: llm_feature_value(y_test, p_base, p_feat, active, blocks)[k]
+            for k in ("decision", "llm_active_skill_pct", "active_error_gain_ci95")
+        },
+        "postcorrection_value_vs_base": {
+            k: llm_feature_value(y_test, p_base, p_post, active, blocks)[k]
+            for k in ("decision", "llm_active_skill_pct", "active_error_gain_ci95")
+        },
     }
 
 
@@ -150,28 +169,34 @@ def run(data_dir, test_from, target=PRIMARY_TARGET):
     hours_sorted = sorted({c.hour_start for c in cells})
     boroughs = list(_BOROUGH_CENTROIDS)
 
-    dense = _one(cells, _synth_events(hours_sorted, boroughs, every_h=60, seed=0), test_start, target)
-    sparse = _one(cells, _synth_events(hours_sorted, boroughs, every_h=600, seed=0), test_start, target)
+    dense = _one(
+        cells, _synth_events(hours_sorted, boroughs, every_h=60, seed=0), test_start, target
+    )
+    sparse = _one(
+        cells, _synth_events(hours_sorted, boroughs, every_h=600, seed=0), test_start, target
+    )
 
     return {
         "run_id": f"run_v2-03synth_{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}",
         "artifact_id": "reports/v2/llm_value/synthetic_ceiling.json",
-        "mode": "research", "claim_status": "simulated",
+        "mode": "research",
+        "claim_status": "simulated",
         "freshness": datetime.now(UTC).isoformat(),
         "disclaimer": "SYNTHETIC proof-of-mechanism. Event effects are injected into real demand and "
-                      "fully disclosed; this is NOT a real-news result and makes no measured business "
-                      "claim. It shows the pipeline/post-correction CAN exploit forward-looking precise "
-                      "dense events — the real-news null is a source problem, not a method problem.",
-        "target": target, "test_from": test_from,
+        "fully disclosed; this is NOT a real-news result and makes no measured business "
+        "claim. It shows the pipeline/post-correction CAN exploit forward-looking precise "
+        "dense events — the real-news null is a source problem, not a method problem.",
+        "target": target,
+        "test_from": test_from,
         "synthetic_event_spec": "multiplicative shocks (surge x1.3-1.7 / suppress x0.5-0.8), exact "
-                                "hour+borough, forward-looking; LLM signal = correct sign + coarse "
-                                "magnitude only (not the exact factor); post-corr alpha fit on train.",
+        "hour+borough, forward-looking; LLM signal = correct sign + coarse "
+        "magnitude only (not the exact factor); post-corr alpha fit on train.",
         "dense_source": dense,
         "sparse_source_newscale": sparse,
         "finding": "With a DENSE forward-looking precise synthetic source, both the event feature and "
-                   "the LLM post-correction improve the forecast on event cells; at news-scale density "
-                   "the same perfect events give a negligible/again-null effect — confirming density is "
-                   "necessary and that the real-news null is structural, not a pipeline limitation.",
+        "the LLM post-correction improve the forecast on event cells; at news-scale density "
+        "the same perfect events give a negligible/again-null effect — confirming density is "
+        "necessary and that the real-news null is structural, not a pipeline limitation.",
     }
 
 
@@ -185,12 +210,24 @@ def main(argv=None) -> int:
     (OUT_DIR / "synthetic_ceiling.json").write_text(json.dumps(res, indent=2), encoding="utf-8")
 
     print("SYNTHETIC CEILING (claim_status: simulated — injected effects, NOT real news)")
-    for name, r in (("DENSE forward+precise", res["dense_source"]), ("SPARSE (news-scale)", res["sparse_source_newscale"])):
-        print(f"\n  [{name}]  event_cells={r['n_event_cells_total']} test_active={r['test_active_cells']} alpha={r['alpha_postcorrection']}")
-        print(f"    WAPE base={r['wape']['base']}  +feature={r['wape']['plus_feature']}  +postcorr={r['wape']['plus_postcorrection']}")
-        f = r["feature_value_vs_base"]; p = r["postcorrection_value_vs_base"]
-        print(f"    feature   vs base: {f['decision']} {f['llm_active_skill_pct']}% CI{f['active_error_gain_ci95']}")
-        print(f"    postcorr  vs base: {p['decision']} {p['llm_active_skill_pct']}% CI{p['active_error_gain_ci95']}")
+    for name, r in (
+        ("DENSE forward+precise", res["dense_source"]),
+        ("SPARSE (news-scale)", res["sparse_source_newscale"]),
+    ):
+        print(
+            f"\n  [{name}]  event_cells={r['n_event_cells_total']} test_active={r['test_active_cells']} alpha={r['alpha_postcorrection']}"
+        )
+        print(
+            f"    WAPE base={r['wape']['base']}  +feature={r['wape']['plus_feature']}  +postcorr={r['wape']['plus_postcorrection']}"
+        )
+        f = r["feature_value_vs_base"]
+        p = r["postcorrection_value_vs_base"]
+        print(
+            f"    feature   vs base: {f['decision']} {f['llm_active_skill_pct']}% CI{f['active_error_gain_ci95']}"
+        )
+        print(
+            f"    postcorr  vs base: {p['decision']} {p['llm_active_skill_pct']}% CI{p['active_error_gain_ci95']}"
+        )
     print(f"\nreport -> {OUT_DIR}/synthetic_ceiling.json")
     return 0
 

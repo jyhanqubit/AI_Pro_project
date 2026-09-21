@@ -13,6 +13,8 @@ from pathlib import Path
 
 import pandas as pd
 import pytest
+
+pytest.importorskip("torch")  # [recsys] extra; skip, never error, without it
 import torch
 
 from config.recsys import RetrieverConfig
@@ -29,8 +31,17 @@ _GBFS = _ROOT / "data" / "fixtures" / "gbfs_station_status.json"
 
 def _tiny_cfg() -> RetrieverConfig:
     return RetrieverConfig(
-        d_model=32, embedding_dim=32, nhead=4, num_layers=1, dim_feedforward=64,
-        dropout=0.0, epochs=1, batch_size=8, max_train_samples=12, hard_negatives=2, seed=0,
+        d_model=32,
+        embedding_dim=32,
+        nhead=4,
+        num_layers=1,
+        dim_feedforward=64,
+        dropout=0.0,
+        epochs=1,
+        batch_size=8,
+        max_train_samples=12,
+        hard_negatives=2,
+        seed=0,
     )
 
 

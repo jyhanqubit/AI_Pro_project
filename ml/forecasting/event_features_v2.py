@@ -43,21 +43,32 @@ TRANSIT_TYPES = frozenset({"TRANSIT_DISRUPTION", "ROAD_CLOSURE"})
 # fabricated exact time: evening for shows/games, daytime for gatherings/incidents, commute for
 # weather/transit/road.
 PEAK_HOUR = {
-    "LARGE_VENUE_EVENT": 19, "PUBLIC_GATHERING": 14, "SAFETY_INCIDENT": 12,
-    "WEATHER_SHOCK": 8, "TRANSIT_DISRUPTION": 8, "ROAD_CLOSURE": 8, "SYSTEM_ALERT": 8, "OTHER": 12,
+    "LARGE_VENUE_EVENT": 19,
+    "PUBLIC_GATHERING": 14,
+    "SAFETY_INCIDENT": 12,
+    "WEATHER_SHOCK": 8,
+    "TRANSIT_DISRUPTION": 8,
+    "ROAD_CLOSURE": 8,
+    "SYSTEM_ALERT": 8,
+    "OTHER": 12,
 }
 
 
 @dataclass(frozen=True)
 class EventFeatureCfg:
-    half_life_h: float = 6.0       # temporal decay: weight halves every 6h from the peak
-    span_h: int = 12               # build features within ±span_h of the peak hour
-    decay_scale_km: float = 10.0   # spatial decay scale for graph spillover (borough centroids ~8-15km)
+    half_life_h: float = 6.0  # temporal decay: weight halves every 6h from the peak
+    span_h: int = 12  # build features within ±span_h of the peak hour
+    decay_scale_km: float = (
+        10.0  # spatial decay scale for graph spillover (borough centroids ~8-15km)
+    )
     peak_hour: dict = field(default_factory=lambda: dict(PEAK_HOUR))
 
     def as_dict(self) -> dict[str, str]:
-        return {"half_life_h": str(self.half_life_h), "span_h": str(self.span_h),
-                "decay_scale_km": str(self.decay_scale_km)}
+        return {
+            "half_life_h": str(self.half_life_h),
+            "span_h": str(self.span_h),
+            "decay_scale_km": str(self.decay_scale_km),
+        }
 
 
 def scoped_boroughs(event_type: str, boroughs: list[str]) -> list[str]:
@@ -78,7 +89,7 @@ def _hours(anchor: datetime, avail: datetime, cfg: EventFeatureCfg):
     """Yield (hour_key, weight) for each hour in the peaked, availability-gated window."""
     for off in range(-cfg.span_h, cfg.span_h + 1):
         h = anchor + timedelta(hours=off)
-        if h < avail:            # leakage gate: cannot use before the news was public
+        if h < avail:  # leakage gate: cannot use before the news was public
             continue
         w = half_life_weight(abs(off), cfg.half_life_h)
         yield h.strftime("%Y-%m-%d %H"), w
@@ -87,7 +98,9 @@ def _hours(anchor: datetime, avail: datetime, cfg: EventFeatureCfg):
 def build_direct_index(events, articles, cfg: EventFeatureCfg | None = None):
     """{(borough, 'YYYY-MM-DD HH') -> {DIRECT_COLS}} — improved, time-anchored, type-scoped."""
     cfg = cfg or EventFeatureCfg()
-    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in DIRECT_COLS})
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(
+        lambda: {c: 0.0 for c in DIRECT_COLS}
+    )
     diag = {"events": 0, "attributed_events": 0}
     for e in events:
         diag["events"] += 1
@@ -122,7 +135,7 @@ def _interval_hours(start: datetime, end: datetime, avail: datetime, cfg: EventF
         if h >= avail:
             yield h.strftime("%Y-%m-%d %H"), 1.0
         h += timedelta(hours=1)
-    for off in range(1, cfg.span_h + 1):     # decaying tail after the event ends
+    for off in range(1, cfg.span_h + 1):  # decaying tail after the event ends
         ht = last + timedelta(hours=off)
         if ht >= avail:
             yield ht.strftime("%Y-%m-%d %H"), half_life_weight(off, cfg.half_life_h)
@@ -137,7 +150,9 @@ def build_permitized_index(events, articles, cfg: EventFeatureCfg | None = None)
     gated, so a retrospective review whose event precedes publication self-excludes (honest leakage).
     """
     cfg = cfg or EventFeatureCfg()
-    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in DIRECT_COLS})
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(
+        lambda: {c: 0.0 for c in DIRECT_COLS}
+    )
     diag = {"events": 0, "attributed_events": 0, "leakage_dropped": 0}
     for e in events:
         diag["events"] += 1
@@ -152,7 +167,7 @@ def build_permitized_index(events, articles, cfg: EventFeatureCfg | None = None)
         sev = float(e.get("severity", 0.5))
         hours = list(_interval_hours(start, end, avail, cfg))
         if not hours:
-            diag["leakage_dropped"] += 1   # event entirely before the news was public
+            diag["leakage_dropped"] += 1  # event entirely before the news was public
             continue
         diag["attributed_events"] += 1
         for b in bs:
@@ -180,7 +195,9 @@ def build_signed_demand_index(events, articles, cfg: EventFeatureCfg | None = No
     learn the sign from a handful of events; where signs superpose we sum them (net effect).
     """
     cfg = cfg or EventFeatureCfg()
-    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(lambda: {c: 0.0 for c in SIGNED_COLS})
+    idx: dict[tuple[str, str], dict[str, float]] = defaultdict(
+        lambda: {c: 0.0 for c in SIGNED_COLS}
+    )
     diag = {"events": 0, "attributed_events": 0, "leakage_dropped": 0}
     for e in events:
         diag["events"] += 1
@@ -193,7 +210,7 @@ def build_signed_demand_index(events, articles, cfg: EventFeatureCfg | None = No
         start = datetime.fromisoformat(e["event_start_at"]).astimezone(_NY)
         end = datetime.fromisoformat(e.get("event_end_at") or e["event_start_at"]).astimezone(_NY)
         sev = float(e.get("severity", 0.5))
-        eff = float(e["demand_effect"])   # signed direction/magnitude from the LLM
+        eff = float(e["demand_effect"])  # signed direction/magnitude from the LLM
         hours = list(_interval_hours(start, end, avail, cfg))
         if not hours:
             diag["leakage_dropped"] += 1
@@ -201,7 +218,7 @@ def build_signed_demand_index(events, articles, cfg: EventFeatureCfg | None = No
         diag["attributed_events"] += 1
         for b in bs:
             for hk, w in hours:
-                idx[(b, hk)]["news_demand_signal"] += eff * sev * w   # signed; superpose overlaps
+                idx[(b, hk)]["news_demand_signal"] += eff * sev * w  # signed; superpose overlaps
     return idx, diag
 
 
@@ -225,8 +242,10 @@ def build_graph_index(events, articles, cfg: EventFeatureCfg | None = None):
         for b, (blat, blng) in _BOROUGH_CENTROIDS.items():
             if b in hosts:
                 continue  # spillover is to OTHER boroughs; the host is covered by the direct arm
-            dmin = min(haversine_km(blat, blng, _BOROUGH_CENTROIDS[h][0], _BOROUGH_CENTROIDS[h][1])
-                       for h in hosts)
+            dmin = min(
+                haversine_km(blat, blng, _BOROUGH_CENTROIDS[h][0], _BOROUGH_CENTROIDS[h][1])
+                for h in hosts
+            )
             gw = exp_distance_decay(dmin, cfg.decay_scale_km)
             for hk, w in _hours(anchor, avail, cfg):
                 cell = idx[(b, hk)]
