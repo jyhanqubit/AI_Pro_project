@@ -13,6 +13,13 @@ GitHub Actions(`.github/workflows/ci.yml`)에 올렸습니다. 점검에서 드�
 v2_final_audit PASS(artifact 45개). mypy는 오류 125건이 남아 advisory로 둡니다. README의
 "검증 하네스" 절에 구조도와 층별 설명이 있습니다.
 
+첫 CI 실행은 실패했습니다. 원인은 `optimization/ledger_run.py`가 쓰는 PyYAML이 `pyproject.toml`
+어디에도 선언돼 있지 않았던 것으로, 로컬에는 시스템에 미리 깔려 있어 `make check`가 통과했고
+GitHub Actions의 빈 환경에서만 테스트 모듈 6개가 수집 단계에서 `ModuleNotFoundError: yaml`로
+멈췄습니다. `pyyaml`을 기본 의존성에, 부하 테스트 스크립트의 `aiohttp`를 `dev` extra에 선언하고
+CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e ".[dev,ml,api,mcp]"`만으로
+512개 수집, 508 passed / 8 skipped, 두 감사 PASS를 재현했습니다.
+
 
 ## 운영 어시스턴트 tool을 MCP 서버로 분리 (2026-09-19)
 

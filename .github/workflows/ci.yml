@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install (base + ml + api + mcp extras, no torch)
-        run: pip install -e ".[dev,ml,api,mcp]" aiohttp
+        run: pip install -e ".[dev,ml,api,mcp]"
       - name: Lint and format gate
         run: |
           ruff check .

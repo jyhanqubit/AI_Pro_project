@@ -12,6 +12,7 @@ dependencies = [
     "pydantic-settings>=2.1",
     "tzdata>=2024.1",  # IANA tz database for zoneinfo on Windows
     "h3>=4.0",  # H3 hexagonal grid for zone assignment (CLAUDE.md section 4)
+    "pyyaml>=6.0",  # versioned cost/elasticity assumption sets (config/*.yaml; optimization/ledger_run)
 ]
 
 [project.optional-dependencies]
@@ -20,6 +21,7 @@ dev = [
     "ruff>=0.4",
     "mypy>=1.9",
     "scipy>=1.11",  # statistical hypothesis tests for EDA verification
+    "aiohttp>=3.9",  # closed-loop load-test client (scripts/load_test_api, scripts/free_tier_probe)
 ]
 graph = [
     "neo4j>=5.0",  # optional live graph backend (Demo Mode runs offline without it)
