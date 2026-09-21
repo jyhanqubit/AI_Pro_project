@@ -100,6 +100,30 @@ HEADLINE_POINTERS: dict[str, dict[str, list]] = {
 BLOCKED_OR_PENDING = {"blocked_data", "blocked_external", "pending_live_label"}
 
 
+VOLATILE_FIELDS = ("run_id", "freshness")
+
+
+def write_if_changed(path: Path, matrix: dict[str, Any]) -> bool:
+    """Write the claim matrix only when its content (minus run stamp) differs from the file.
+
+    A verification gate must not dirty the tree it verifies: rewriting an identical matrix with a
+    new ``run_id``/``freshness`` on every run made ``make check`` leave a modified committed file
+    behind. Keeping the committed copy when nothing else changed also lets CI assert
+    ``git diff --exit-code`` after the audits. Returns True when the file was (re)written.
+    """
+    if path.exists():
+        try:
+            previous = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            previous = None
+        if isinstance(previous, dict):
+            strip = lambda d: {k: v for k, v in d.items() if k not in VOLATILE_FIELDS}  # noqa: E731
+            if strip(previous) == strip(matrix):
+                return False
+    path.write_text(json.dumps(matrix, indent=2), encoding="utf-8")
+    return True
+
+
 def _artifacts() -> list[Path]:
     """Every committed V2 artifact except the machine claim matrix (which we generate)."""
     return sorted(p for p in V2_REPORTS.rglob("*.json") if p != CLAIM_MATRIX)
@@ -256,10 +280,13 @@ def main() -> int:
         ),
     }
     FINAL_DIR.mkdir(parents=True, exist_ok=True)
-    CLAIM_MATRIX.write_text(json.dumps(matrix, indent=2), encoding="utf-8")
+    rewritten = write_if_changed(CLAIM_MATRIX, matrix)
 
     print(f"\nartifacts by claim_status: {matrix['by_claim_status']}")
-    print(f"claim matrix -> {CLAIM_MATRIX.relative_to(REPO_ROOT)}")
+    print(
+        f"claim matrix -> {CLAIM_MATRIX.relative_to(REPO_ROOT)} "
+        f"({'rewritten' if rewritten else 'unchanged, committed copy kept'})"
+    )
     print(f"\nV2-09 final audit: {'PASS — V2_COMPLETE' if ok else 'FAIL — V2_INCOMPLETE'}")
     return 0 if ok else 1
 

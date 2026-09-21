@@ -12,7 +12,10 @@ services:
     name: shockflow-api
     runtime: python
     plan: free
-    buildCommand: pip install -e ".[api,ml]"
+    # Exact versions from the serving lock (make lock). The promoted model is a scikit-learn
+    # pickle and the loader refuses to serve it under any version but the one it was fitted
+    # with, so the build must not resolve dependencies afresh.
+    buildCommand: pip install -r requirements/serve.txt && pip install -e . --no-deps
     # Single worker on purpose. The replay cutoff lives in a per-process singleton
     # (services/api/replay.py get_engine) and the UI reads /v1/forecasts etc. without a
     # cutoff, so with N workers a set-cutoff would land on one process and the next read on

@@ -19,7 +19,9 @@ Everything runs in offline **Demo Mode** (no API keys, no live collectors), so n
 1. Push this repo to GitHub (already done if you're reading this there).
 2. Go to **render.com → New → Blueprint**, pick this repository. Render reads `render.yaml` and
    creates the `shockflow-api` web service:
-   - build: `pip install -e ".[api,ml]"`
+   - build: `pip install -r requirements/serve.txt && pip install -e . --no-deps` (exact versions
+     from the serving lock; the promoted model refuses to load under a scikit-learn other than the
+     one it was fitted with, so the build never re-resolves)
    - start: `uvicorn services.api.app:app --host 0.0.0.0 --port $PORT`
 3. Deploy. You'll get a URL like `https://shockflow-api.onrender.com`.
 4. Check it: open `https://shockflow-api.onrender.com/v1/health` → should return JSON `{"status":"ok", ...}`.

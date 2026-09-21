@@ -22,6 +22,7 @@ dev = [
     "mypy>=1.9",
     "scipy>=1.11",  # statistical hypothesis tests for EDA verification
     "aiohttp>=3.9",  # closed-loop load-test client (scripts/load_test_api, scripts/free_tier_probe)
+    "pytest-socket>=0.7",  # tests never reach the public network (see [tool.pytest.ini_options])
 ]
 graph = [
     "neo4j>=5.0",  # optional live graph backend (Demo Mode runs offline without it)
@@ -112,3 +113,14 @@ follow_imports = "skip"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Tests must not depend on the runner's egress (CLAUDE.md section 17; GitHub runners have
+# internet, the dev sandbox does not). pytest-socket refuses every TCP connection except
+# loopback (TestClient, the "cluster unreachable" degrade tests) and Unix sockets (asyncio's
+# self-pipe, the MCP stdio client's subprocess plumbing).
+addopts = "--disable-socket --allow-hosts=127.0.0.1,::1,localhost --allow-unix-socket"
+filterwarnings = [
+    # The promoted serving model is a pickle; sklearn warns (does not fail) when a different
+    # version unpickles it. That is a silent reproducibility drift, so the harness treats it as
+    # an error (the loader in ml/forecasting/promoted.py refuses the mismatch at runtime too).
+    "error::sklearn.exceptions.InconsistentVersionWarning",
+]

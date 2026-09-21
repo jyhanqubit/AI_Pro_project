@@ -123,7 +123,7 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
   → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
 - **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
   (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
-- **테스트:** `make check` 기준 508 passed / 8 skipped. skip 8개는 전부 optional extra(torch, faiss, sqlalchemy, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
+- **테스트:** `make check` 기준 517 passed / 8 skipped. skip 8개는 전부 optional extra(torch, faiss, sqlalchemy, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
 
 ## 검증 하네스
 
@@ -132,16 +132,18 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
 push와 pull request마다 실행됩니다.
 
 ```text
+pip install -r requirements/dev.txt              환경: lock에 적힌 정확한 버전 (로컬 make install = CI = Render의 serve.txt)
 make check
  ├─ 1. ruff check . / ruff format --check .      정적 게이트 (F, I, B, UP, E; 줄 길이는 포매터에 위임)
  ├─ 2. make seed-graph                           이벤트 graph 스냅숏 (오프라인, 1초; copilot 테스트 3개의 입력)
- ├─ 3. pytest                                    508 passed / 8 skipped
- │     ├─ tests/unit         58 파일 434개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀
- │     ├─ tests/integration   8 파일  92개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB
+ ├─ 3. pytest                                    517 passed / 8 skipped, 공용 네트워크 차단(pytest-socket)
+ │     ├─ tests/unit         59 파일 432개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀, 하네스 가드(9)
+ │     ├─ tests/integration   8 파일  88개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB
  │     └─ tests/e2e           1 파일   1개   13:59 → 14:00 골든패스 전체 흐름
  ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
  ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
- └─ 6. python -m mypy .                          advisory (알려진 오류 125건, 아래 참고)
+ ├─ 6. git diff --exit-code (CI만)               게이트가 다시 만든 artifact가 커밋본과 같은지
+ └─ 7. python -m mypy .                          advisory (알려진 오류 125건, 아래 참고)
 ```
 
 **네 층으로 나뉩니다.**
@@ -154,10 +156,20 @@ make check
 | 측정 자체의 정직성 | 판정 규칙 사전 고정(CI가 0을 포함하면 보류), 예측을 실행 전에 artifact에 기록(뉴스벤더 q\*), RAGAS 판정의 drift guard(코드 답이 판정 당시 답과 다르면 실패), 시드 앙상블, 단일 분할 결과의 rolling-origin 재현 | `ml/forecasting/predictive_lift.py`, `quantile_cost.py`, `ml/copilot/ragas_generation.py`, `news_feature_conditions.py` |
 
 **fixture와 artifact의 역할 분담.** 테스트는 인터넷 없이 `data/fixtures/`만으로 돕니다(트립 샘플, GBFS 재고,
-뉴스 corpus, 허가 이벤트, gold set, Claude 라우팅과 RAGAS 판정 기록). 측정 결과는 `reports/v2/**`에
-JSON으로 커밋해 다운로드 없이 검토할 수 있고, 무거운 재실행(원본 트립 3 GB)은 `make v2-*` 명령으로
-분리했습니다. optional extra(torch, faiss, sqlalchemy, qiskit, ragas)가 없으면 해당 테스트는 사유와 함께
-skip되고 실패하지 않습니다.
+뉴스 corpus, 허가 이벤트, gold set, Claude 라우팅과 RAGAS 판정 기록). "인터넷 없이"는 약속이 아니라
+설정입니다. `pytest-socket`이 loopback 밖의 모든 연결을 거부하므로 러너에 인터넷이 있든 없든 결과가
+같습니다. 측정 결과는 `reports/v2/**`에 JSON으로 커밋해 다운로드 없이 검토할 수 있고, 무거운
+재실행(원본 트립 3 GB)은 `make v2-*` 명령으로 분리했습니다. optional extra(torch, faiss, sqlalchemy,
+qiskit, ragas)가 없으면 해당 테스트는 사유와 함께 skip되고 실패하지 않습니다.
+
+**환경이 같다는 보장.** 의존성은 `pyproject.toml`에 하한만 적고, 실제 설치는 `requirements/dev.txt`
+(개발과 CI)와 `requirements/serve.txt`(Render)의 정확한 버전으로 합니다. 두 파일은 `make lock`이 `uv pip
+compile`로 같은 해석에서 만들고, `requirements/constraints.txt`가 이유와 함께 고정해야 할 버전을
+담습니다. 지금 그 항목은 하나, scikit-learn 1.9.0입니다. 승격 모델 `promoted_model.joblib`은 pickle이라
+다른 버전이 열면 scikit-learn은 경고만 내고 지나가는데, 그 경고가 CI 로그에 네 번 찍히고도 통과한 것이
+이 규칙을 만든 계기입니다. 이제 manifest가 학습 시점의 라이브러리 버전을 기록하고, 로더는 설치된
+scikit-learn이 기록과 다르면 서빙을 거부하며(503), 테스트는 세 lock 파일의 핀이 manifest와 같은지 확인하고
+그 경고 자체를 오류로 취급합니다.
 
 **이번 점검에서 고친 것.** 하네스가 잘 관리되고 있는지 실제로 돌려 보니 다음이 어긋나 있었고 모두 고쳤습니다.
 
@@ -177,6 +189,22 @@ skip되고 실패하지 않습니다.
   Makefile과 CI를 `python -m mypy`, `python -m pytest`로 바꾸고
   `scripts/`를 패키지로 만들자 실제 오류 125건이 드러났습니다. 한 번에 고칠 규모가 아니라 CI에서
   advisory(`continue-on-error`)로 두고 알려진 부채로 적어 둡니다.
+
+**CI가 처음 돌고 나서 고친 것.** 위 정비 직후 첫 GitHub Actions 실행이 두 번 연속 실패했습니다. 둘 다
+로컬 `make check`는 통과한 상태였고, 원인은 코드가 아니라 "로컬과 CI가 같은 환경"이라는 보장이
+없었던 데 있었습니다.
+
+- `optimization/ledger_run.py`가 쓰는 PyYAML이 어느 extra에도 선언돼 있지 않았습니다. 로컬에는 시스템에
+  깔려 있어 몰랐고, CI의 빈 환경에서 테스트 모듈 6개가 수집 단계에서 멈췄습니다. 선언을 고치는 데서
+  끝내지 않고 위의 lock 체계를 도입해, 빈 환경에서 lock만으로 전체가 통과하는 것을 CI 자체가 증명하게
+  했습니다.
+- `/v2/operator/stations/import`와 `/v2/news/sync` 테스트가 "테스트 환경에는 인터넷이 없다"를 전제로
+  degraded 응답을 기대했습니다. GitHub 러너는 인터넷이 있어 실제 GBFS 호출이 성공했습니다. provider를
+  monkeypatch로 실패시키도록 바꾸고, 같은 종류의 전제가 다시 생기지 않도록 `pytest-socket`으로 공용
+  네트워크를 차단했습니다. 차단이 실제로 걸려 있는지 확인하는 테스트도 있습니다.
+- 최종 감사가 매번 `claim_matrix.json`의 run_id와 freshness를 새로 써서 `make check`가 커밋된 파일을
+  수정한 채로 끝났습니다. 검증 게이트가 검증 대상을 바꾸면 안 되므로 내용이 실제로 달라질 때만 쓰게
+  했고, 그 덕에 CI가 "게이트가 다시 만든 artifact가 커밋본과 같다"를 `git diff --exit-code`로 확인합니다.
 
 ## 서빙
 
@@ -679,8 +707,8 @@ API는 `TestClient`로 HTTP 경계에서 검증합니다. 내부 함수가 아�
 
 OpenAPI 문서는 서버를 띄운 뒤 http://127.0.0.1:8000/docs 에서 볼 수 있고, 스키마는 코드의 Pydantic
 모델에서 생성되므로 구현과 어긋나지 않습니다. 배포는 `render.yaml` 블루프린트 하나로 정의됩니다.
-build는 `pip install -e ".[api,ml]"`, start는 `uvicorn services.api.app:app`, 환경변수는 위의 안전한
-기본값과 `OMP_NUM_THREADS=1`이고, 워커 수를 1로 두는 이유는 파일 안에 주석으로 남겼습니다.
+build는 `requirements/serve.txt`의 고정 버전 설치, start는 `uvicorn services.api.app:app`, 환경변수는
+위의 안전한 기본값과 `OMP_NUM_THREADS=1`이고, 워커 수를 1로 두는 이유는 파일 안에 주석으로 남겼습니다.
 
 ---
 
@@ -694,7 +722,8 @@ build는 `pip install -e ".[api,ml]"`, start는 `uvicorn services.api.app:app`, 
 <summary><b>전체 make 명령 보기</b></summary>
 
 ```bash
-make install       # .venv 생성 + 패키지(editable)와 dev 도구 설치
+make install       # requirements/dev.txt의 고정 버전 설치 + 패키지(editable)
+make lock          # pyproject + constraints에서 requirements/{dev,serve}.txt 재생성 (uv 필요)
 make lint          # ruff check + format check
 make typecheck     # mypy
 make test          # pytest
@@ -709,7 +738,7 @@ make web                  # Next.js 운영자 UI (apps/web; 먼저 npm install �
 ```
 
 윈도우에서 `make`를 쓸 수 없다면 대응 명령을 직접 실행하세요
-(예: `python -m venv .venv && .venv/Scripts/pip install -e ".[dev]"`).
+(예: `python -m venv .venv && .venv\Scripts\pip install -r requirements/dev.txt && .venv\Scripts\pip install -e . --no-deps`).
 
 </details>
 

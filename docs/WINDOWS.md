@@ -37,7 +37,7 @@ own: no internet skips the live fetch, no `-AnthropicKey` uses the offline mock 
 
 | `make …` | PowerShell |
 | --- | --- |
-| `make install` | `python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -e ".[dev]"` |
+| `make install` | `python -m venv .venv; .\.venv\Scripts\Activate.ps1; pip install -r requirements/dev.txt; pip install -e . --no-deps` |
 | `make test` | `python -m pytest` |
 | `make collect-demo` | `python -m pipelines.collectors.demo` |
 | `make build-features` | `python -m pipelines.features.demo` |
@@ -65,8 +65,9 @@ Test-Path pyproject.toml                    # must print True
 
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1                # (Set-ExecutionPolicy -Scope Process Bypass if blocked)
-pip install -e ".[dev]"
-python -m pytest                            # some torch/data-dependent tests skip/fail — that's fine
+pip install -r requirements/dev.txt         # exact versions CI uses (scikit-learn pinned to the promoted model's)
+pip install -e . --no-deps
+python -m pytest                            # optional-extra tests (torch, faiss, ...) skip with a reason
 ```
 
 ## A. Offline demo (no key / no internet / no docker)

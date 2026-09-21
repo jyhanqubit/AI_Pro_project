@@ -48,6 +48,7 @@ from ml.forecasting.experiment import usable_frame
 from ml.forecasting.feature_selection import wape_scorer
 from ml.forecasting.metrics import evaluate, mae
 from ml.forecasting.models import algorithm_names, make_pipeline
+from ml.forecasting.promoted import library_versions
 from ml.forecasting.splits import rolling_origin_folds, to_hour_index
 
 OUT_DIR = Path("reports/v2/holdout")
@@ -358,6 +359,8 @@ def main(argv: list[str] | None = None) -> None:
         "trained_on_rows": int(len(df)),
         "trained_through_hour": max(df["hour_start"]).isoformat(),
         "model_file": model_saved,
+        # The joblib is a pickle: the loader refuses to serve it under another scikit-learn.
+        "library_versions": library_versions(),
         **promoted,
     }
     (OUT_DIR / "promoted_model.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")

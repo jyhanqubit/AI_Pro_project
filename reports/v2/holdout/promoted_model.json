@@ -7,6 +7,10 @@
   "trained_on_rows": 226953,
   "trained_through_hour": "2026-07-31T23:00:00-04:00",
   "model_file": "reports/v2/holdout/promoted_model.joblib",
+  "library_versions": {
+    "scikit-learn": "1.9.0"
+  },
+  "library_versions_note": "scikit-learn read back from the pickle itself (sklearn's InconsistentVersionWarning.original_sklearn_version when loaded under 1.9.1); the run that produced this artifact did not record numpy/python, so they are not claimed here. Runs after 2026-09-21 record all three at fit time.",
   "algorithm": "hist_gradient_boosting",
   "params": {
     "model__learning_rate": 0.1,

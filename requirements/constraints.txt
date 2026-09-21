@@ -1,0 +1,4 @@
+# Pins that the lock must honour and why. Read by `make lock` (uv pip compile -c).
+# The promoted serving model (reports/v2/holdout/promoted_model.joblib) was pickled with this
+# scikit-learn; the loader refuses any other version, so the lock has to carry the same one.
+scikit-learn==1.9.0

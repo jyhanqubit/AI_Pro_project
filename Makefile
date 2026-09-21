@@ -6,11 +6,15 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lint typecheck test check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
+.PHONY: install lock lint typecheck test check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
 
-install:  ## Create/refresh the dev environment (pip + venv)
-	python -m venv .venv
-	.venv/Scripts/pip install -e ".[dev]"
+install:  ## Install the dev environment from the lock (exact versions CI and Render use)
+	python -m pip install -r requirements/dev.txt
+	python -m pip install -e . --no-deps
+
+lock:  ## Re-resolve requirements/{dev,serve}.txt from pyproject + constraints (needs uv; commit the result)
+	uv pip compile pyproject.toml --python-version 3.11 --universal --extra dev --extra ml --extra api --extra mcp -c requirements/constraints.txt -o requirements/dev.txt
+	uv pip compile pyproject.toml --python-version 3.11 --universal --extra api --extra ml -c requirements/dev.txt -o requirements/serve.txt
 
 lint:  ## Ruff lint + format check
 	ruff check .

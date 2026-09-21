@@ -20,6 +20,33 @@ GitHub Actions의 빈 환경에서만 테스트 모듈 6개가 수집 단계에�
 CI의 임시 `aiohttp` 설치를 제거했습니다. 빈 venv에 `pip install -e ".[dev,ml,api,mcp]"`만으로
 512개 수집, 508 passed / 8 skipped, 두 감사 PASS를 재현했습니다.
 
+## 하네스 엔지니어링 보강: lock, 모델 버전 강제, 감사 idempotent (2026-09-21)
+
+CI가 두 번 연속 깨진 뒤 "왜 로컬에서 못 잡았나"를 기준으로 세 가지를 구조적으로 막았습니다.
+
+1. **환경 동일성.** `requirements/constraints.txt`(고정해야 할 버전과 이유) → `make lock`(`uv pip
+   compile --universal`, python 3.11) → `requirements/dev.txt`(개발, CI)와 `requirements/serve.txt`
+   (Render, dev.txt를 constraint로 같은 해석). CI와 `render.yaml`은 lock에서 설치하고 `pip install -e .
+   --no-deps`로 재해석을 막습니다. 테스트는 `pytest-socket`으로 loopback 밖 연결을 거부합니다
+   (`addopts`; asyncio self-pipe와 MCP stdio를 위해 unix socket은 허용).
+2. **승격 모델의 라이브러리 버전.** `promoted_model.json`에 `library_versions`를 기록합니다. 기존
+   artifact는 재학습 없이 pickle 자체가 내는 `InconsistentVersionWarning.original_sklearn_version`
+   (1.9.1로 열었을 때)에서 scikit-learn 1.9.0을 읽어 채웠고, 그 run이 기록하지 않은 numpy/python은
+   주장하지 않았습니다(`library_versions_note`). `load_promoted_model`은 기록과 설치 버전이 다르거나
+   기록이 없으면 `PromotedModelUnavailable`(API 503)을 내고, 로드 중 그 경고가 나면 오류로 올립니다.
+   pytest `filterwarnings`도 같은 경고를 error로 둡니다. constraints는 scikit-learn==1.9.0.
+3. **감사의 idempotency.** `scripts.v2_final_audit.write_if_changed`가 run_id/freshness를 뺀 내용이
+   같으면 커밋본을 유지합니다. CI는 감사 뒤 `git diff --exit-code`로 생성물과 커밋본이 같은지 봅니다.
+
+새 테스트 `tests/unit/test_harness_guards.py` 9개: 공용 네트워크 차단이 실제로 걸려 있는지, loopback은
+열려 있는지, manifest에 버전이 있는지, lock 세 파일의 핀이 manifest와 같은지, 로더가 다른 버전과
+버전 없는 manifest를 거부하는지, joblib 없는 manifest는 non-servable로 로드되는지, 커밋된 모델이
+설치된 버전으로 로드되는지, 감사가 run stamp만 바뀐 파일을 다시 쓰지 않는지.
+
+검증: 빈 venv에 `pip install -r requirements/dev.txt && pip install -e . --no-deps`만으로 517 passed /
+8 skipped, ruff 두 게이트 통과, v2_audit PASS, v2_final_audit PASS("unchanged, committed copy kept"),
+감사와 graph 빌드 뒤 `git status` 깨끗함.
+
 두 번째 실행에서는 `/v2/operator/stations/import` 테스트 하나가 실패했습니다. 이 테스트는
 "테스트 환경에는 인터넷이 없다"를 전제로 degraded 응답을 기대했는데, GitHub 러너는 인터넷이
 있어 실제 GBFS 호출이 성공하고 `live`가 돌아왔습니다. `/v2/news/sync` 테스트도 같은 구조로
