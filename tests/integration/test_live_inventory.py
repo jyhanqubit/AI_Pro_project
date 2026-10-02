@@ -169,3 +169,28 @@ def test_age_is_measured_from_the_snapshot(configured, monkeypatch) -> None:
         now=datetime(2026, 10, 2, 13, 30, tzinfo=UTC),
     )
     assert out["age_minutes"] == 90.0
+
+
+def test_fetch_rows_pages_through_postgrest_max_rows() -> None:
+    # Supabase's PostgREST returns at most 1,000 rows per request; the whole ~2,500-station
+    # network needs Range paging. A mock transport serves 2,520 rows in 1,000-row pages.
+    total = 2520
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.headers["apikey"] == "k" and request.url.path.endswith(
+            "/rest/v1/live_inventory_latest"
+        )
+        seen.append(request.headers["Range"])
+        start, end = (int(x) for x in request.headers["Range"].split("-"))
+        page = [
+            {"station_id": f"s{i:05d}", "bikes": 1, "docks": 1}
+            for i in range(start, min(end + 1, total))
+        ]
+        return httpx.Response(200, json=page)
+
+    with httpx.Client(transport=httpx.MockTransport(handler)) as c:
+        rows = li.fetch_rows("https://x.supabase.co", "k", 5.0, client=c)
+    assert len(rows) == total
+    assert seen == ["0-999", "1000-1999", "2000-2999"]
+    assert rows[0]["station_id"] == "s00000" and rows[-1]["station_id"] == "s02519"

@@ -23,24 +23,45 @@ from config.settings import get_settings
 VIEW = "live_inventory_latest"
 SOURCE = f"supabase:{VIEW}"
 MAX_ROWS = 5000  # the network is ~2,500 stations; a hard cap keeps a bad view from flooding us
+PAGE = 1000  # PostgREST max-rows on Supabase; one Range page per request
 LOW_BIKES = 2  # "about to run out" threshold for the shortage list
 
 Fetcher = Callable[[str, str, float], list[dict[str, Any]]]
 
 
-def fetch_rows(url: str, key: str, timeout_s: float) -> list[dict[str, Any]]:
-    """Read every row of the latest-snapshot view (PostgREST, publishable key, read-only)."""
-    r = httpx.get(
-        f"{url.rstrip('/')}/rest/v1/{VIEW}",
-        params={"select": "*", "order": "station_id.asc", "limit": str(MAX_ROWS)},
-        headers={"apikey": key, "Authorization": f"Bearer {key}"},
-        timeout=timeout_s,
-    )
-    r.raise_for_status()
-    data = r.json()
-    if not isinstance(data, list):
-        raise ValueError(f"unexpected PostgREST payload: {type(data).__name__}")
-    return data
+def fetch_rows(
+    url: str, key: str, timeout_s: float, *, client: httpx.Client | None = None
+) -> list[dict[str, Any]]:
+    """Read every row of the latest-snapshot view (PostgREST, publishable key, read-only).
+
+    PostgREST caps one response at the project's ``max-rows`` (1,000 on Supabase by default),
+    which is below the ~2,500-station network, so the view is read in pages via the ``Range``
+    header until a short page arrives. ``MAX_ROWS`` bounds the total.
+    """
+    endpoint = f"{url.rstrip('/')}/rest/v1/{VIEW}"
+    headers = {"apikey": key, "Authorization": f"Bearer {key}"}
+    params = {"select": "*", "order": "station_id.asc"}
+    rows: list[dict[str, Any]] = []
+    own = client is None
+    c = client or httpx.Client(timeout=timeout_s)
+    try:
+        for start in range(0, MAX_ROWS, PAGE):
+            r = c.get(
+                endpoint,
+                params=params,
+                headers={**headers, "Range-Unit": "items", "Range": f"{start}-{start + PAGE - 1}"},
+            )
+            r.raise_for_status()
+            page = r.json()
+            if not isinstance(page, list):
+                raise ValueError(f"unexpected PostgREST payload: {type(page).__name__}")
+            rows.extend(page)
+            if len(page) < PAGE:
+                break
+    finally:
+        if own:
+            c.close()
+    return rows
 
 
 def _degraded(reason: str, *, limit: int, region: str | None) -> dict[str, Any]:

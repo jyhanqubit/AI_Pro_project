@@ -130,7 +130,7 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
   → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
 - **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
   (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
-- **테스트:** `make check` 기준 528 passed / 7 skipped. skip 7개는 전부 optional extra(torch, faiss, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
+- **테스트:** `make check` 기준 529 passed / 7 skipped. skip 7개는 전부 optional extra(torch, faiss, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
 
 ## 검증 하네스
 
@@ -145,11 +145,11 @@ pre-commit install                               커밋 시점에 ruff check/for
 make check                                       Python 하네스 (CI `harness` job과 같은 순서)
  ├─ 1. ruff check . / ruff format --check .      정적 게이트 (F, I, B, UP, E; 줄 길이는 포매터에 위임)
  ├─ 2. make seed-graph                           이벤트 graph 스냅숏 (오프라인, 1초; copilot 테스트 3개의 입력)
- ├─ 3. pytest --cov --cov-fail-under=55          528 passed / 7 skipped, coverage 58.8% (바닥 55)
+ ├─ 3. pytest --cov --cov-fail-under=55          529 passed / 7 skipped, coverage 58.8% (바닥 55)
  │     │                                         공용 네트워크 차단(pytest-socket), 테스트당 120초 timeout,
  │     │                                         경고는 전부 오류(허용 목록 3건은 사유와 함께 pyproject에)
  │     ├─ tests/unit         59 파일 432개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀, 하네스 가드(9)
- │     ├─ tests/integration  10 파일  99개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB, Supabase 로더, 라이브 재고
+ │     ├─ tests/integration  10 파일 100개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB, Supabase 로더, 라이브 재고
  │     └─ tests/e2e           1 파일   1개   13:59 → 14:00 골든패스 전체 흐름
  ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
  ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
