@@ -130,7 +130,7 @@ rolling-origin 6창**에서 창마다 재학습해, 한 분할이 놓치는 학�
   → B4 +graph feature. 같은 cutoff와 split로 arm만 바꿉니다.
 - **난수 통제:** A1과 A2는 test 행의 약 6%에서만 입력이 다르므로 단일 시드는 트리 난수가 지배합니다
   (같은 창이 +2.23 ↔ −2.26). 그래서 이벤트 feature 비교는 시드 10개 앙상블로만 측정합니다.
-- **테스트:** `make check` 기준 517 passed / 8 skipped. skip 8개는 전부 optional extra(torch, faiss, sqlalchemy, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
+- **테스트:** `make check` 기준 523 passed / 7 skipped. skip 7개는 전부 optional extra(torch, faiss, qiskit, ragas) 부재이며 사유가 표시됩니다. 구조는 아래 [검증 하네스](#검증-하네스) 절에 있습니다.
 
 ## 검증 하네스
 
@@ -145,16 +145,16 @@ pre-commit install                               커밋 시점에 ruff check/for
 make check                                       Python 하네스 (CI `harness` job과 같은 순서)
  ├─ 1. ruff check . / ruff format --check .      정적 게이트 (F, I, B, UP, E; 줄 길이는 포매터에 위임)
  ├─ 2. make seed-graph                           이벤트 graph 스냅숏 (오프라인, 1초; copilot 테스트 3개의 입력)
- ├─ 3. pytest --cov --cov-fail-under=55          517 passed / 8 skipped, coverage 57.7% (바닥 55)
+ ├─ 3. pytest --cov --cov-fail-under=55          523 passed / 7 skipped, coverage 58.7% (바닥 55)
  │     │                                         공용 네트워크 차단(pytest-socket), 테스트당 120초 timeout,
  │     │                                         경고는 전부 오류(허용 목록 3건은 사유와 함께 pyproject에)
  │     ├─ tests/unit         59 파일 432개   시간 커널, 누수, 계약, 지표, 최적화 feasibility, artifact 핀, 하네스 가드(9)
- │     ├─ tests/integration   8 파일  88개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB
+ │     ├─ tests/integration   9 파일  94개   HTTP 경계 계약(58), GraphRAG, MCP 서버(9), DB, Supabase 로더
  │     └─ tests/e2e           1 파일   1개   13:59 → 14:00 골든패스 전체 흐름
  ├─ 4. scripts.v2_audit                          도메인 drift + ResultEnvelope 계약 게이트
  ├─ 5. scripts.v2_final_audit                    artifact 45개의 envelope, 완성 집합, 추적 가능성 → claim_matrix.json
  ├─ 6. git diff --exit-code (CI만)               게이트가 다시 만든 artifact가 커밋본과 같은지
- └─ 7. scripts.mypy_ratchet                      mypy 오류 수가 config/mypy_baseline.json(122)을 넘으면 실패, 줄면 baseline을 내리라고 실패
+ └─ 7. scripts.mypy_ratchet                      mypy 오류 수가 config/mypy_baseline.json(117)을 넘으면 실패, 줄면 baseline을 내리라고 실패
 
 make web-check                                   프론트 하네스 (CI `web` job과 같은 순서, apps/web)
  ├─ eslint .                                     next/core-web-vitals + next/typescript 규칙, 0 problems
@@ -747,6 +747,29 @@ API는 `TestClient`로 HTTP 경계에서 검증합니다. 내부 함수가 아�
 - `tests/integration/test_model_serving.py`: artifact가 있으면 measured 예측을, 없으면 503을 돌려주는지.
 - E2E 골든패스(`tests/e2e/`): cutoff 13:59 → 14:00 → 이벤트 추출 → graph → feature → 예측 → 설명 →
   시나리오 off → 재배치까지 한 흐름.
+
+### 라이브 수집 백엔드 (Supabase)
+
+서버 없이 돌아가는 수집 백엔드를 하나 더 두었습니다. Supabase Postgres 안에서 `pg_cron`이 매일
+`pg_net`으로 Citi Bike GBFS 두 feed(정류장 정보, 재고)를 받아 적재합니다. 설계 원칙은 API와 같습니다.
+
+- **출처가 행에 붙어 있습니다.** 모든 스냅숏에 `fetched_at`(응답 도착), `source_last_updated`(feed가
+  밝힌 시각), `payload_hash`, `mode=live`가 있고, 요청 하나마다 `gbfs_fetch_log`에 상태(pending →
+  ingested, duplicate, failed), HTTP 상태 코드, 행 수, 오류가 남습니다.
+- **적재는 idempotent합니다.** feed가 같은 `last_updated`를 다시 내보내면 `duplicate`로 기록만 하고
+  행을 넣지 않으며, (station_id, fetched_at) unique 제약이 중복 삽입을 막습니다.
+- **쓰기 경로는 하나입니다.** `SECURITY DEFINER` 함수 세 개(request, ingest, rollup)만 쓰고, API
+  역할에서는 execute를 회수했습니다. 테이블은 RLS를 켜고 공개 키로는 읽기만 됩니다.
+- **fixture와 live를 섞지 않습니다.** 데모용 한글 이름 45건은 별도 테이블에 `mode=demo_fixture`로
+  두고, 실제 정류장 2,520개(NYC 2,401, Jersey City 78, Hoboken 28)는 feed에서 옵니다.
+- **용량을 먼저 계산했습니다.** 10분 주기로 시작해 한 주기 안에 요청과 적재가 맞물리는 것까지
+  확인한 뒤 하루 1회로 바꿨습니다. 하루 2,520행이면 1년이 100 MB 미만이라 원본 스냅숏을 영구 보관하고,
+  10분 주기용으로 만든 시간 집계와 7일 보관 정리는 함수만 남겨 두었습니다.
+
+적용한 SQL은 `supabase/migrations/`에 그대로 있고, 과거 데이터(이벤트 2,895건, 승격 모델의 zone별
+예측 136건, zone × 시간 수요 패널)는 `scripts/supabase_load_history.py`가 SQLAlchemy로 upsert합니다.
+SQLite로 같은 코드를 돌리는 테스트가 있어 Postgres 없이도 회귀를 잡습니다. 운영 메모와 연결 절차는
+`supabase/README.md`에 있습니다.
 
 ### 문서와 배포
 

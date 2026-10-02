@@ -6,14 +6,14 @@
 # Override on the CLI: `make evaluate CITIBIKE_ZIP=path/to/other.zip`.
 CITIBIKE_ZIP ?= data/raw/citibike/JC-202606-citibike-tripdata.csv.zip
 
-.PHONY: install lock lint typecheck test coverage check web-check collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
+.PHONY: install lock lint typecheck test coverage check web-check supabase-load-history collect-demo build-features extract-events-demo graph-upsert-demo seed-graph graph-features-demo train-baseline evaluate rebalance-demo v1-live-fixture evaluate-recommendation evaluate-recommendation-sample train-recommendation-retriever evaluate-recommendation-e2e v1-policy-simulation v1-experiment-dry-run v1-backfill-news v1-collect-news-live v1-build-event-features v1-news-vectorstore v1-evaluate-anomalies api web api-lan web-lan v2-evaluate-search v2-evaluate-predictive-lift v2-evaluate-revenue v2-import-stations db-load graph-upsert-neo4j download-citibike v2-audit v2-holdout v2-serving-export v2-quantile-cost v2-ledger v2-llm-value v2-llm-value-borough v2-llm-value-rolling v2-news-conditions v2-mpc v2-pricing v2-copilot v2-monitor v2-rl v2-final
 
 install:  ## Install the dev environment from the lock (exact versions CI and Render use)
 	python -m pip install -r requirements/dev.txt
 	python -m pip install -e . --no-deps
 
 lock:  ## Re-resolve requirements/{dev,serve}.txt from pyproject + constraints (needs uv; commit the result)
-	uv pip compile pyproject.toml --python-version 3.11 --universal --extra dev --extra ml --extra api --extra mcp -c requirements/constraints.txt -o requirements/dev.txt
+	uv pip compile pyproject.toml --python-version 3.11 --universal --extra dev --extra ml --extra api --extra mcp --extra rdb -c requirements/constraints.txt -o requirements/dev.txt
 	uv pip compile pyproject.toml --python-version 3.11 --universal --extra api --extra ml -c requirements/dev.txt -o requirements/serve.txt
 
 lint:  ## Ruff lint + format check
@@ -207,6 +207,9 @@ mcp-server:  ## Run the operator-copilot MCP server on stdio (add --transport st
 
 v2-mcp-compare:  ## EXTRA: copilot benchmarks + tool latency, in-process vs MCP stdio -> reports/v2/copilot/mcp_transport_comparison.*
 	python -m scripts.mcp_before_after
+
+supabase-load-history:  ## Load events + promoted-model forecasts into DATABASE_URL (Supabase Postgres or SQLite); add --panel --trips DIR for zone x hour demand
+	python -m scripts.supabase_load_history --events --forecasts
 
 v2-free-tier-probe:  ## EXTRA: serving API under an emulated 0.1-CPU free tier (spawns its own server); writes reports/v2/serving/free_tier_emulation.*
 	python -m scripts.free_tier_probe

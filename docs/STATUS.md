@@ -17,9 +17,17 @@ RLS를 켜고 API 역할은 읽기만 가능하며 쓰기 함수의 execute 권�
 - 적용 과정에서 배운 것: MCP 커넥터는 삭제 계열 키워드가 든 문장을 사람 확인 대기 상태로 두어
   60초 timeout으로 롤백됐습니다. 배포본의 보관 정리 문장은 동적 SQL로 넣었고, 저장소 파일은
   평문입니다(동작 동일). pg_net이 public 스키마에 설치된 보안 권고 1건은 대시보드에서 처리 필요.
-- 아직 안 한 것: 과거 집계 수요, 이벤트, 예측 등 수십만 행의 적재. 이 샌드박스의 egress 정책이
-  프로젝트 호스트를 막고 있어 `DATABASE_URL` 직접 연결이 불가하며, 채팅 도구로 넣을 규모가
-  아닙니다. 월별 트립과 GDELT 뉴스는 GitHub Actions schedule로 붙일 계획.
+- 주기 변경: 10분 주기 루프(cron이 16:10 UTC에 큐에 넣은 요청이 다음 tick에 적재, 스냅숏 5,040행
+  / 2회분)를 검증한 뒤 하루 1회(11:50 정보, 12:00 재고, 12:10 적재 UTC)로 바꿨습니다
+  (`migrations/20261002_03_daily_cadence.sql`). 원본 스냅숏이 영구 기록이 되고 시간 집계와 7일
+  정리는 스케줄에서 뺐습니다.
+- 과거 데이터 로더: `scripts/supabase_load_history.py`(`make supabase-load-history`). 이벤트
+  2,895건(graph 스냅숏), 승격 모델 zone별 예측 136건, `--panel --trips`로 zone × 시간 수요 패널을
+  `DATABASE_URL`에 upsert하고 Postgres면 RLS 읽기 전용 정책을 적용합니다. SQLite로 두 번 돌려
+  idempotent함을 확인했고 테스트 2개(`tests/integration/test_supabase_history_loader.py`)가 있습니다.
+  이 샌드박스는 egress 정책으로 DB 호스트에 못 붙으므로 실제 Supabase 적재는 `supabase/README.md`의
+  절차대로 네트워크가 있는 환경에서 실행해야 합니다. 월별 트립과 GDELT 뉴스는 GitHub Actions
+  schedule로 붙일 계획.
 
 ## 검증 하네스 점검과 정비 (2026-09-21)
 
