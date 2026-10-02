@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # Relational store (opt-in [rdb] extra). SQLite by default (zero-config, offline); swap to a
     # Postgres URL (postgresql+psycopg://…) without code changes. Demo Mode never requires it.
     database_url: str = Field(default="sqlite:///data/processed/shockflow.db")
+    # Supabase project that collects the live GBFS inventory (supabase/README.md). Read over
+    # PostgREST with the publishable (client-side, RLS-limited) key; both empty -> the live
+    # inventory route answers `degraded`, Demo Mode is unaffected.
+    supabase_url: str | None = Field(default=None)
+    supabase_publishable_key: str | None = Field(default=None)
+    supabase_timeout_s: float = Field(default=8.0, gt=0)
     local_tz: str = Field(default="America/New_York")
     # Copilot tool transport: "inprocess" (default) or "mcp_stdio" (spawn services.mcp.server and
     # call the same five tools over the Model Context Protocol). MCP failures degrade to in-process.

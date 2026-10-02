@@ -4,6 +4,7 @@ import { useReplay } from "../providers";
 import { useApi } from "@/lib/useApi";
 import { api, type ClaimStatus, type CockpitMetric } from "@/lib/api";
 import { ModeBadge } from "@/components/ModeBadge";
+import { LiveInventory } from "@/components/LiveInventory";
 
 // V2-07 Cockpit: every headline metric is read live from a committed reports/v2/** artifact via
 // GET /v2/cockpit/metrics and shown with its claim_status + artifact provenance. Nothing here is
@@ -91,6 +92,8 @@ export default function CockpitPage() {
         함께 표시됩니다. 하드코딩된 숫자는 없습니다. <span className="mono">research</span> 결과는 운영
         화면에 노출되지 않습니다.
       </p>
+
+      <LiveInventory limit={5} />
 
       {loading && <p className="muted">불러오는 중…</p>}
       {error && <p className="pill decrease">API 오류: {error}</p>}

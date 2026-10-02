@@ -529,6 +529,48 @@ export interface NewsSyncResponse {
   note: string;
 }
 
+export interface LiveStation {
+  station_id: string;
+  name: string | null;
+  region_id: string | null;
+  lat: number | null;
+  lng: number | null;
+  capacity: number | null;
+  bikes: number;
+  docks: number;
+  fill_ratio: number | null;
+  is_renting: boolean;
+  is_returning: boolean;
+}
+
+export interface LiveInventorySummary {
+  n_stations: number;
+  bikes_total: number;
+  docks_total: number;
+  empty_renting: number;
+  low_renting: number;
+  full_returning: number;
+  not_renting: number;
+}
+
+export interface LiveInventoryResponse {
+  status: "live" | "degraded";
+  mode: "live";
+  claim_status: ClaimStatus;
+  source: string;
+  run_id?: string;
+  fetched_at: string | null;
+  source_last_updated: string | null;
+  age_minutes: number | null;
+  limit: number;
+  region_id: string | null;
+  summary: LiveInventorySummary | null;
+  lowest: LiveStation[];
+  fullest: LiveStation[];
+  degraded_reason?: string;
+  note: string;
+}
+
 export interface StationImportResponse {
   status: "live" | "degraded";
   mode: string;
@@ -720,6 +762,10 @@ export const api = {
   stationSearch: (q = "", k = 20) =>
     req<StationSearchResponse>(
       `/v2/rider/stations/search?q=${encodeURIComponent(q)}&k=${k}`,
+    ),
+  liveInventory: (limit = 5, region?: string) =>
+    req<LiveInventoryResponse>(
+      `/v2/live/inventory?limit=${limit}${region ? `&region=${encodeURIComponent(region)}` : ""}`,
     ),
   operatorStatistics: () => req<OperatorStatistics>("/v2/operator/statistics"),
   operatorTimeline: () => req<OperatorTimeline>("/v2/operator/timeline"),

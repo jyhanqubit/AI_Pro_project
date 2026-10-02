@@ -54,6 +54,23 @@ Pause or resume a job without deleting it:
 select cron.alter_job((select jobid from cron.job where jobname = 'gbfs-station-status-10min'), active := false);
 ```
 
+## Serving: `GET /v2/live/inventory`
+
+The API reads the `live_inventory_latest` view (migration 04: latest snapshot joined to the
+station master, `security_invoker` so RLS applies) over PostgREST with the publishable key
+(`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`; set in `render.yaml`). The response is labelled
+`mode=live`, `claim_status=measured`, carries the snapshot's `fetched_at` as freshness and
+`age_minutes`, and summarises the network (stations, bikes, docks, empty/low/full counts) plus the
+stations closest to empty and to full. Without the two variables, or when Supabase is unreachable,
+it answers `status=degraded` with the reason; Demo Mode never depends on it. The operator cockpit
+(`apps/web/app/cockpit`) shows it as the "라이브 재고" panel with a LIVE badge and the snapshot time,
+visually apart from the replay metrics.
+
+Monitoring: `.github/workflows/live-data.yml` checks every day at 13:00 UTC that the newest
+ingested snapshot is younger than 48 hours (fails and emails otherwise), and on Mondays or on
+demand smoke-tests the deployed API (`/v1/health`, `/v2/live/inventory` must be `live`) and the
+Vercel page.
+
 ## Reading from the app
 
 The publishable key (`sb_publishable_...`) is meant for clients and only reaches what RLS allows,

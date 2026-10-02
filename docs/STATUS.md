@@ -2,6 +2,22 @@
 
 _Last updated: 2026-10-02_
 
+## 라이브 재고 서빙과 수집 모니터링 (2026-10-02)
+
+- `GET /v2/live/inventory`(`services/api/live_inventory.py`): Supabase의 `live_inventory_latest`
+  view(migration 04, security_invoker)를 PostgREST + publishable key로 읽어 `mode=live`,
+  `claim_status=measured`, 스냅숏 `fetched_at`, `age_minutes`, 요약과 최저/최고 정류장을 반환.
+  미설정이나 연결 실패는 `degraded` + 사유. 설정은 `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`
+  (`render.yaml`에 포함, 공개 키). 테스트 5개(`tests/integration/test_live_inventory.py`): 미설정
+  degrade, 연결 실패 degrade, 요약 계산과 순위, 지역 필터, 경과 시간.
+- 콕핏(`apps/web/app/cockpit`)에 `LiveInventory` 패널 추가. LIVE 배지와 스냅숏 시각으로 재생 지표와
+  구분. ESLint, tsc, vitest 통과.
+- `.github/workflows/live-data.yml`: 매일 13:00 UTC 최신 ingested 스냅숏이 48시간 이내인지 검사,
+  월요일과 수동 실행 시 Render `/v1/health`, `/v2/live/inventory`(live여야 함), Vercel 페이지
+  smoke test.
+- 과거 데이터 적재 완료(사용자 PC에서 실행): events 2,895, model_forecasts 136, demand_zone_hour
+  233,540(295 zone, 2026-01~07). RLS 읽기 전용 정책 적용, DB 59 MB.
+
 ## Supabase 라이브 재고 수집 (2026-10-02)
 
 Supabase 프로젝트(`ckikekotyulxwfbjqzir`) 안에서 pg_cron + pg_net으로 Citi Bike GBFS를 주기

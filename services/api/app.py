@@ -486,6 +486,17 @@ def create_app() -> FastAPI:
 
         return import_live_stations(limit=limit)
 
+    @app.get("/v2/live/inventory")
+    def live_inventory_endpoint(limit: int = 10, region: str | None = None) -> dict:
+        """V2: latest live station inventory from the Supabase collection (mode=live).
+
+        Degrades with a reason when Supabase is not configured or unreachable; never fabricates.
+        ``region`` filters by GBFS region id (71 NYC, 70 Jersey City, 311 Hoboken).
+        """
+        from .live_inventory import live_inventory
+
+        return live_inventory(limit=max(1, min(limit, 100)), region=region)
+
     @app.post("/v2/operator/ask")
     def ops_ask_endpoint(engine: EngineDep, body: OpsAskRequest) -> dict:
         """V2-08 ops copilot: GraphRAG (LLM over the as-of event graph) when a key is configured,

@@ -1,0 +1,86 @@
+name: live-data
+
+# Two checks the harness cannot do offline:
+#   liveness   every day after the Supabase cron has run (12:10 UTC): the newest ingested
+#              station_status snapshot must be younger than 48 hours, else the collection is
+#              silently broken and this run fails (and emails).
+#   deploy     on demand (and weekly): the Render API answers /v1/health and serves the live
+#              inventory from Supabase, and the Vercel page is up. Render's free tier sleeps,
+#              so the first request is retried for up to ~2 minutes.
+# Both use the project's publishable key, a client-side key limited by row-level security.
+
+on:
+  schedule:
+    - cron: "0 13 * * *"   # liveness, daily
+    - cron: "30 13 * * 1"  # deploy smoke, Mondays
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  SUPABASE_URL: https://ckikekotyulxwfbjqzir.supabase.co
+  SUPABASE_PUBLISHABLE_KEY: sb_publishable_ZyZ-iGQ-rXr8O-hcBZVRoQ_lPnOGLvQ
+  API_BASE: https://shockflow-api.onrender.com
+  WEB_URL: https://ai-pro-project-1.vercel.app
+
+jobs:
+  liveness:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 13 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Newest ingested station_status snapshot must be < 48 h old
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --fail --max-time 30 \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/gbfs_fetch_log?feed=eq.station_status&state=eq.ingested&select=fetched_at,n_rows&order=fetched_at.desc&limit=1")
+          echo "latest: $body"
+          python3 - "$body" <<'EOF'
+          import json, sys
+          from datetime import datetime, timezone
+          rows = json.loads(sys.argv[1])
+          if not rows:
+              raise SystemExit("no ingested station_status snapshot at all")
+          fetched = datetime.fromisoformat(rows[0]["fetched_at"].replace("Z", "+00:00"))
+          age_h = (datetime.now(timezone.utc) - fetched).total_seconds() / 3600
+          print(f"newest snapshot {fetched.isoformat()} ({age_h:.1f} h old, {rows[0]['n_rows']} rows)")
+          if age_h > 48:
+              raise SystemExit(f"collection stale: {age_h:.1f} h > 48 h")
+          EOF
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '30 13 * * 1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Render API health (retry through the free-tier cold start)
+        run: |
+          set -uo pipefail
+          for i in $(seq 1 12); do
+            if out=$(curl -sS --fail --max-time 60 "$API_BASE/v1/health"); then
+              echo "$out"; exit 0
+            fi
+            echo "attempt $i: not ready, waiting 10 s"; sleep 10
+          done
+          echo "API did not answer /v1/health"; exit 1
+      - name: Live inventory is served from Supabase (status=live)
+        run: |
+          set -euo pipefail
+          body=$(curl -sS --fail --max-time 60 "$API_BASE/v2/live/inventory?limit=3")
+          echo "$body" | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)
+          print({k: d.get(k) for k in ("status", "mode", "claim_status", "fetched_at", "age_minutes")})
+          print("summary:", d.get("summary"))
+          if d.get("status") != "live":
+              raise SystemExit(f"live inventory degraded: {d.get(\"degraded_reason\")}")
+          '
+      - name: Vercel page is up
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/page.html -w "%{http_code}" --max-time 60 "$WEB_URL/cockpit")
+          echo "GET $WEB_URL/cockpit -> $code ($(wc -c < /tmp/page.html) bytes)"
+          test "$code" = "200"
+          grep -q "ShockFlow" /tmp/page.html || { echo "page does not mention ShockFlow"; exit 1; }
