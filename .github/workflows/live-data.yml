@@ -68,15 +68,16 @@ jobs:
       - name: Live inventory is served from Supabase (status=live)
         run: |
           set -euo pipefail
-          body=$(curl -sS --fail --max-time 60 "$API_BASE/v2/live/inventory?limit=3")
-          echo "$body" | python3 -c '
-          import json, sys
-          d = json.load(sys.stdin)
+          curl -sS --fail --max-time 60 "$API_BASE/v2/live/inventory?limit=3" > /tmp/inventory.json
+          python3 - <<'EOF'
+          import json
+          d = json.load(open("/tmp/inventory.json"))
           print({k: d.get(k) for k in ("status", "mode", "claim_status", "fetched_at", "age_minutes")})
           print("summary:", d.get("summary"))
+          print("lowest:", [(s["name"], s["bikes"]) for s in d.get("lowest", [])])
           if d.get("status") != "live":
-              raise SystemExit(f"live inventory degraded: {d.get(\"degraded_reason\")}")
-          '
+              raise SystemExit("live inventory degraded: " + str(d.get("degraded_reason")))
+          EOF
       - name: Vercel page is up
         run: |
           set -euo pipefail
