@@ -1,6 +1,25 @@
 # Project Status
 
-_Last updated: 2026-09-21_
+_Last updated: 2026-10-02_
+
+## Supabase 라이브 재고 수집 (2026-10-02)
+
+Supabase 프로젝트(`ckikekotyulxwfbjqzir`) 안에서 pg_cron + pg_net으로 Citi Bike GBFS를 주기
+수집합니다. 외부 러너, secret, API 키 없이 DB가 스스로 10분마다 `station_status`를, 매일
+`station_information`을 받아오고, 매시 완료된 시간을 station × hour로 집계한 뒤 원본 스냅숏은
+7일만 보관합니다. 모든 행에 `fetched_at`, `source_last_updated`, `payload_hash`, `mode=live`가
+붙고, 같은 `last_updated`의 재발행 payload는 `duplicate`로 기록해 적재가 idempotent합니다.
+RLS를 켜고 API 역할은 읽기만 가능하며 쓰기 함수의 execute 권한은 회수했습니다.
+
+- 첫 적재: 정류장 2,520개(NYC 2,401 / JC 78 / Hoboken 28), 재고 스냅숏 2,520행(자전거 34,354대,
+  빈 거치대 31,308), gazetteer 45행(`demo_fixture`).
+- SQL은 `supabase/migrations/`에 기록, 운영 메모는 `supabase/README.md`.
+- 적용 과정에서 배운 것: MCP 커넥터는 삭제 계열 키워드가 든 문장을 사람 확인 대기 상태로 두어
+  60초 timeout으로 롤백됐습니다. 배포본의 보관 정리 문장은 동적 SQL로 넣었고, 저장소 파일은
+  평문입니다(동작 동일). pg_net이 public 스키마에 설치된 보안 권고 1건은 대시보드에서 처리 필요.
+- 아직 안 한 것: 과거 집계 수요, 이벤트, 예측 등 수십만 행의 적재. 이 샌드박스의 egress 정책이
+  프로젝트 호스트를 막고 있어 `DATABASE_URL` 직접 연결이 불가하며, 채팅 도구로 넣을 규모가
+  아닙니다. 월별 트립과 GDELT 뉴스는 GitHub Actions schedule로 붙일 계획.
 
 ## 검증 하네스 점검과 정비 (2026-09-21)
 

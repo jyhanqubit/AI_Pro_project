@@ -45,6 +45,13 @@ Citi Bike 수요 이력 + 시간 정보가 붙은 뉴스 / 이벤트 + 현재 st
 승격 모델은 leakage 검증이 끝난 Citi Bike Jersey City 패널(2026-01~07, 226,953행 / 219 zone)로
 학습했습니다.
 
+**라이브 재고는 Supabase 안에서 주기 수집합니다.** 외부 러너나 키 없이 Postgres의 pg_cron이
+10분마다 pg_net으로 Citi Bike GBFS를 받아 정류장 2,520개의 재고 스냅숏을 쌓고, 매시 station × hour로
+집계한 뒤 원본은 7일만 보관합니다. 모든 행에 `fetched_at`, `source_last_updated`, `payload_hash`,
+`mode=live`가 붙고 같은 payload의 재발행은 `duplicate`로 기록되어 적재가 idempotent합니다. 구성 SQL은
+`supabase/migrations/`, 운영 메모는 `supabase/README.md`에 있습니다. 데모 fixture와 라이브 데이터는
+테이블과 `mode` 값으로 분리되어 fixture가 라이브로 표시되는 일이 없습니다.
+
 ## 핵심 결과
 
 숫자마다 측정 조건을 함께 적었습니다. 안 된 것(뉴스 피처의 조건부 실패, 철회한 permit lift)도
