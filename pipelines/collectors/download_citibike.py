@@ -182,7 +182,10 @@ def main(argv: list[str] | None = None) -> int:
     if not saved:
         return 1
     print(f"\nDone. {len(saved)} archive(s) in {dest}.")
-    print("Next: python -m ml.forecasting.run <that .zip> --news <news.jsonl> --provider anthropic")
+    print(
+        "Next: python -m ml.forecasting.run <archive> (train/evaluate) or "
+        "python -m scripts.supabase_load_history --panel --trips <dest> (load zone x hour demand)"
+    )
     return 0
 
 

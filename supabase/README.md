@@ -104,8 +104,9 @@ re-running is safe. Tested offline against SQLite (`tests/integration/test_supab
    ```
 
    The `--panel` step aggregates the local trip archives with the forecasting pipeline's own
-   code: the Jersey City files (2026-01..07) take about 1.5 minutes and 2 GB of RAM for ~227 k
-   rows; the full NYC set (24.9 M trips) needs more memory than a laptop and is better run month
+   code: the Jersey City files (2026-01..07) take about 1.5 minutes and 2 GB of RAM and give
+   233,540 rows (295 zones; the promoted model trained on 226,953 of them after dropping the
+   lag warm-up hours); the full NYC set (24.9 M trips) needs more memory than a laptop and is better run month
    by month (`--trips data/raw/citibike/202606-citibike-tripdata.zip`, one file at a time).
 3. Check: `select count(*) from events;`, `select count(*) from demand_zone_hour;`, and
    `history_load_runs` has one audit row per table per run.
