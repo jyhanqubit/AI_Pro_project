@@ -1,6 +1,15 @@
 # Project Status
 
-_Last updated: 2026-10-02_
+_Last updated: 2026-10-07_
+
+## 수치 표기 정정: 뉴스 피처 gain의 단위 (2026-10-07)
+
+`news_feature_conditions.json`의 6월 창 `mean_gain` 1.2409와 `ci_95` [0.83, 1.64]는 행당(borough × 시간)
+절대오차의 평균 감소량(단위: 대)이지 WAPE 상대 %가 아닙니다(`predictive_lift.py:119`,
+`mean_loss_m0` 179.07 → `mean_loss_m1` 177.83). 상대로는 0.69%, CI [0.46%, 0.92%]. README의
+"+1.24% 개선" 표기(핵심 결과 1, A/B/C 절, 주장 매트릭스)와 A/B/C 표 헤더의 "gain %"를 "대/행"으로
+고쳤고, 포트폴리오 PPTX의 헤드라인도 0.69%로 바꿨습니다. "부족 73% 감소"는 MPC에만 해당하며 단일
+MILP는 42%임을 명시했습니다.
 
 ## 라이브 재고 서빙과 수집 모니터링 (2026-10-02)
 
