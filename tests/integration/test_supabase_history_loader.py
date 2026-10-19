@@ -45,7 +45,11 @@ def _tiny_graph(path: Path) -> Path:
                 "props": {"available_at": "2026-02-01T09:00:00+00:00", "status": "rejected"},
             },
         ],
-        "edges": [{"type": "AFFECTS", "source": "evt_a", "target": "892a1072e7bffff"}],
+        "edges": [
+            # the real export format (pipelines/graph/export.py): from/rel/to with [label, key]
+            {"from": ["Event", "evt_a"], "rel": "AFFECTS", "to": ["H3Zone", "892a1072e7bffff"]},
+            {"from": ["Article", "art_1"], "rel": "REPORTS", "to": ["Event", "evt_a"]},
+        ],
     }
     path.write_text(json.dumps(graph), encoding="utf-8")
     return path
@@ -94,3 +98,26 @@ def test_panel_from_the_trip_fixture(tmp_path: Path) -> None:
     assert all(abs(r["net_flow"] - (r["arrivals"] - r["departures"])) < 1e-9 for r in rows)
     # one row per (zone, hour): the primary key held, so re-running cannot duplicate
     assert len({(r["zone_id"], str(r["hour_start"])) for r in rows}) == len(rows)
+
+
+def test_affects_edge_accepts_the_export_format_and_the_flat_one() -> None:
+    real = {"from": ["Event", "e1"], "rel": "AFFECTS", "to": ["H3Zone", "z1"]}
+    flat = {"type": "AFFECTS", "source": "e1", "target": "z1"}
+    other = {"from": ["Article", "a1"], "rel": "REPORTS", "to": ["Event", "e1"]}
+    assert loader._affects_edge(real) == ("e1", "z1")
+    assert loader._affects_edge(flat) == ("e1", "z1")
+    assert loader._affects_edge(other) == (None, "")
+
+
+def test_committed_snapshot_events_get_their_zones(tmp_path: Path) -> None:
+    # Regression: the first loader read type/source/target, so every AFFECTS edge of the real
+    # snapshot was skipped and all zone_ids were []. If the snapshot exists, most events with an
+    # AFFECTS edge must now carry at least one zone.
+    snap = loader.GRAPH_SNAPSHOT
+    if not snap.exists():
+        pytest.skip("graph snapshot not built (make seed-graph)")
+    graph = json.loads(snap.read_text(encoding="utf-8"))
+    n_affects = sum(1 for e in graph["edges"] if loader._affects_edge(e)[0] is not None)
+    rows = list(loader.event_rows(snap, loader.datetime.now(loader.UTC)))
+    with_zone = sum(1 for r in rows if json.loads(r["zone_ids"]))
+    assert n_affects > 0 and with_zone > 0

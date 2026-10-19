@@ -201,15 +201,32 @@ def _ts(value: str | None) -> datetime | None:
 
 
 # --------------------------------------------------------------------------- sources
+def _affects_edge(edge: dict[str, Any]) -> tuple[str | None, str]:
+    """(event_id, zone_id) for an Event -AFFECTS-> H3Zone edge, else (None, "").
+
+    The snapshot written by ``pipelines.graph.export`` stores an edge as
+    ``{"from": [label, key], "rel": REL, "to": [label, key]}``. A flat
+    ``{"type", "source", "target"}`` shape is accepted too so older hand-made files still load.
+    """
+    rel = edge.get("rel", edge.get("type"))
+    if rel != "AFFECTS":
+        return None, ""
+    src, dst = edge.get("from", edge.get("source")), edge.get("to", edge.get("target"))
+    src_key = src[1] if isinstance(src, (list, tuple)) else src
+    dst_key = dst[1] if isinstance(dst, (list, tuple)) else dst
+    if src_key is None or dst_key is None:
+        return None, ""
+    return str(src_key), str(dst_key)
+
+
 def event_rows(snapshot: Path, now: datetime) -> Iterator[dict[str, Any]]:
     """Event nodes of the graph snapshot, with the H3 zones they AFFECT (if any edges exist)."""
     graph = json.loads(snapshot.read_text(encoding="utf-8"))
     affects: dict[str, list[str]] = {}
     for e in graph.get("edges", []):
-        if e.get("type") == "AFFECTS":
-            affects.setdefault(str(e.get("source") or e.get("from")), []).append(
-                str(e.get("target") or e.get("to"))
-            )
+        event_id, zone_id = _affects_edge(e)
+        if event_id is not None:
+            affects.setdefault(event_id, []).append(zone_id)
     source = (
         str(snapshot.relative_to(REPO_ROOT))
         if snapshot.is_relative_to(REPO_ROOT)
