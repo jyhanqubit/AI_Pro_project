@@ -400,6 +400,12 @@ make v2-spark-bench        # PySpark shuffle 벤치마크
 
 가벼운 항목은 트립 없이 바로 재현할 수 있습니다(아래 [빠른 확인 안내](#-빠른-확인-안내)).
 
+흐름을 한 번에 훑고 싶으면 설명용 노트북 [notebooks/interview_walkthrough.ipynb](notebooks/interview_walkthrough.ipynb)를
+여세요. 셀 안에서 Citi Bike 스키마의 합성 트립 CSV와 fixture 형식의 뉴스 JSONL을 만들고, 저장소의 수집기, 집계, 피처 빌더,
+seasonal naive 대비 B1~B4 WAPE 비교, greedy/MILP/MPC 재배치를 그대로 호출합니다. 거기서 나오는 숫자는 합성 데이터 기준이며,
+실측값은 마지막 셀이 `reports/` 아티팩트에서 `claim_status`와 함께 읽어 보여 줍니다. 출력 파일은 `notebooks/outputs/`에 쓰이고
+Git에서 제외됩니다.
+
 ## 기술 스택
 
 - **예측/최적화:** Python 3.11, scikit-learn(HistGradientBoosting), pandas, numpy, scipy(MILP: HiGHS)

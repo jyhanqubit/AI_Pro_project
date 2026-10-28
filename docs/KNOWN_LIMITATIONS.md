@@ -25,6 +25,13 @@ look complete.
 - What *is* validated: the as-of feature machinery and its leakage boundary
   (`tests/unit/test_graph_features.py`, incl. the 14:01→14:00 regression). The graph → numeric
   feature path is real; only its *predictive contribution on this particular window* is null.
+- **Event dedup has no time window.** `pipelines/events/extractor.py` merges two extractions of
+  the same type whenever their *title* token Jaccard is ≥ 0.6 (`DEDUP_JACCARD_THRESHOLD`),
+  regardless of how far apart they were published. A recurring headline ("Signal failure
+  suspends PATH service near Hoboken Terminal") on two different days therefore becomes one
+  event dated at the first occurrence, and the later day gets no event feature. Surfaced while
+  building `notebooks/interview_walkthrough.ipynb`; the fix (a publication-time window in the
+  dedup key) is not implemented.
 
 ## Modelling
 

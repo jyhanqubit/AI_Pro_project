@@ -67,3 +67,6 @@ apps/web/dist/
 Thumbs.db
 .idea/
 .vscode/
+
+# notebook scratch outputs (synthetic CSV / JSONL written by notebooks/*.ipynb)
+notebooks/outputs/

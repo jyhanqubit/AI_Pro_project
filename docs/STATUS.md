@@ -1,6 +1,24 @@
 # Project Status
 
-_Last updated: 2026-10-07_
+_Last updated: 2026-10-28_
+
+## 설명용 노트북 추가 (2026-10-28)
+
+- `notebooks/interview_walkthrough.ipynb`: 합성 Citi Bike CSV(저지시티 6개 정류장, 2026-06-01~07-14, 6일의
+  PATH 중단/공연 충격)와 fixture 형식의 합성 뉴스 JSONL을 셀에서 만들고, `CitiBikeCollector` →
+  `aggregate_demand` → `load_real_panel(provider="mock")` → `usable_frame`/`holdout_by_time` →
+  B0~B4 WAPE/MAE/MASE/OCS(전체와 이벤트 시간대) → greedy/MILP 단일 시점 → `optimization.mpc.simulate`
+  다기간 정책 비교 순서로 저장소 함수를 그대로 호출한다. 마지막 셀은 `reports/v2/**`와
+  `reports/weather_lift.json`의 실측값을 `claim_status`, `mode`와 함께 읽는다. 노트북 안의 숫자는 합성
+  데이터 기준이며 포트폴리오 수치가 아니다.
+- 만들면서 확인한 두 가지: 이벤트가 테스트 구간에만 있으면 학습에서 항상 0인 피처라 B1~B4가 완전히
+  같은 값이 나온다. 또 추출기의 중복 제거는 제목 토큰 Jaccard(0.6)만 보고 시간 창이 없어서 같은 제목의
+  기사가 날짜만 달라도 하나로 합쳐진다(합성 뉴스는 날짜별로 표현을 바꿔 회피). 두 번째는
+  `docs/KNOWN_LIMITATIONS.md` 성격의 사실이라 여기 기록만 남긴다.
+- `pyproject.toml` ruff `extend-exclude = ["notebooks"]`, `.gitignore`에 `notebooks/outputs/`.
+  `ruff check .`, `ruff format --check .`, `scripts.v2_audit` PASS. 노트북은 nbclient로 실행해 출력이
+  채워진 상태로 커밋(실행 환경: 잠금 파일 기준 venv + nbformat/nbclient/ipykernel/matplotlib).
+
 
 ## 수치 표기 정정: 뉴스 피처 gain의 단위 (2026-10-07)
 

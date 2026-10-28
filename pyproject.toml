@@ -96,6 +96,9 @@ packages = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+# Teaching notebooks (notebooks/*.ipynb) are walkthroughs, not shipped code; keep the lint gate on the
+# packages the tests cover.
+extend-exclude = ["notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
