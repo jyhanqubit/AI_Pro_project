@@ -211,5 +211,8 @@ v2-mcp-compare:  ## EXTRA: copilot benchmarks + tool latency, in-process vs MCP 
 supabase-load-history:  ## Load events + promoted-model forecasts into DATABASE_URL (Supabase Postgres or SQLite); add --panel --trips DIR for zone x hour demand
 	python -m scripts.supabase_load_history --events --forecasts
 
+exp-mcp-tokens:  ## EXPERIMENT 1: MCP tool-definition / raw vs summary response tokens (tiktoken cl100k_base) -> reports/agent_experiments/mcp_tokens.json
+	python -m experiments.mcp_tokens
+
 v2-free-tier-probe:  ## EXTRA: serving API under an emulated 0.1-CPU free tier (spawns its own server); writes reports/v2/serving/free_tier_emulation.*
 	python -m scripts.free_tier_probe

@@ -57,6 +57,12 @@ llm = [
 mcp = [
     "mcp>=2.2",  # operator copilot tools as an MCP server (services/mcp) + stdio client
 ]
+experiments = [
+    # experiments/: MCP token accounting (tiktoken cl100k_base) and SHAP explanations; optional,
+    # not in the locks — `pip install -e ".[experiments]"`.
+    "tiktoken>=0.7",
+    "shap>=0.46",
+]
 ragas = [
     # Optional: real RAGAS non-LLM retrieval metrics for the V2-06 copilot benchmark
     # (ml/copilot/ragas_retrieval.py). Absent -> that runner records blocked_external, no fake numbers.
@@ -146,7 +152,7 @@ filterwarnings = [
 # What counts: the product and pipeline code. Tests, the web app, generated and vendored trees
 # are excluded so the number describes the code under test, not the tests themselves.
 source = ["."]
-omit = ["tests/*", "apps/*", ".venv/*", "*/node_modules/*", "scripts/free_tier_probe.py", "scripts/load_test_api.py", "scripts/spark_shuffle_bench.py"]
+omit = ["tests/*", "apps/*", ".venv/*", "*/node_modules/*", "scripts/free_tier_probe.py", "scripts/load_test_api.py", "scripts/spark_shuffle_bench.py", "experiments/*"]
 branch = false
 
 [tool.coverage.report]

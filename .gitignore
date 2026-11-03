@@ -41,6 +41,9 @@ reports/**
 # V2 report scaffolding + small measured summaries (reviewer-verifiable; large binaries below still ignored)
 !reports/v2/
 !reports/v2/**
+!reports/agent_experiments.md
+!reports/agent_experiments/
+!reports/agent_experiments/**
 *.parquet
 *.joblib
 # intentional small versioned serving artifact (§15) — the promoted measured model

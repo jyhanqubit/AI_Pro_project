@@ -1,6 +1,18 @@
 # Project Status
 
-_Last updated: 2026-10-28_
+_Last updated: 2026-11-03_
+
+## Agent experiments 1/3: MCP 토큰 측정 (2026-11-03)
+
+- `experiments/mcp_tokens.py`: 5개 MCP 도구 정의(name+description+input_schema 865 토큰, output_schema
+  포함 3,988)와 시나리오 4개의 원본/요약 응답 토큰을 실제 stdio 서버 호출로 측정. 요약
+  (`experiments/mcp_summary.py`, 별도 서버 `experiments/mcp_summary_server.py` 3개 도구)은 운영 상태
+  5,265→664(87.4%), zone 예측 1,067→263(75.4%)를 줄이고 답을 보존(check 함수로 검증); 이벤트 근거
+  328→324(1.2%)와 지표 74→74는 이득 없음. 필요한 도구만 노출하면 정의 토큰 85~91% 감소. 토크나이저
+  tiktoken cl100k_base(근사). 결과 `reports/agent_experiments/mcp_tokens.json`, 표와 결론
+  `reports/agent_experiments.md`. 테스트 5개(`tests/integration/test_experiments_mcp_tokens.py`,
+  인코딩 파일 없으면 1개 skip). 기존 서버, 모델, 지표는 변경 없음. 작업 2(SHAP), 3(PSI)은 미실행.
+
 
 ## 설명용 노트북 추가 (2026-10-28)
 

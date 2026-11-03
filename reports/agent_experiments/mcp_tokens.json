@@ -1,0 +1,1421 @@
+{
+  "experiment": "mcp_tokens",
+  "generated_at": "2026-11-03T11:04:23.792668+00:00",
+  "git_commit": "fb5d943+dirty",
+  "command": "python -m experiments.mcp_tokens",
+  "seed": 42,
+  "tokenizer": {
+    "library": "tiktoken",
+    "encoding": "cl100k_base",
+    "note": "approximation; provider tokenizers differ. Counts are over compact UTF-8 JSON (ensure_ascii=False, no spaces) with `freshness` normalised to a constant."
+  },
+  "transport": "mcp_stdio",
+  "cutoff": "2026-07-12T18:00:00-04:00",
+  "mode": "historical_replay",
+  "tool_definitions": {
+    "all_five_tokens_name_desc_input": 865,
+    "all_five_tokens_with_output_schema": 3988,
+    "per_tool": [
+      {
+        "name": "get_graph_context",
+        "tokens_name_desc_input": 102,
+        "tokens_with_output_schema": 806,
+        "input_schema_properties": [
+          "cutoff",
+          "max_events"
+        ]
+      },
+      {
+        "name": "get_operator_statistics",
+        "tokens_name_desc_input": 80,
+        "tokens_with_output_schema": 588,
+        "input_schema_properties": [
+          "cutoff"
+        ]
+      },
+      {
+        "name": "get_metric",
+        "tokens_name_desc_input": 128,
+        "tokens_with_output_schema": 663,
+        "input_schema_properties": [
+          "name"
+        ]
+      },
+      {
+        "name": "get_model_forecast",
+        "tokens_name_desc_input": 76,
+        "tokens_with_output_schema": 587,
+        "input_schema_properties": [
+          "top"
+        ]
+      },
+      {
+        "name": "get_pricing_quotes",
+        "tokens_name_desc_input": 477,
+        "tokens_with_output_schema": 1342,
+        "input_schema_properties": [
+          "cutoff",
+          "rules",
+          "safety",
+          "stale"
+        ]
+      }
+    ],
+    "summary_server_tools": {
+      "all_tokens_name_desc_input": 358,
+      "per_tool": {
+        "get_model_forecast_summary": 133,
+        "get_graph_context_summary": 120,
+        "get_operator_statistics_summary": 103
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "id": "A_zone_forecast",
+      "question": "zone 892a107216bffff 의 다음 1시간 예측 출발 수는? (모델, 서빙 시각 포함)",
+      "tools_needed": [
+        "get_model_forecast"
+      ],
+      "raw_tokens": 1067,
+      "summary_tokens": 263,
+      "reduction_pct": 75.4,
+      "raw_chars": 2752,
+      "summary_chars": 828,
+      "answer_preserved": "zone 892a107216bffff next-hour departures = 8.3 in both; serving_hour, algorithm, run_id and claim_status preserved",
+      "raw_payload": {
+        "mode": "historical_replay",
+        "cutoff": null,
+        "claim_status": "measured",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": "run_v2-01_20260816T061758Z_827818f6",
+        "artifact_id": "reports/v2/holdout/promoted_model.json",
+        "tool": "get_model_forecast",
+        "forecast": {
+          "mode": "historical_replay",
+          "claim_status": "measured",
+          "run_id": "run_v2-01_20260816T061758Z_827818f6",
+          "freshness": "2026-01-01T00:00:00+00:00",
+          "model": {
+            "algorithm": "hist_gradient_boosting",
+            "params": {
+              "model__learning_rate": 0.1,
+              "model__max_depth": 8,
+              "model__max_iter": 300
+            },
+            "feature_version": "dfv1",
+            "target": "departures",
+            "trained_on_rows": 226953,
+            "trained_through_hour": "2026-07-31T23:00:00-04:00",
+            "holdout_wape_mean": 0.49737498226992827,
+            "holdout_mase_mean": 0.8708135819131595
+          },
+          "serving_hour": "2026-08-01T00:00:00-04:00",
+          "forecast_horizon_h": 1,
+          "n_zones": 136,
+          "forecasts": [
+            {
+              "zone_id": "892a107216bffff",
+              "lat": 40.7355,
+              "lng": -74.03009,
+              "predicted_departures": 8.3
+            },
+            {
+              "zone_id": "892a1072e7bffff",
+              "lat": 40.7193,
+              "lng": -74.04228,
+              "predicted_departures": 7.89
+            },
+            {
+              "zone_id": "892a10723b7ffff",
+              "lat": 40.73808,
+              "lng": -74.03234,
+              "predicted_departures": 3.98
+            },
+            {
+              "zone_id": "892a1072397ffff",
+              "lat": 40.74594,
+              "lng": -74.03479,
+              "predicted_departures": 2.93
+            },
+            {
+              "zone_id": "892a1072e73ffff",
+              "lat": 40.71942,
+              "lng": -74.03801,
+              "predicted_departures": 2.86
+            },
+            {
+              "zone_id": "892a1072e4fffff",
+              "lat": 40.72188,
+              "lng": -74.04452,
+              "predicted_departures": 2.83
+            },
+            {
+              "zone_id": "892a107217bffff",
+              "lat": 40.7382,
+              "lng": -74.02806,
+              "predicted_departures": 2.42
+            },
+            {
+              "zone_id": "892a10720afffff",
+              "lat": 40.75416,
+              "lng": -74.02442,
+              "predicted_departures": 2.4
+            },
+            {
+              "zone_id": "892a107214bffff",
+              "lat": 40.74336,
+              "lng": -74.03255,
+              "predicted_departures": 2.3
+            },
+            {
+              "zone_id": "892a1072ec7ffff",
+              "lat": 40.72752,
+              "lng": -74.03191,
+              "predicted_departures": 2.3
+            },
+            {
+              "zone_id": "892a1072153ffff",
+              "lat": 40.74618,
+              "lng": -74.02624,
+              "predicted_departures": 2.24
+            },
+            {
+              "zone_id": "892a1072e1bffff",
+              "lat": 40.72482,
+              "lng": -74.03394,
+              "predicted_departures": 2.23
+            },
+            {
+              "zone_id": "892a1072e5bffff",
+              "lat": 40.72717,
+              "lng": -74.04474,
+              "predicted_departures": 2.23
+            },
+            {
+              "zone_id": "892a1072027ffff",
+              "lat": 40.74876,
+              "lng": -74.02849,
+              "predicted_departures": 2.17
+            },
+            {
+              "zone_id": "892a1072a9bffff",
+              "lat": 40.71144,
+              "lng": -74.03982,
+              "predicted_departures": 1.81
+            },
+            {
+              "zone_id": "892a10705dbffff",
+              "lat": 40.73185,
+              "lng": -74.06632,
+              "predicted_departures": 1.68
+            },
+            {
+              "zone_id": "892a10721dbffff",
+              "lat": 40.75158,
+              "lng": -74.02218,
+              "predicted_departures": 1.65
+            },
+            {
+              "zone_id": "892a1072e6fffff",
+              "lat": 40.71402,
+              "lng": -74.04207,
+              "predicted_departures": 1.61
+            },
+            {
+              "zone_id": "892a1072e4bffff",
+              "lat": 40.72447,
+              "lng": -74.04677,
+              "predicted_departures": 1.35
+            },
+            {
+              "zone_id": "892a10723a3ffff",
+              "lat": 40.73796,
+              "lng": -74.03661,
+              "predicted_departures": 1.3
+            }
+          ],
+          "note": "승격된 측정 모델(hist_gradient_boosting)이 요청 시점에 실제로 예측한 다음 1시간 departures입니다. 피처는 학습 데이터 마지막 시각까지의 실측 이력에서 누수 없이 계산된 값이며(§5.4), 데모 휴리스틱과 무관합니다. 음수 예측은 그대로 보고합니다."
+        }
+      },
+      "summary_payload": {
+        "tool": "get_model_forecast",
+        "mode": "historical_replay",
+        "cutoff": null,
+        "claim_status": "measured",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": "run_v2-01_20260816T061758Z_827818f6",
+        "artifact_id": "reports/v2/holdout/promoted_model.json",
+        "summary_of": "get_model_forecast",
+        "serving_hour": "2026-08-01T00:00:00-04:00",
+        "forecast_horizon_h": 1,
+        "model": {
+          "algorithm": "hist_gradient_boosting",
+          "feature_version": "dfv1",
+          "holdout_wape_mean": 0.49737498226992827
+        },
+        "n_zones": 136,
+        "rows_in_full": 20,
+        "aggregate": {
+          "sum_predicted_departures": 56.48,
+          "max_predicted_departures": 8.3,
+          "mean_predicted_departures": 2.824
+        },
+        "rows": [
+          {
+            "zone_id": "892a107216bffff",
+            "predicted_departures": 8.3
+          }
+        ],
+        "full_result_ref": {
+          "tool": "get_model_forecast",
+          "args": {
+            "top": 20
+          },
+          "run_id": "run_v2-01_20260816T061758Z_827818f6",
+          "artifact_id": "reports/v2/holdout/promoted_model.json"
+        }
+      }
+    },
+    {
+      "id": "B_event_evidence",
+      "question": "cutoff 시점에 사용 가능한 이벤트는 무엇이고 각각의 근거 문장과 가장 큰 영향 zone 은?",
+      "tools_needed": [
+        "get_graph_context"
+      ],
+      "raw_tokens": 328,
+      "summary_tokens": 324,
+      "reduction_pct": 1.2,
+      "raw_chars": 1086,
+      "summary_chars": 1091,
+      "answer_preserved": "2 event ids, types, evidence sentences and the largest-delta zone per event agree; cutoff preserved",
+      "raw_payload": {
+        "mode": "historical_replay",
+        "cutoff": "2026-07-12T18:00:00-04:00",
+        "claim_status": "demo_fixture",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": null,
+        "artifact_id": null,
+        "tool": "get_graph_context",
+        "event_count": 2,
+        "events": [
+          {
+            "event_id": "evt_1ba459353f180420",
+            "title": "Signal failure suspends PATH service near Hoboken Terminal",
+            "type": "TRANSIT_DISRUPTION",
+            "severity": 0.7,
+            "effect": "수요 증가",
+            "evidence": "A signal failure has suspended PATH service between Hoboken Terminal and City Hall, effective this afternoon",
+            "zones": [
+              {
+                "zone_id": "892a107216bffff",
+                "forecast_delta": 2.71
+              },
+              {
+                "zone_id": "892a10723b7ffff",
+                "forecast_delta": 4.5
+              },
+              {
+                "zone_id": "892a1072ec7ffff",
+                "forecast_delta": 2.38
+              }
+            ]
+          },
+          {
+            "event_id": "evt_998af550a7d82b06",
+            "title": "Waterfront concert expected to draw large crowds",
+            "type": "LARGE_VENUE_EVENT",
+            "severity": 0.5,
+            "effect": "수요 증가",
+            "evidence": "A large evening concert at the Newport waterfront is expected to draw thousands",
+            "zones": [
+              {
+                "zone_id": "892a107216bffff",
+                "forecast_delta": 2.71
+              },
+              {
+                "zone_id": "892a10723b7ffff",
+                "forecast_delta": 4.5
+              },
+              {
+                "zone_id": "892a1072ec7ffff",
+                "forecast_delta": 2.38
+              }
+            ]
+          }
+        ]
+      },
+      "summary_payload": {
+        "tool": "get_graph_context",
+        "mode": "historical_replay",
+        "cutoff": "2026-07-12T18:00:00-04:00",
+        "claim_status": "demo_fixture",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": null,
+        "artifact_id": null,
+        "summary_of": "get_graph_context",
+        "event_count": 2,
+        "events": [
+          {
+            "event_id": "evt_1ba459353f180420",
+            "type": "TRANSIT_DISRUPTION",
+            "title": "Signal failure suspends PATH service near Hoboken Terminal",
+            "effect": "수요 증가",
+            "severity": 0.7,
+            "evidence": "A signal failure has suspended PATH service between Hoboken Terminal and City Hall, effective this afternoon",
+            "zone_count": 3,
+            "top_zones": [
+              {
+                "zone_id": "892a10723b7ffff",
+                "forecast_delta": 4.5
+              }
+            ]
+          },
+          {
+            "event_id": "evt_998af550a7d82b06",
+            "type": "LARGE_VENUE_EVENT",
+            "title": "Waterfront concert expected to draw large crowds",
+            "effect": "수요 증가",
+            "severity": 0.5,
+            "evidence": "A large evening concert at the Newport waterfront is expected to draw thousands",
+            "zone_count": 3,
+            "top_zones": [
+              {
+                "zone_id": "892a10723b7ffff",
+                "forecast_delta": 4.5
+              }
+            ]
+          }
+        ],
+        "full_result_ref": {
+          "tool": "get_graph_context",
+          "args": {
+            "cutoff": "2026-07-12T18:00:00-04:00",
+            "max_events": 12
+          },
+          "run_id": null,
+          "artifact_id": null
+        }
+      }
+    },
+    {
+      "id": "C_ops_shortage_surge",
+      "question": "지금 부족 정류장 수와 부족 대수, 시스템 이용률, 가장 급등하는 zone 은? (재배치가 다루는 상태)",
+      "tools_needed": [
+        "get_operator_statistics"
+      ],
+      "raw_tokens": 5265,
+      "summary_tokens": 664,
+      "reduction_pct": 87.4,
+      "raw_chars": 14813,
+      "summary_chars": 1930,
+      "answer_preserved": "stations_in_shortage 17, shortage units 147, utilization 0.48, top surge zone 892a10723b7ffff (delta 4.5) agree",
+      "raw_payload": {
+        "mode": "historical_replay",
+        "cutoff": "2026-07-12T18:00:00-04:00",
+        "claim_status": "demo_fixture",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": null,
+        "artifact_id": null,
+        "tool": "get_operator_statistics",
+        "statistics": {
+          "mode": "historical_replay",
+          "cutoff": "2026-07-12T18:00:00-04:00",
+          "model_version": "demo-heuristic-v1",
+          "feature_version": "gfv1",
+          "note": "과거 재생(Historical Replay) 상태의 실제 집계입니다. 수요 변화(Δ)는 라벨이 붙은 데모 heuristic(demo-heuristic-v1) 예보 델타이며, 측정된 Phase 06 모델 출력이 아닙니다. 모든 값은 오프라인 fixture에서 계산됩니다.",
+          "station_count": 45,
+          "total_bikes": 614,
+          "total_capacity": 1284,
+          "total_docks_free": 670,
+          "system_utilization": 0.48,
+          "availability_counts": {
+            "plenty": 21,
+            "ok": 6,
+            "tight": 1,
+            "low": 17
+          },
+          "stations_in_shortage": 17,
+          "total_shortage_units": 147,
+          "total_surplus_units": 244,
+          "available_event_count": 2,
+          "events_by_effect": {
+            "increase": 2,
+            "decrease": 0,
+            "unknown": 0
+          },
+          "events_by_type": {
+            "TRANSIT_DISRUPTION": 1,
+            "LARGE_VENUE_EVENT": 1
+          },
+          "affected_zone_count": 3,
+          "demand_delta_total": 9.59,
+          "demand_delta_max": 4.5,
+          "demand_delta_mean_affected": 3.2,
+          "zones": [
+            {
+              "zone_id": "892a10723b7ffff",
+              "ko": "저지시티 시청",
+              "en": "City Hall",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 18,
+              "utilization": 0.33,
+              "baseline_forecast": 14.67,
+              "event_aware_forecast": 19.17,
+              "forecast_delta": 4.5,
+              "event_exposure": 0.5108,
+              "worst_level": "low",
+              "shortage": 4
+            },
+            {
+              "zone_id": "892a107216bffff",
+              "ko": "호보켄 터미널",
+              "en": "Hoboken Terminal",
+              "area": "호보켄",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 20,
+              "utilization": 0.3,
+              "baseline_forecast": 8.54,
+              "event_aware_forecast": 11.25,
+              "forecast_delta": 2.71,
+              "event_exposure": 0.5296,
+              "worst_level": "low",
+              "shortage": 3
+            },
+            {
+              "zone_id": "892a1072ec7ffff",
+              "ko": "뉴포트",
+              "en": "Newport",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 16,
+              "utilization": 0.38,
+              "baseline_forecast": 9.35,
+              "event_aware_forecast": 11.73,
+              "forecast_delta": 2.38,
+              "event_exposure": 0.4243,
+              "worst_level": "low",
+              "shortage": 2
+            },
+            {
+              "zone_id": "892a1072e7bffff",
+              "ko": "그로브 스트리트",
+              "en": "Grove St PATH",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 16,
+              "capacity": 20,
+              "utilization": 0.8,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a1072e3bffff",
+              "ko": "익스체인지 플레이스",
+              "en": "Exchange Place",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 13,
+              "capacity": 18,
+              "utilization": 0.72,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100f313ffff",
+              "ko": "28 Ave & 44 St",
+              "en": "28 Ave & 44 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 16,
+              "capacity": 19,
+              "utilization": 0.84,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100a977ffff",
+              "ko": "Prospect Ave & E 151 St",
+              "en": "Prospect Ave & E 151 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 15,
+              "capacity": 21,
+              "utilization": 0.71,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100c603ffff",
+              "ko": "41 Ave & 67 St",
+              "en": "41 Ave & 67 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 3,
+              "capacity": 20,
+              "utilization": 0.15,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 5
+            },
+            {
+              "zone_id": "892a100d34fffff",
+              "ko": "E 5 St & Ave A",
+              "en": "E 5 St & Ave A",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 44,
+              "capacity": 48,
+              "utilization": 0.92,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d26bffff",
+              "ko": "Perry St & Greenwich Ave",
+              "en": "Perry St & Greenwich Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 9,
+              "capacity": 53,
+              "utilization": 0.17,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 12
+            },
+            {
+              "zone_id": "892a100db97ffff",
+              "ko": "Bergen St & Kingston Ave",
+              "en": "Bergen St & Kingston Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 18,
+              "capacity": 22,
+              "utilization": 0.82,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a10774d3ffff",
+              "ko": "Degraw St & 3 Ave",
+              "en": "Degraw St & 3 Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 19,
+              "capacity": 35,
+              "utilization": 0.54,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d6afffff",
+              "ko": "E 54 St & 1 Ave",
+              "en": "E 54 St & 1 Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 29,
+              "capacity": 41,
+              "utilization": 0.71,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a1072d4bffff",
+              "ko": "Peck Slip & South St",
+              "en": "Peck Slip & South St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 25,
+              "capacity": 45,
+              "utilization": 0.56,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100c327ffff",
+              "ko": "St Felix Ave & 61 St",
+              "en": "St Felix Ave & 61 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 12,
+              "capacity": 19,
+              "utilization": 0.63,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a1008cb7ffff",
+              "ko": "Adam Clayton Powell Blvd & W 132 St",
+              "en": "Adam Clayton Powell Blvd & W 132 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 19,
+              "capacity": 23,
+              "utilization": 0.83,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100aaafffff",
+              "ko": "W 155 St & Frederick Douglass Blvd",
+              "en": "W 155 St & Frederick Douglass Blvd",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 26,
+              "capacity": 31,
+              "utilization": 0.84,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100a9dbffff",
+              "ko": "Boston Rd & E 167 St",
+              "en": "Boston Rd & E 167 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 11,
+              "capacity": 21,
+              "utilization": 0.52,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a1008c8bffff",
+              "ko": "Riverside Dr & W 138 St",
+              "en": "Riverside Dr & W 138 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 24,
+              "capacity": 30,
+              "utilization": 0.8,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d8a7ffff",
+              "ko": "Macon St & Patchen Ave",
+              "en": "Macon St & Patchen Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 10,
+              "capacity": 19,
+              "utilization": 0.53,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100da63ffff",
+              "ko": "Bergen St & 4 Ave",
+              "en": "Bergen St & 4 Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 3,
+              "capacity": 34,
+              "utilization": 0.09,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 11
+            },
+            {
+              "zone_id": "892a100ab63ffff",
+              "ko": "5 Ave & E 135 St",
+              "en": "5 Ave & E 135 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 21,
+              "capacity": 21,
+              "utilization": 1.0,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100aeb7ffff",
+              "ko": "W Tremont Ave & Montgomery Ave",
+              "en": "W Tremont Ave & Montgomery Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 1,
+              "capacity": 21,
+              "utilization": 0.05,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 7
+            },
+            {
+              "zone_id": "892a100db67ffff",
+              "ko": "Flatbush Ave & Lincoln Rd",
+              "en": "Flatbush Ave & Lincoln Rd",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 12,
+              "capacity": 23,
+              "utilization": 0.52,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100ca4bffff",
+              "ko": "Bergen St & Mother Gaston Blvd",
+              "en": "Bergen St & Mother Gaston Blvd",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 19,
+              "capacity": 24,
+              "utilization": 0.79,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a107751bffff",
+              "ko": "Park Circle & East Dr",
+              "en": "Park Circle & East Dr",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 27,
+              "capacity": 29,
+              "utilization": 0.93,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d51bffff",
+              "ko": "Skillman Ave & Honeywell St",
+              "en": "Skillman Ave & Honeywell St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 2,
+              "capacity": 19,
+              "utilization": 0.11,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 6
+            },
+            {
+              "zone_id": "892a100d913ffff",
+              "ko": "St Marks Ave & Ralph Ave",
+              "en": "St Marks Ave & Ralph Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 5,
+              "capacity": 19,
+              "utilization": 0.26,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 3
+            },
+            {
+              "zone_id": "892a100cacbffff",
+              "ko": "Fulton St & Williams Ave",
+              "en": "Fulton St & Williams Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 19,
+              "capacity": 21,
+              "utilization": 0.9,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100a953ffff",
+              "ko": "3 Ave & E 163 St",
+              "en": "3 Ave & E 163 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 7,
+              "capacity": 27,
+              "utilization": 0.26,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 4
+            },
+            {
+              "zone_id": "892a10012cfffff",
+              "ko": "Goulden Ave & W 205 St",
+              "en": "Goulden Ave & W 205 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 14,
+              "capacity": 19,
+              "utilization": 0.74,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d64fffff",
+              "ko": "8 Ave & W 49 St",
+              "en": "8 Ave & W 49 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 9,
+              "capacity": 65,
+              "utilization": 0.14,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 17
+            },
+            {
+              "zone_id": "892a100dc63ffff",
+              "ko": "Bushwick Ave & Forrest St",
+              "en": "Bushwick Ave & Forrest St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 16,
+              "capacity": 20,
+              "utilization": 0.8,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100d9d3ffff",
+              "ko": "Sumpter St & Fulton St",
+              "en": "Sumpter St & Fulton St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 16,
+              "capacity": 19,
+              "utilization": 0.84,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100aaabffff",
+              "ko": "St Nicholas Ave & W 157 St",
+              "en": "St Nicholas Ave & W 157 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 4,
+              "capacity": 20,
+              "utilization": 0.2,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 4
+            },
+            {
+              "zone_id": "892a100a9c7ffff",
+              "ko": "E 163 St & Union Ave",
+              "en": "E 163 St & Union Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 9,
+              "capacity": 24,
+              "utilization": 0.38,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 1
+            },
+            {
+              "zone_id": "892a100f323ffff",
+              "ko": "Broadway & 51 St",
+              "en": "Broadway & 51 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 25,
+              "capacity": 27,
+              "utilization": 0.93,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a10725afffff",
+              "ko": "W 35 St & 9 Ave",
+              "en": "W 35 St & 9 Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 9,
+              "capacity": 32,
+              "utilization": 0.28,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 4
+            },
+            {
+              "zone_id": "892a100a817ffff",
+              "ko": "College Ave & E 170 St",
+              "en": "College Ave & E 170 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 7,
+              "capacity": 24,
+              "utilization": 0.29,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 3
+            },
+            {
+              "zone_id": "892a100d203ffff",
+              "ko": "Madison Ave & E 26 St",
+              "en": "Madison Ave & E 26 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 0,
+              "capacity": 75,
+              "utilization": 0.0,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 30
+            },
+            {
+              "zone_id": "892a100a94fffff",
+              "ko": "Bergen Ave & E 152 St",
+              "en": "Bergen Ave & E 152 St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 12,
+              "capacity": 21,
+              "utilization": 0.57,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "ok",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100c6abffff",
+              "ko": "72 St & Woodside Ave",
+              "en": "72 St & Woodside Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 9,
+              "capacity": 19,
+              "utilization": 0.47,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "tight",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a100f3d7ffff",
+              "ko": "37 St & 24 Ave",
+              "en": "37 St & 24 Ave",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 16,
+              "capacity": 19,
+              "utilization": 0.84,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a1072ca7ffff",
+              "ko": "Orchard St & Grand St",
+              "en": "Orchard St & Grand St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 25,
+              "capacity": 45,
+              "utilization": 0.56,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "plenty",
+              "shortage": 0
+            },
+            {
+              "zone_id": "892a107289bffff",
+              "ko": "Vesey St & Church St",
+              "en": "Vesey St & Church St",
+              "area": "NYC",
+              "station_count": 1,
+              "bikes": 0,
+              "capacity": 78,
+              "utilization": 0.0,
+              "baseline_forecast": 0.0,
+              "event_aware_forecast": 0.0,
+              "forecast_delta": 0.0,
+              "event_exposure": 0.0,
+              "worst_level": "low",
+              "shortage": 31
+            }
+          ],
+          "top_surge_zones": [
+            {
+              "zone_id": "892a10723b7ffff",
+              "ko": "저지시티 시청",
+              "en": "City Hall",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 18,
+              "utilization": 0.33,
+              "baseline_forecast": 14.67,
+              "event_aware_forecast": 19.17,
+              "forecast_delta": 4.5,
+              "event_exposure": 0.5108,
+              "worst_level": "low",
+              "shortage": 4
+            },
+            {
+              "zone_id": "892a107216bffff",
+              "ko": "호보켄 터미널",
+              "en": "Hoboken Terminal",
+              "area": "호보켄",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 20,
+              "utilization": 0.3,
+              "baseline_forecast": 8.54,
+              "event_aware_forecast": 11.25,
+              "forecast_delta": 2.71,
+              "event_exposure": 0.5296,
+              "worst_level": "low",
+              "shortage": 3
+            },
+            {
+              "zone_id": "892a1072ec7ffff",
+              "ko": "뉴포트",
+              "en": "Newport",
+              "area": "저지시티",
+              "station_count": 1,
+              "bikes": 6,
+              "capacity": 16,
+              "utilization": 0.38,
+              "baseline_forecast": 9.35,
+              "event_aware_forecast": 11.73,
+              "forecast_delta": 2.38,
+              "event_exposure": 0.4243,
+              "worst_level": "low",
+              "shortage": 2
+            }
+          ]
+        }
+      },
+      "summary_payload": {
+        "tool": "get_operator_statistics",
+        "mode": "historical_replay",
+        "cutoff": "2026-07-12T18:00:00-04:00",
+        "claim_status": "demo_fixture",
+        "freshness": "2026-01-01T00:00:00+00:00",
+        "run_id": null,
+        "artifact_id": null,
+        "summary_of": "get_operator_statistics",
+        "aggregates": {
+          "model_version": "demo-heuristic-v1",
+          "feature_version": "gfv1",
+          "note": "과거 재생(Historical Replay) 상태의 실제 집계입니다. 수요 변화(Δ)는 라벨이 붙은 데모 heuristic(demo-heuristic-v1) 예보 델타이며, 측정된 Phase 06 모델 출력이 아닙니다. 모든 값은 오프라인 fixture에서 계산됩니다.",
+          "station_count": 45,
+          "total_bikes": 614,
+          "total_capacity": 1284,
+          "total_docks_free": 670,
+          "system_utilization": 0.48,
+          "availability_counts": {
+            "plenty": 21,
+            "ok": 6,
+            "tight": 1,
+            "low": 17
+          },
+          "stations_in_shortage": 17,
+          "total_shortage_units": 147,
+          "total_surplus_units": 244,
+          "available_event_count": 2,
+          "events_by_effect": {
+            "increase": 2,
+            "decrease": 0,
+            "unknown": 0
+          },
+          "events_by_type": {
+            "TRANSIT_DISRUPTION": 1,
+            "LARGE_VENUE_EVENT": 1
+          },
+          "affected_zone_count": 3,
+          "demand_delta_total": 9.59,
+          "demand_delta_max": 4.5,
+          "demand_delta_mean_affected": 3.2
+        },
+        "top_surge_zones": [
+          {
+            "zone_id": "892a10723b7ffff",
+            "en": "City Hall",
+            "forecast_delta": 4.5,
+            "shortage": 4,
+            "worst_level": "low",
+            "utilization": 0.33
+          },
+          {
+            "zone_id": "892a107216bffff",
+            "en": "Hoboken Terminal",
+            "forecast_delta": 2.71,
+            "shortage": 3,
+            "worst_level": "low",
+            "utilization": 0.3
+          },
+          {
+            "zone_id": "892a1072ec7ffff",
+            "en": "Newport",
+            "forecast_delta": 2.38,
+            "shortage": 2,
+            "worst_level": "low",
+            "utilization": 0.38
+          }
+        ],
+        "top_shortage_zones": [
+          {
+            "zone_id": "892a107289bffff",
+            "en": "Vesey St & Church St",
+            "forecast_delta": 0.0,
+            "shortage": 31,
+            "worst_level": "low",
+            "utilization": 0.0
+          },
+          {
+            "zone_id": "892a100d203ffff",
+            "en": "Madison Ave & E 26 St",
+            "forecast_delta": 0.0,
+            "shortage": 30,
+            "worst_level": "low",
+            "utilization": 0.0
+          },
+          {
+            "zone_id": "892a100d64fffff",
+            "en": "8 Ave & W 49 St",
+            "forecast_delta": 0.0,
+            "shortage": 17,
+            "worst_level": "low",
+            "utilization": 0.14
+          }
+        ],
+        "zones_in_full": 45,
+        "full_result_ref": {
+          "tool": "get_operator_statistics",
+          "args": {
+            "cutoff": "2026-07-12T18:00:00-04:00"
+          },
+          "run_id": null,
+          "artifact_id": null
+        }
+      }
+    },
+    {
+      "id": "D_rebalancing_policy_metric",
+      "question": "(보조) 측정된 최적 재배치 정책과 그 비용은?",
+      "tools_needed": [
+        "get_metric"
+      ],
+      "raw_tokens": 74,
+      "summary_tokens": 74,
+      "reduction_pct": 0.0,
+      "raw_chars": 223,
+      "summary_chars": 223,
+      "answer_preserved": "already compact (one enveloped number); no summary variant — summary == raw",
+      "raw_payload": {
+        "value": "mpc",
+        "run_id": "run_v2-04_20260721T034058Z",
+        "artifact_id": "reports/v2/mpc/policy_comparison.json#ranking_by_total_cost",
+        "mode": "historical_replay",
+        "claim_status": "simulated",
+        "freshness": "2026-01-01T00:00:00+00:00"
+      },
+      "summary_payload": {
+        "value": "mpc",
+        "run_id": "run_v2-04_20260721T034058Z",
+        "artifact_id": "reports/v2/mpc/policy_comparison.json#ranking_by_total_cost",
+        "mode": "historical_replay",
+        "claim_status": "simulated",
+        "freshness": "2026-01-01T00:00:00+00:00"
+      }
+    }
+  ],
+  "staged_exposure": {
+    "all_five_tokens": 865,
+    "catalog_tokens": 210,
+    "per_tool_tokens": {
+      "get_graph_context": 102,
+      "get_operator_statistics": 80,
+      "get_metric": 128,
+      "get_model_forecast": 76,
+      "get_pricing_quotes": 477
+    },
+    "scenarios": [
+      {
+        "id": "A_zone_forecast",
+        "tools_needed": [
+          "get_model_forecast"
+        ],
+        "all_five_tokens": 865,
+        "needed_only_tokens": 78,
+        "needed_only_reduction_pct": 91.0,
+        "two_stage_tokens": 288,
+        "two_stage_reduction_pct": 66.7
+      },
+      {
+        "id": "B_event_evidence",
+        "tools_needed": [
+          "get_graph_context"
+        ],
+        "all_five_tokens": 865,
+        "needed_only_tokens": 104,
+        "needed_only_reduction_pct": 88.0,
+        "two_stage_tokens": 314,
+        "two_stage_reduction_pct": 63.7
+      },
+      {
+        "id": "C_ops_shortage_surge",
+        "tools_needed": [
+          "get_operator_statistics"
+        ],
+        "all_five_tokens": 865,
+        "needed_only_tokens": 82,
+        "needed_only_reduction_pct": 90.5,
+        "two_stage_tokens": 292,
+        "two_stage_reduction_pct": 66.2
+      },
+      {
+        "id": "D_rebalancing_policy_metric",
+        "tools_needed": [
+          "get_metric"
+        ],
+        "all_five_tokens": 865,
+        "needed_only_tokens": 130,
+        "needed_only_reduction_pct": 85.0,
+        "two_stage_tokens": 340,
+        "two_stage_reduction_pct": 60.7
+      }
+    ]
+  }
+}
