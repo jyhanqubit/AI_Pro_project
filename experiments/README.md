@@ -30,6 +30,33 @@ python -m experiments.mcp_tokens --in-process   # stdio 대신 in-process 전송
 - 테스트: `tests/integration/test_experiments_mcp_tokens.py` (요약이 답을 보존하는지, 토큰 수 재현성,
   단계별 노출이 전체보다 비싸지지 않는지). 인코딩 파일이 없으면 토큰 테스트만 사유와 함께 skip.
 
-## 실험 2: SHAP 설명 — 미실행 (작업 1 확인 후 진행)
+## 데이터 준비 (실험 2, 3 공통)
 
-## 실험 3: 재학습 판단 (PSI) — 미실행 (작업 1 확인 후 진행)
+```bash
+make download-citibike JC=1 MONTHS="202601 202602 202603 202604 202605 202606 202607 202608 202609"
+```
+
+저지시티 월별 아카이브(각 1~4 MB)를 `data/raw/citibike/` 에 받습니다. `experiments/_panel.py` 가 저장소 파이프라인으로
+패널을 만들고 `data/processed/experiments/panel_<hash>.pkl` 에 캐시합니다(첫 실행 약 2.5분, 이후 즉시).
+
+## 실험 2: SHAP 설명 (`experiments/shap_explain.py`)
+
+```bash
+make exp-shap                         # = python -m experiments.shap_explain --months 2026-08 2026-09 --n 3000 --seed 42
+```
+
+승격 모델(`reports/v2/holdout/promoted_model.joblib`)에 `shap.TreeExplainer` 를 붙여 글로벌 평균 |SHAP| 상위 10,
+대표 예측 3건의 상위 5 기여, 트리 gain / permutation importance 와의 순위 비교, 상위 피처의 누수 판정
+(`pipelines/features/lags.py` 규칙 대조)을 `reports/agent_experiments/shap_explain.json` 에 씁니다.
+테스트: `tests/unit/test_experiments_drift_explain.py`(누수 매핑), `tests/integration/test_experiments_model_explain.py`
+(gain importance 결정성, SHAP 재현성과 합 = 예측; shap 없으면 skip).
+
+## 실험 3: 재학습 판단 (`experiments/retrain_gate.py`)
+
+```bash
+make exp-retrain-gate                 # = python -m experiments.retrain_gate (기준 2026-01..05, drop 5%, seed 42)
+```
+
+기준 월 피처 분포 대비 월별 PSI(10분위 구간), 챔피언 월별 WAPE, 규칙 판정(keep / retrain / review), 판정이 나온
+out-of-sample 월마다 챌린저(같은 레시피, 평가 월 이전 전체로 재학습) 비교를 `reports/agent_experiments/retrain_gate.json`
+에 씁니다. 테스트: `tests/unit/test_experiments_drift_explain.py` (PSI 0/단조/재현성, NaN 구간, 판정 임계값).

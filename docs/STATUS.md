@@ -2,6 +2,19 @@
 
 _Last updated: 2026-11-03_
 
+## Agent experiments 2/3, 3/3: SHAP 설명과 재학습 판단 (2026-11-03)
+
+- 데이터: 저지시티 트립 2026-01~09 를 `make download-citibike JC=1` 로 받아 저장소 파이프라인으로 패널 재구성
+  (7월까지 226,955행 / 219 zone, 승격 아티팩트 226,953 / 219 과 2행 차이). 캐시 `data/processed/experiments/`.
+- `experiments/shap_explain.py`: 승격 HGB 에 `shap.TreeExplainer`(지원됨), 8~9월 out-of-sample 3,000행(seed 42).
+  상위 3 = dep_lag_1 0.410, dep_lag_168 0.372, dep_lag_24 0.298. 상위 10 모두 `lags.py` 인덱스 규칙과 대조해 누수
+  아님. gain importance 와 순위 차가 큰 피처 cal_hour_cos, net_cumsum_day.
+- `experiments/retrain_gate.py`: 기준 1~5월 대비 6~9월 PSI(10분위), 주요 12 피처 max PSI 0.18~0.23
+  (arr_roll_mean_24, 계절 수준 이동), 챔피언 WAPE 0.464~0.494 로 기준 0.4974 대비 하락 없음 → 규칙상 "재학습" 구간.
+  챌린저(1~8월 재학습) 9월 WAPE 0.4799 vs 챔피언 0.4825(−0.55%); 같은 범위 재적합은 8월 +0.19%.
+- 보고서 `reports/agent_experiments.md`, 결과 JSON 2개, 테스트 6개 추가(unit 4, integration 2; shap 없으면 1개 skip).
+  Makefile `exp-shap`, `exp-retrain-gate`. 승격 모델과 커밋 지표는 변경 없음.
+
 ## Agent experiments 1/3: MCP 토큰 측정 (2026-11-03)
 
 - `experiments/mcp_tokens.py`: 5개 MCP 도구 정의(name+description+input_schema 865 토큰, output_schema

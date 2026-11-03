@@ -211,6 +211,12 @@ v2-mcp-compare:  ## EXTRA: copilot benchmarks + tool latency, in-process vs MCP 
 supabase-load-history:  ## Load events + promoted-model forecasts into DATABASE_URL (Supabase Postgres or SQLite); add --panel --trips DIR for zone x hour demand
 	python -m scripts.supabase_load_history --events --forecasts
 
+exp-shap:  ## EXPERIMENT 2: SHAP on the promoted model, out-of-sample months (needs data/raw/citibike JC archives) -> reports/agent_experiments/shap_explain.json
+	python -m experiments.shap_explain --months 2026-08 2026-09 --n 3000 --seed 42
+
+exp-retrain-gate:  ## EXPERIMENT 3: monthly PSI + champion WAPE + challenger (needs data/raw/citibike JC archives) -> reports/agent_experiments/retrain_gate.json
+	python -m experiments.retrain_gate
+
 exp-mcp-tokens:  ## EXPERIMENT 1: MCP tool-definition / raw vs summary response tokens (tiktoken cl100k_base) -> reports/agent_experiments/mcp_tokens.json
 	python -m experiments.mcp_tokens
 

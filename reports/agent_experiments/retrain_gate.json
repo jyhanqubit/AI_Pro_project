@@ -1,0 +1,260 @@
+{
+  "experiment": "retrain_gate",
+  "generated_at": "2026-11-03T11:34:21.197036+00:00",
+  "git_commit": "6457278+dirty",
+  "command": "python -m experiments.retrain_gate --baseline-months 2026-01 2026-02 2026-03 2026-04 2026-05 --drop-pct 5.0 --seed 42",
+  "seed": 42,
+  "data": {
+    "source_files": [
+      "JC-202601-citibike-tripdata.zip",
+      "JC-202602-citibike-tripdata.csv.zip",
+      "JC-202603-citibike-tripdata.csv.zip",
+      "JC-202604-citibike-tripdata.zip",
+      "JC-202605-citibike-tripdata.csv.zip",
+      "JC-202606-citibike-tripdata.csv.zip",
+      "JC-202607-citibike-tripdata.csv.zip",
+      "JC-202608-citibike-tripdata.csv.zip",
+      "JC-202609-citibike-tripdata.csv.zip"
+    ],
+    "usable_rows": 308055,
+    "months": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05",
+      "2026-06",
+      "2026-07",
+      "2026-08",
+      "2026-09"
+    ],
+    "baseline_months": [
+      "2026-01",
+      "2026-02",
+      "2026-03",
+      "2026-04",
+      "2026-05"
+    ]
+  },
+  "champion": {
+    "run_id": "run_v2-01_20260816T061758Z_827818f6",
+    "algorithm": "hist_gradient_boosting",
+    "trained_through_hour": "2026-07-31T23:00:00-04:00",
+    "feature_version": "dfv1"
+  },
+  "rule": {
+    "psi_bins": "baseline deciles (10 bins, unique edges; value bins when <= 10 distinct values); NaN is its own bin",
+    "psi_keep_below": 0.1,
+    "psi_review_at_or_above": 0.25,
+    "performance_reference": {
+      "wape": 0.49737498226992827,
+      "source": "reports/v2/holdout/h3_multiholdout.json aggregate.wape.mean (May..Jul out-of-sample windows)"
+    },
+    "performance_drop_if_wape_worse_by_pct": 5.0,
+    "key_features": [
+      "dep_lag_168",
+      "dep_lag_1",
+      "dep_lag_24",
+      "net_cumsum_day",
+      "arr_roll_mean_24",
+      "dep_roll_mean_3",
+      "arr_roll_mean_3",
+      "arr_lag_1",
+      "cal_hour_cos",
+      "cal_is_evening_rush",
+      "cal_hour_sin",
+      "cal_day_of_week"
+    ],
+    "key_features_rule": "top-12 total split gain of the champion's trees"
+  },
+  "baseline_performance": {
+    "rows": 145354,
+    "wape": 0.52674456529782,
+    "mae": 1.0649188288423297,
+    "in_sample_for_champion": true
+  },
+  "monthly": [
+    {
+      "month": "2026-06",
+      "rows": 40442,
+      "zones": 182,
+      "psi_key_features": {
+        "dep_lag_168": 0.0997,
+        "dep_lag_1": 0.0655,
+        "dep_lag_24": 0.0761,
+        "net_cumsum_day": 0.0215,
+        "arr_roll_mean_24": 0.2295,
+        "dep_roll_mean_3": 0.0949,
+        "arr_roll_mean_3": 0.0784,
+        "arr_lag_1": 0.0592,
+        "cal_hour_cos": 0.0111,
+        "cal_is_evening_rush": 0.0024,
+        "cal_hour_sin": 0.0043,
+        "cal_day_of_week": 0.0152
+      },
+      "psi_max_key": 0.2295,
+      "psi_max_key_feature": "arr_roll_mean_24",
+      "psi_all_features_over_0_1": [
+        "arr_expanding_mean",
+        "arr_roll_mean_24",
+        "dep_expanding_mean",
+        "dep_roll_mean_24",
+        "member_share_lag_168"
+      ],
+      "champion_wape": 0.4644,
+      "champion_mae": 1.2575,
+      "champion_in_sample": true,
+      "wape_vs_reference_pct": -6.64,
+      "performance_drop": false,
+      "verdict": "retrain"
+    },
+    {
+      "month": "2026-07",
+      "rows": 41159,
+      "zones": 174,
+      "psi_key_features": {
+        "dep_lag_168": 0.0893,
+        "dep_lag_1": 0.0523,
+        "dep_lag_24": 0.0608,
+        "net_cumsum_day": 0.0171,
+        "arr_roll_mean_24": 0.1854,
+        "dep_roll_mean_3": 0.0759,
+        "arr_roll_mean_3": 0.0648,
+        "arr_lag_1": 0.0481,
+        "cal_hour_cos": 0.0081,
+        "cal_is_evening_rush": 0.0023,
+        "cal_hour_sin": 0.0029,
+        "cal_day_of_week": 0.0071
+      },
+      "psi_max_key": 0.1854,
+      "psi_max_key_feature": "arr_roll_mean_24",
+      "psi_all_features_over_0_1": [
+        "arr_expanding_mean",
+        "arr_roll_mean_24",
+        "dep_expanding_mean",
+        "dep_roll_mean_24",
+        "member_share_lag_168"
+      ],
+      "champion_wape": 0.4811,
+      "champion_mae": 1.2714,
+      "champion_in_sample": true,
+      "wape_vs_reference_pct": -3.27,
+      "performance_drop": false,
+      "verdict": "retrain"
+    },
+    {
+      "month": "2026-08",
+      "rows": 41823,
+      "zones": 166,
+      "psi_key_features": {
+        "dep_lag_168": 0.0962,
+        "dep_lag_1": 0.056,
+        "dep_lag_24": 0.0649,
+        "net_cumsum_day": 0.0125,
+        "arr_roll_mean_24": 0.2006,
+        "dep_roll_mean_3": 0.0816,
+        "arr_roll_mean_3": 0.0696,
+        "arr_lag_1": 0.0513,
+        "cal_hour_cos": 0.0082,
+        "cal_is_evening_rush": 0.0019,
+        "cal_hour_sin": 0.0036,
+        "cal_day_of_week": 0.0255
+      },
+      "psi_max_key": 0.2006,
+      "psi_max_key_feature": "arr_roll_mean_24",
+      "psi_all_features_over_0_1": [
+        "arr_expanding_mean",
+        "arr_roll_mean_24",
+        "dep_expanding_mean",
+        "dep_roll_mean_24",
+        "member_share_lag_168"
+      ],
+      "champion_wape": 0.4944,
+      "champion_mae": 1.3106,
+      "champion_in_sample": false,
+      "wape_vs_reference_pct": -0.59,
+      "performance_drop": false,
+      "verdict": "retrain"
+    },
+    {
+      "month": "2026-09",
+      "rows": 39277,
+      "zones": 173,
+      "psi_key_features": {
+        "dep_lag_168": 0.1171,
+        "dep_lag_1": 0.0563,
+        "dep_lag_24": 0.0607,
+        "net_cumsum_day": 0.0267,
+        "arr_roll_mean_24": 0.1766,
+        "dep_roll_mean_3": 0.0808,
+        "arr_roll_mean_3": 0.0677,
+        "arr_lag_1": 0.0521,
+        "cal_hour_cos": 0.0044,
+        "cal_is_evening_rush": 0.0014,
+        "cal_hour_sin": 0.0018,
+        "cal_day_of_week": 0.0164
+      },
+      "psi_max_key": 0.1766,
+      "psi_max_key_feature": "arr_roll_mean_24",
+      "psi_all_features_over_0_1": [
+        "arr_expanding_mean",
+        "arr_lag_168",
+        "arr_roll_mean_24",
+        "dep_expanding_mean",
+        "dep_lag_168",
+        "dep_roll_mean_24",
+        "member_share_lag_168"
+      ],
+      "champion_wape": 0.4825,
+      "champion_mae": 1.3056,
+      "champion_in_sample": false,
+      "wape_vs_reference_pct": -2.99,
+      "performance_drop": false,
+      "verdict": "retrain"
+    }
+  ],
+  "challengers": [
+    {
+      "evaluation_month": "2026-08",
+      "challenger_train_months": "2026-01..2026-07",
+      "challenger_train_rows": 226955,
+      "includes_months_after_champion_span": [],
+      "algorithm": "hist_gradient_boosting",
+      "params": {
+        "model__learning_rate": 0.1,
+        "model__max_depth": 8,
+        "model__max_iter": 300
+      },
+      "seed": 42,
+      "champion_wape": 0.4944,
+      "challenger_wape": 0.4953,
+      "champion_mae": 1.3106,
+      "challenger_mae": 1.3131,
+      "challenger_wape_rel_pct": 0.19,
+      "challenger_better": false
+    },
+    {
+      "evaluation_month": "2026-09",
+      "challenger_train_months": "2026-01..2026-08",
+      "challenger_train_rows": 268778,
+      "includes_months_after_champion_span": [
+        "2026-08"
+      ],
+      "algorithm": "hist_gradient_boosting",
+      "params": {
+        "model__learning_rate": 0.1,
+        "model__max_depth": 8,
+        "model__max_iter": 300
+      },
+      "seed": 42,
+      "champion_wape": 0.4825,
+      "challenger_wape": 0.4799,
+      "champion_mae": 1.3056,
+      "challenger_mae": 1.2984,
+      "challenger_wape_rel_pct": -0.55,
+      "challenger_better": true
+    }
+  ],
+  "challenger_note": "champion = committed promoted model (fit through 2026-07-31T23:00:00-04:00); challenger = same algorithm and params refit on all rows before the evaluation month",
+  "elapsed_s": 14.7
+}
